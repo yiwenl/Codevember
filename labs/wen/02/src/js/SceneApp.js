@@ -27,8 +27,9 @@ p._initViews = function() {
 };
 
 p.render = function() {
+	GL.clear(0, 0, 0, 0);
 	this.camera._ry.value += .01;
-	this._vAxis.render();
+	// this._vAxis.render();
 	this._vDotPlane.render();
 
 	this._vSphere.render();
