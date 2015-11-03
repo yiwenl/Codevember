@@ -24,9 +24,14 @@ float exponentialOut(float t) {
   return t == 1.0 ? t : 1.0 - pow(2.0, -10.0 * t);
 }
 
+const float PI = 3.141592657;
+
 void main(void) {
     float lengthCenter = length(aCenter);
     float scale = (sin(aCenter.x * .01 + time) * cos(aCenter.y * .02 + time) * sin(aCenter.z * .015 + time)) * .5 + .5;
+
+    vec3 nPos = normalize(aVertexPosition);
+    float nOffset = sin(nPos.x * PI + time*2.0);
     
     scale = smoothstep(0.5, 1.0, scale);
     // scale = exponentialIn(scale);
@@ -40,5 +45,5 @@ void main(void) {
     gl_Position = uPMatrix * uMVMatrix * vec4(newPos, 1.0);
     vTextureCoord = aTextureCoord;
 
-    vNormal = aNormal;
+    vNormal = mix(aNormal, nPos, nOffset);
 }
