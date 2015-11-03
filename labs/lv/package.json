@@ -1,0 +1,50 @@
+{
+  "name": "Codevember-es6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "postcss",
+    "es6"
+  ],
+  "author": "Liam Viney",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^6.0.3",
+    "autoresponsive-react": "^1.1.8",
+    "babelify": "^6.4.0",
+    "browser-sync": "^2.9.11",
+    "browserify": "^12.0.1",
+    "css-mqpacker": "^4.0.0",
+    "cssnext": "^1.8.4",
+    "csswring": "^4.0.0",
+    "es6-react-mixins": "^0.2.1",
+    "eslint-plugin-react": "^3.6.3",
+    "gulp": "^3.9.0",
+    "gulp-clean": "^0.3.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-eslint": "^1.0.0",
+    "gulp-exit": "0.0.2",
+    "gulp-notify": "^2.2.0",
+    "gulp-postcss": "^6.0.1",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-watch": "^4.3.5",
+    "lost": "^6.6.2",
+    "postcss-import": "^7.1.0",
+    "postcss-nested": "^1.0.0",
+    "postcss-pxtorem": "^3.1.0",
+    "postcss-simple-vars": "^1.0.1",
+    "react": "^0.14.0",
+    "react-dom": "^0.14.1",
+    "react-mixin": "^2.0.2",
+    "react-packery-mixin": "^0.1.9",
+    "reactify": "^1.1.1",
+    "rucksack-css": "^0.8.5",
+    "vinyl-source-stream": "^1.1.0",
+    "yargs": "^3.29.0"
+  }
+}
