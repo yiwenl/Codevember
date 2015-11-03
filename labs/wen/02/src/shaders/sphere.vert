@@ -15,6 +15,7 @@ uniform float time;
 varying vec2 vTextureCoord;
 varying vec3 vCenter;
 varying vec3 vNormal;
+varying vec3 vVertex;
 
 float exponentialIn(float t) {
   return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));
@@ -45,5 +46,6 @@ void main(void) {
     gl_Position = uPMatrix * uMVMatrix * vec4(newPos, 1.0);
     vTextureCoord = aTextureCoord;
 
+    vVertex = newPos;
     vNormal = mix(aNormal, nPos, nOffset);
 }

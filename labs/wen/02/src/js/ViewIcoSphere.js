@@ -119,6 +119,7 @@ p.render = function() {
 	this.shader.uniform("color", "uniform3fv", [1, 1, 1]);
 	this.shader.uniform("opacity", "uniform1f", 1);
 	this.shader.uniform("time", "uniform1f", this.time);
+	this.shader.uniform("eye", "uniform3fv", GL.camera.position);
 	GL.draw(this.mesh);
 };
 
