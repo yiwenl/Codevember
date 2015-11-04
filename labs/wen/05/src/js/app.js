@@ -2,31 +2,17 @@
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 
-window.params = {
-	sphereSize:100,
-	numParticles:200,
-	bounceForce:15.0
-};
-
 (function() {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
-
-		var loader = new bongiovi.SimpleImageLoader();
-		var assets = ["assets/gradient.jpg"];
-		loader.load(assets, this, this._onImageLoaded);
-	}
-
-	var p = App.prototype;
-
-	p._onImageLoaded = function(img) {
-		window.images = img;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	};
+	}
+
+	var p = App.prototype;
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -40,7 +26,6 @@ window.params = {
 		bongiovi.Scheduler.addEF(this, this._loop);
 
 		// this.gui = new dat.GUI({width:300});
-		// this.gui.add(params, 'bounceForce', 5.0, 50.0);
 	};
 
 	p._loop = function() {

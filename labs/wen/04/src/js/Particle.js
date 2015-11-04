@@ -61,6 +61,7 @@ p.reset = function() {
 	this.color[1] = random(min, 1.0);
 	this.color[2] = random(min, 1.0);
 	this.color = [1, 1, .975];
+	this.size = random(1, 2);
 };
 
 module.exports = Particle;

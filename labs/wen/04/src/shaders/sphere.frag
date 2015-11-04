@@ -3,7 +3,7 @@
 precision highp float;
 
 uniform vec3 eye;
-
+uniform sampler2D texture;
 
 varying vec3 vNormal;
 varying vec3 vVertex;
@@ -49,13 +49,14 @@ float exponentialOut(float t) {
 
 const vec3 lightPos0 = vec3(105.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = .25;
+const float lightWeight0 = .35;
 
 const vec3 lightPos1 = vec3(-195.0, -195.0, 0.0);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = .15;
+const float lightWeight1 = .25;
 
-const vec3 whiteColor = vec3(1.0);
+const vec3 color0 = vec3(19.0, 19.0, 28.0)/255.0;
+const vec3 color1 = vec3(1.0);
 
 void main(void) {
 
@@ -63,8 +64,8 @@ void main(void) {
 	vec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;	
 
 	vec3 lightParticle = vec3(.0);
-	float minRadius = 150.0;
-	float lightWeight = .25;
+	float minRadius = 250.0;
+	float lightWeight = .15;
 	for(int i=0; i<NUM_PARTICLES; i++) {
 		vec3 light = particles[i];
 		float d = distance(light, vVertex);
@@ -77,7 +78,15 @@ void main(void) {
 		
 	}
 
+	lightParticle = min(lightParticle, vec3(1.0));
+
 	vec3 color = diff0 + diff1 + lightParticle;
+	float l = length(color) / length(vec3(1.0));
+	// l = pow(l, 2.0);
+	// l = exponentialOut(l);
+	// color = mix(color0, color1, l);
+
+	color = texture2D(texture, vec2(l, .5)).rgb;
 
 	gl_FragColor = vec4(color, 1.0);
 }

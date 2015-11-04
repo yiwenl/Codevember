@@ -25,7 +25,7 @@ p._init = function() {
 p.render = function(p) {
 	this.shader.bind();
 	this.shader.uniform("position", "uniform3fv", vec3.clone(p.position) || [0, 0, 0]);
-	this.shader.uniform("scale", "uniform3fv", [1, 1, 1]);
+	this.shader.uniform("scale", "uniform3fv", [p.size, p.size, p.size]);
 	this.shader.uniform("color", "uniform3fv", vec3.clone(p.color));
 	this.shader.uniform("opacity", "uniform1f", 1);
 	GL.draw(this.mesh);

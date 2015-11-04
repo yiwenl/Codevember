@@ -24,7 +24,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createSphere(params.sphereSize, 36);
 };
 
-p.render = function(particles) {
+p.render = function(particles, texture) {
 	var pos = [];
 	var color = [];
 	for(var i=0; i<particles.length; i++) {
@@ -42,6 +42,8 @@ p.render = function(particles) {
 	this.shader.uniform("colors", "uniform3fv", color);
 	this.shader.uniform("particles", "uniform3fv", pos);
 	this.shader.uniform("opacity", "uniform1f", 1);
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
 	GL.draw(this.mesh);
 };
 

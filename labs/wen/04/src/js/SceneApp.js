@@ -30,6 +30,7 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
+	this._textureGradient = new bongiovi.GLTexture(images.gradient);
 };
 
 p._initViews = function() {
@@ -48,7 +49,7 @@ p.render = function() {
 		p.update();
 		this._vDot.render(p);
 	}
-	this._vSphere.render(this.particles);
+	this._vSphere.render(this.particles, this._textureGradient);
 };
 
 p.resize = function() {
