@@ -2,6 +2,12 @@
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 
+window.params = {
+	sphereSize:100,
+	numParticles:200,
+	bounceForce:15.0
+};
+
 (function() {
 	var SceneApp = require("./SceneApp");
 
@@ -26,6 +32,7 @@ var dat = require("dat-gui");
 		bongiovi.Scheduler.addEF(this, this._loop);
 
 		// this.gui = new dat.GUI({width:300});
+		// this.gui.add(params, 'bounceForce', 5.0, 50.0);
 	};
 
 	p._loop = function() {
