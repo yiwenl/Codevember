@@ -1,6 +1,9 @@
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
+window.params = {
+	height:100
+};
 
 (function() {
 	var SceneApp = require("./SceneApp");
