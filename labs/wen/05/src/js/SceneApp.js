@@ -67,7 +67,7 @@ p.render = function() {
 	var totalWidth = params.numBelts * params.beltWidth;
 
 	for(var i=0; i<params.numBelts; i++) {
-		var uvy = i/params.numBelts;
+		var uvy = i/params.numBelts + .5/params.numBelts;
 		var pos = [0, 0, params.beltWidth * i -totalWidth/2 + params.beltWidth*.5];
 		this._vBelt.render(this.fboNoise.getTexture(), this.fboNormal.getTexture(), pos, uvy);	
 	}
