@@ -22,8 +22,8 @@ p._init = function() {
 	var numX = 100;
 	var numZ = 10;
 	var count = 0;
-	var size = 200;
-	var sizeZ = size * .1;
+	var size = params.beltLength;
+	var sizeZ = params.beltWidth;
 
 	function getPosition(i, j) {
 		var pos = [0, 0, 0];

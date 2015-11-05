@@ -2,7 +2,11 @@
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
-	height:100
+	height:100,
+	numBelts:20,
+	beltLength:300,
+	beltWidth:20
+
 };
 
 (function() {

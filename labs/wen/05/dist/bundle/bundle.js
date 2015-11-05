@@ -4430,7 +4430,7 @@ function SceneApp() {
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
 
-	this.camera._rx.value = -.3;
+	this.camera._rx.value = -.5;
 	this.camera._ry.value = .3;
 
 	window.addEventListener("resize", this.resize.bind(this));
@@ -4482,12 +4482,14 @@ p.render = function() {
 	GL.setViewport(0, 0, GL.width, GL.height);
 	GL.setMatrices(this.camera);
 	GL.rotate(this.sceneRotation.matrix);
-	this._vAxis.render();
+	// this._vAxis.render();
 	this._vDotPlane.render();
 
-	for(var i=0; i<10; i++) {
-		var uvy = i/10;
-		var pos = [0, 0, 20 * i -100+10];
+	var totalWidth = params.numBelts * params.beltWidth;
+
+	for(var i=0; i<params.numBelts; i++) {
+		var uvy = i/params.numBelts;
+		var pos = [0, 0, params.beltWidth * i -totalWidth/2 + params.beltWidth*.5];
 		this._vBelt.render(this.fboNoise.getTexture(), this.fboNormal.getTexture(), pos, uvy);	
 	}
 	
@@ -4508,7 +4510,7 @@ var gl;
 
 function ViewBelt() {
 	// bongiovi.View.call(this, glslify('../shaders/belt.vert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n// belt.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D textureHeight;\nuniform sampler2D textureNormal;\nuniform float uvy;\nuniform float height;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = vec2(aTextureCoord.x, uvy);\n\tpos.y = texture2D(textureHeight, uv).r * height;\n\tpos += position;\n\tvNormal = texture2D(textureNormal, uv).rgb * 2.0 - 1.0;\n\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n    vVertex = pos;\n}", "#define GLSLIFY 1\n// belt.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 color) {\n\tvec3 L = normalize(light);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn color * lambert;\n}\n\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {\n\tvec3 dirToLight = light - pos;\n\treturn diffuse(normal, dirToLight, color);\n}\n\n\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(105.0, 0.0, 105.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = .65;\n\nconst vec3 lightPos1 = vec3(-195.0, 0.0, -195.0);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = .35; \n\nconst vec3 lightPos2 = vec3(0.0, 195.0, 0.0);\nconst vec3 lightColor2 = vec3(1.0);\nconst float lightWeight2 = .25; \n\nvoid main(void) {\n\tvec3 diff0 = diffuse(vNormal, lightPos0, vVertex, lightColor0) * lightWeight0;\n\tvec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;\t\n\tvec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;\t\n\n\tvec3 color = vec3(ambient) + diff0 + diff1 + diff2;\n\n    gl_FragColor = vec4(color, 1.0);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// belt.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D textureHeight;\nuniform sampler2D textureNormal;\nuniform float uvy;\nuniform float height;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = vec2(aTextureCoord.x, uvy);\n\tpos.y = texture2D(textureHeight, uv).r * height;\n\tpos += position;\n\tvNormal = texture2D(textureNormal, uv).rgb * 2.0 - 1.0;\n\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n    vVertex = pos;\n}", "#define GLSLIFY 1\n// belt.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 color) {\n\tvec3 L = normalize(light);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn color * lambert;\n}\n\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {\n\tvec3 dirToLight = light - pos;\n\treturn diffuse(normal, dirToLight, color);\n}\n\n\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(205.0, 0.0, 205.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = .75;\n\nconst vec3 lightPos1 = vec3(-295.0, 0.0, -295.0);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = .35; \n\nconst vec3 lightPos2 = vec3(0.0, 195.0, 0.0);\nconst vec3 lightColor2 = vec3(1.0);\nconst float lightWeight2 = .25; \n\nvoid main(void) {\n\tvec3 diff0 = diffuse(vNormal, lightPos0, vVertex, lightColor0) * lightWeight0;\n\tvec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;\t\n\tvec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;\t\n\n\tvec3 color = vec3(ambient) + diff0 + diff1 + diff2;\n\n    gl_FragColor = vec4(color, 1.0);\n}");
 }
 
 var p = ViewBelt.prototype = new bongiovi.View();
@@ -4524,8 +4526,8 @@ p._init = function() {
 	var numX = 100;
 	var numZ = 10;
 	var count = 0;
-	var size = 200;
-	var sizeZ = size * .1;
+	var size = params.beltLength;
+	var sizeZ = params.beltWidth;
 
 	function getPosition(i, j) {
 		var pos = [0, 0, 0];
@@ -4645,7 +4647,11 @@ module.exports = ViewNormal;
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
-	height:100
+	height:100,
+	numBelts:20,
+	beltLength:300,
+	beltWidth:20
+
 };
 
 (function() {

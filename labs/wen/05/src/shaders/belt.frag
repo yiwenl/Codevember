@@ -22,11 +22,11 @@ vec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {
 
 const float ambient = .2;
 
-const vec3 lightPos0 = vec3(105.0, 0.0, 105.0);
+const vec3 lightPos0 = vec3(205.0, 0.0, 205.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = .65;
+const float lightWeight0 = .75;
 
-const vec3 lightPos1 = vec3(-195.0, 0.0, -195.0);
+const vec3 lightPos1 = vec3(-295.0, 0.0, -295.0);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
 const float lightWeight1 = .35; 
 
