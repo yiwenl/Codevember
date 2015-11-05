@@ -1,0 +1,1 @@
+{"version":3,"sources":["main.css"],"names":[],"mappings":"AAEA,UACE,WAAW,AACX,YAAa,AACb,SAAS,AACT,UAAU,AAEV,eAA4B,CAC7B","file":"main.css","sourcesContent":["@import 'config.css';\n\nhtml, body {\n  width:100%;\n  height: 100%;\n  margin:0;\n  padding:0;\n\n  background:var(--bg--color);\n}\n"],"sourceRoot":"/source/"}
