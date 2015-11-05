@@ -1,7 +1,53 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+// app.js
+window.bongiovi = require("./libs/bongiovi.js");
+var dat = require("dat-gui");
+window.params = {
+	height:150,
+	numBelts:20,
+	beltLength:300,
+	beltWidth:20
+
+};
+
+(function() {
+	var SceneApp = require("./SceneApp");
+
+	App = function() {
+		if(document.body) this._init();
+		else {
+			window.addEventListener("load", this._init.bind(this));
+		}
+	}
+
+	var p = App.prototype;
+
+	p._init = function() {
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
+		this.canvas.className = "Main-Canvas";
+		document.body.appendChild(this.canvas);
+		bongiovi.GL.init(this.canvas);
+
+		this._scene = new SceneApp();
+		bongiovi.Scheduler.addEF(this, this._loop);
+
+		// this.gui = new dat.GUI({width:300});
+	};
+
+	p._loop = function() {
+		this._scene.loop();
+	};
+
+})();
+
+
+new App();
+},{"./SceneApp":5,"./libs/bongiovi.js":10,"dat-gui":2}],2:[function(require,module,exports){
 module.exports = require('./vendor/dat.gui')
 module.exports.color = require('./vendor/dat.color')
-},{"./vendor/dat.color":2,"./vendor/dat.gui":3}],2:[function(require,module,exports){
+},{"./vendor/dat.color":3,"./vendor/dat.gui":4}],3:[function(require,module,exports){
 /**
  * dat-gui JavaScript Controller Library
  * http://code.google.com/p/dat-gui
@@ -757,7 +803,7 @@ dat.color.math = (function () {
 })(),
 dat.color.toString,
 dat.utils.common);
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /**
  * dat-gui JavaScript Controller Library
  * http://code.google.com/p/dat-gui
@@ -4418,13 +4464,14 @@ dat.dom.CenteredDiv = (function (dom, common) {
 dat.utils.common),
 dat.dom.dom,
 dat.utils.common);
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // SceneApp.js
 
 var GL = bongiovi.GL, gl;
 var ViewNoise = require("./ViewNoise");
 var ViewNormal = require("./ViewNormal");
 var ViewBelt = require("./ViewBelt");
+var ViewPlane = require('./ViewPlane');
 
 function SceneApp() {
 	gl = GL.gl;
@@ -4432,6 +4479,9 @@ function SceneApp() {
 
 	this.camera._rx.value = -.5;
 	this.camera._ry.value = .3;
+
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -4455,6 +4505,7 @@ p._initViews = function() {
 	this._vNormal   = new ViewNormal();
 	this._vCopy     = new bongiovi.ViewCopy();
 	this._vBelt 	= new ViewBelt();
+	this._vPlane    = new ViewPlane();
 };
 
 p.render = function() {
@@ -4474,9 +4525,9 @@ p.render = function() {
 	this._vNormal.render(this.fboNoise.getTexture());
 	this.fboNormal.unbind();
 	GL.setViewport(0, 0, 256, 256);
-	this._vCopy.render(this.fboNoise.getTexture());
+	// this._vCopy.render(this.fboNoise.getTexture());
 	GL.setViewport(0, 270, 256, 256);
-	this._vCopy.render(this.fboNormal.getTexture());
+	// this._vCopy.render(this.fboNormal.getTexture());
 
 
 	GL.setViewport(0, 0, GL.width, GL.height);
@@ -4492,7 +4543,22 @@ p.render = function() {
 		var pos = [0, 0, params.beltWidth * i -totalWidth/2 + params.beltWidth*.5];
 		this._vBelt.render(this.fboNoise.getTexture(), this.fboNormal.getTexture(), pos, uvy);	
 	}
-	
+
+	var d = params.beltWidth * params.numBelts;
+	// this._vPlane.render([params.beltLength, 0, d]);
+	var c = 0;
+	for(var j=-1; j<=1; j++) {
+		for(var i=-1; i<=1; i++) {
+			// console.log(i + j);
+			var tx = params.beltLength * j;
+			var tz = d * i;
+			if( !(i == 0 && j == 0)) {
+				c ++ ;
+				this._vPlane.render([tx, 0, tz]);
+			}
+		}
+	}
+
 };
 
 p.resize = function() {
@@ -4501,7 +4567,7 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewBelt":5,"./ViewNoise":6,"./ViewNormal":7}],5:[function(require,module,exports){
+},{"./ViewBelt":6,"./ViewNoise":7,"./ViewNormal":8,"./ViewPlane":9}],6:[function(require,module,exports){
 // ViweBelt.js
 
 var GL = bongiovi.GL;
@@ -4510,7 +4576,7 @@ var gl;
 
 function ViewBelt() {
 	// bongiovi.View.call(this, glslify('../shaders/belt.vert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n// belt.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D textureHeight;\nuniform sampler2D textureNormal;\nuniform float uvy;\nuniform float height;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = vec2(aTextureCoord.x, uvy);\n\tpos.y = texture2D(textureHeight, uv).r * height;\n\tpos += position;\n\tvNormal = texture2D(textureNormal, uv).rgb * 2.0 - 1.0;\n\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n    vVertex = pos;\n}", "#define GLSLIFY 1\n// belt.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 color) {\n\tvec3 L = normalize(light);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn color * lambert;\n}\n\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {\n\tvec3 dirToLight = light - pos;\n\treturn diffuse(normal, dirToLight, color);\n}\n\n\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(205.0, 0.0, 205.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = .75;\n\nconst vec3 lightPos1 = vec3(-295.0, 0.0, -295.0);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = .35; \n\nconst vec3 lightPos2 = vec3(0.0, 195.0, 0.0);\nconst vec3 lightColor2 = vec3(1.0);\nconst float lightWeight2 = .25; \n\nvoid main(void) {\n\tvec3 diff0 = diffuse(vNormal, lightPos0, vVertex, lightColor0) * lightWeight0;\n\tvec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;\t\n\tvec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;\t\n\n\tvec3 color = vec3(ambient) + diff0 + diff1 + diff2;\n\n    gl_FragColor = vec4(color, 1.0);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// belt.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D textureHeight;\nuniform sampler2D textureNormal;\nuniform float uvy;\nuniform float height;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = vec2(aTextureCoord.x, uvy);\n\tfloat h = texture2D(textureHeight, uv).r;\n\tpos.y = h * height + 50.0;\n\tpos += position;\n\tvNormal = texture2D(textureNormal, uv).rgb * 2.0 - 1.0;\n\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n    vVertex = pos;\n}", "#define GLSLIFY 1\n\n// belt.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 color) {\n\tvec3 L = normalize(light);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn color * lambert;\n}\n\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {\n\tvec3 dirToLight = light - pos;\n\treturn diffuse(normal, dirToLight, color);\n}\n\n\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(150.0*2.0, 300.0*2.0, 0.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 1.00;\n\nconst vec3 lightPos1 = vec3(-295.0, 0.0, -295.0);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = .0; \n\nconst vec3 lightPos2 = vec3(0.0, 195.0, 0.0);\nconst vec3 lightColor2 = vec3(1.0);\nconst float lightWeight2 = .0; \n\nvoid main(void) {\n\tvec3 diff0 = diffuse(vNormal, lightPos0, vVertex, lightColor0) * lightWeight0;\n\tvec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;\t\n\tvec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;\t\n\n\tvec3 color = vec3(ambient) + diff0 + diff1 + diff2;\n\n    gl_FragColor = vec4(color, 1.0);\n}");
 }
 
 var p = ViewBelt.prototype = new bongiovi.View();
@@ -4582,7 +4648,7 @@ p.render = function(textureHeight, textureNormal, position, uvy) {
 };
 
 module.exports = ViewBelt;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // ViewNoise.js
 var GL = bongiovi.GL;
 var gl;
@@ -4590,7 +4656,7 @@ var gl;
 
 function ViewNoise() {
 	this.time = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n// noise.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nuniform float time;\nconst float PI = 3.141592657;\n\nvoid main(void) {\n\tvec2 uv = vTextureCoord * 1.1;\n\tfloat grey = snoise(uv.x, uv.y - time, cos(time)) * .5 + .5;\n\tgrey *= sin(vTextureCoord.x * PI);\n\tgrey = pow(grey, 2.5);\n    gl_FragColor = vec4(vec3(grey), 1.0);\n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\n// noise.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nuniform float time;\nconst float PI = 3.141592657;\n\nvoid main(void) {\n\tvec2 uv = vTextureCoord * 1.1;\n\tfloat grey = snoise(uv.x, uv.y - time, cos(time)) * .5 + .5;\n\tgrey *= sin(vTextureCoord.x * PI);\n\tgrey *= sin(vTextureCoord.y * PI);\n\tgrey = pow(grey, 2.5);\n    gl_FragColor = vec4(vec3(grey), 1.0);\n}");
 }
 
 var p = ViewNoise.prototype = new bongiovi.View();
@@ -4614,7 +4680,7 @@ p.render = function() {
 };
 
 module.exports = ViewNoise;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // ViewNormal.js
 
 var GL = bongiovi.GL;
@@ -4622,7 +4688,7 @@ var gl;
 
 
 function ViewNormal() {
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n// normal.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\n\nconst float gap = 0.01;\nconst float hOffset = .1;\n\nvoid main(void) {\n\tvec2 uv = vTextureCoord;\n\tvec2 uvRight = uv + vec2(gap, 0.0);\n\tvec2 uvBottom = uv + vec2(0.0, gap);\n\tfloat h = texture2D(texture, uv).r;\n\tfloat hRight = texture2D(texture, uvRight).r;\n\tfloat hBottom = texture2D(texture, uvBottom).r;\n\n\tvec3 pCurr = vec3(0.0, 0.0, h);\n\tvec3 pRight = vec3(gap, 0.0, hRight);\n\tvec3 pBottom = vec3(0.0, gap, hBottom);\n\n\tvec3 vRight = pRight - pCurr;\n\tvec3 vBottom = pBottom - pCurr;\n\t// vec3 normal = cross(vBottom, vRight);\n\tvec3 normal = cross(vRight, vBottom);\n\tnormal = normalize(normal) * .5 + .5;\n\n\n    gl_FragColor = vec4(normal, 1.0);\n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\n// normal.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\n\nconst float gap = 0.01;\nconst float hOffset = .1;\n\nvoid main(void) {\n\tvec2 uv = vTextureCoord;\n\tvec2 uvRight = uv + vec2(gap, 0.0);\n\tvec2 uvBottom = uv + vec2(0.0, gap);\n\tfloat h = texture2D(texture, uv).r;\n\tfloat hRight = texture2D(texture, uvRight).r;\n\tfloat hBottom = texture2D(texture, uvBottom).r;\n\n\tvec3 pCurr = vec3(0.0, h, 0.0);\n\tvec3 pRight = vec3(gap, hRight, 0.0);\n\tvec3 pBottom = vec3(0.0, hBottom, gap);\n\n\tvec3 vRight = pRight - pCurr;\n\tvec3 vBottom = pBottom - pCurr;\n\tvec3 normal = cross(vBottom, vRight);\n\t// vec3 normal = cross(vRight, vBottom);\n\tnormal = normalize(normal) * .5 + .5;\n\n\n    gl_FragColor = vec4(normal, 1.0);\n}");
 }
 
 var p = ViewNormal.prototype = new bongiovi.View();
@@ -4642,53 +4708,65 @@ p.render = function(texture) {
 };
 
 module.exports = ViewNormal;
-},{}],8:[function(require,module,exports){
-// app.js
-window.bongiovi = require("./libs/bongiovi.js");
-var dat = require("dat-gui");
-window.params = {
-	height:100,
-	numBelts:20,
-	beltLength:300,
-	beltWidth:20
+},{}],9:[function(require,module,exports){
+// ViewPlane.js
 
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewPlane() {
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// plane.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec3 aNormal;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition + position;\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n\n    vNormal = normalize(aNormal);\n    vVertex = pos;\n}", "#define GLSLIFY 1\n\n// plane.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 color) {\n\tvec3 L = normalize(light);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn color * lambert;\n}\n\n\nvec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {\n\tvec3 dirToLight = light - pos;\n\treturn diffuse(normal, dirToLight, color);\n}\n\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(150.0*2.0, 300.0*2.0, 0.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 1.00;\n\nconst vec3 lightPos1 = vec3(-295.0, 0.0, -295.0);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = .0; \n\nconst vec3 lightPos2 = vec3(0.0, 195.0, 0.0);\nconst vec3 lightColor2 = vec3(1.0);\nconst float lightWeight2 = .0; \n\nvoid main(void) {\n\tvec3 diff0 = diffuse(vNormal, lightPos0, vVertex, lightColor0) * lightWeight0;\n\tvec3 diff1 = diffuse(vNormal, lightPos1, vVertex, lightColor1) * lightWeight1;\t\n\tvec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;\t\n\n\tvec3 color = vec3(ambient) + diff0 + diff1 + diff2;\n    gl_FragColor = vec4(color, 1.0);\n}");
+}
+
+var p = ViewPlane.prototype = new bongiovi.View();
+p.constructor = ViewPlane;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var positions = [];
+	var coords = [];
+	var normals = [];
+	var indices = [0, 1, 2, 0, 2, 3]; 
+	var y = 50;
+
+	var w = params.beltLength/2;
+	var h = params.beltWidth * params.numBelts/2;
+
+	positions.push([ w, y, -h]);
+	positions.push([-w, y, -h]);
+	positions.push([-w, y,  h]);
+	positions.push([ w, y,  h]);
+
+	normals.push([0, 1, 0]);
+	normals.push([0, 1, 0]);
+	normals.push([0, 1, 0]);
+	normals.push([0, 1, 0]);
+
+	coords.push([0, 0]);
+	coords.push([1, 0]);
+	coords.push([1, 1]);
+	coords.push([0, 1]);
+
+	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.TRIANGLES);
+	this.mesh.bufferVertex(positions);
+	this.mesh.bufferTexCoords(coords);
+	this.mesh.bufferIndices(indices);
+	this.mesh.bufferData(normals, "aNormal", 3);
 };
 
-(function() {
-	var SceneApp = require("./SceneApp");
+p.render = function(pos) {
+	this.shader.bind();
+	this.shader.uniform("position", "uniform3fv", pos || [0, 0, 0]);
+	GL.draw(this.mesh);
+};
 
-	App = function() {
-		if(document.body) this._init();
-		else {
-			window.addEventListener("load", this._init.bind(this));
-		}
-	}
-
-	var p = App.prototype;
-
-	p._init = function() {
-		this.canvas = document.createElement("canvas");
-		this.canvas.width = window.innerWidth;
-		this.canvas.height = window.innerHeight;
-		this.canvas.className = "Main-Canvas";
-		document.body.appendChild(this.canvas);
-		bongiovi.GL.init(this.canvas);
-
-		this._scene = new SceneApp();
-		bongiovi.Scheduler.addEF(this, this._loop);
-
-		// this.gui = new dat.GUI({width:300});
-	};
-
-	p._loop = function() {
-		this._scene.loop();
-	};
-
-})();
+module.exports = ViewPlane;
 
 
-new App();
-},{"./SceneApp":4,"./libs/bongiovi.js":9,"dat-gui":1}],9:[function(require,module,exports){
+
+},{}],10:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
@@ -18814,4 +18892,4 @@ module.exports = ViewDotPlanes;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[8]);
+},{}]},{},[1]);

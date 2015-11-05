@@ -17,14 +17,14 @@ void main(void) {
 	float hRight = texture2D(texture, uvRight).r;
 	float hBottom = texture2D(texture, uvBottom).r;
 
-	vec3 pCurr = vec3(0.0, 0.0, h);
-	vec3 pRight = vec3(gap, 0.0, hRight);
-	vec3 pBottom = vec3(0.0, gap, hBottom);
+	vec3 pCurr = vec3(0.0, h, 0.0);
+	vec3 pRight = vec3(gap, hRight, 0.0);
+	vec3 pBottom = vec3(0.0, hBottom, gap);
 
 	vec3 vRight = pRight - pCurr;
 	vec3 vBottom = pBottom - pCurr;
-	// vec3 normal = cross(vBottom, vRight);
-	vec3 normal = cross(vRight, vBottom);
+	vec3 normal = cross(vBottom, vRight);
+	// vec3 normal = cross(vRight, vBottom);
 	normal = normalize(normal) * .5 + .5;
 
 

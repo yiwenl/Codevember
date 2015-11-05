@@ -76,6 +76,7 @@ void main(void) {
 	vec2 uv = vTextureCoord * 1.1;
 	float grey = snoise(uv.x, uv.y - time, cos(time)) * .5 + .5;
 	grey *= sin(vTextureCoord.x * PI);
+	grey *= sin(vTextureCoord.y * PI);
 	grey = pow(grey, 2.5);
     gl_FragColor = vec4(vec3(grey), 1.0);
 }

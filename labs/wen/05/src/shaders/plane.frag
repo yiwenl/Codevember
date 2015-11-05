@@ -1,9 +1,7 @@
-// belt.frag
-
+// plane.frag
 #define SHADER_NAME SIMPLE_TEXTURE
 
 precision highp float;
-varying vec2 vTextureCoord;
 varying vec3 vNormal;
 varying vec3 vVertex;
 
@@ -18,7 +16,6 @@ vec3 diffuse(vec3 normal, vec3 light, vec3 pos, vec3 color) {
 	vec3 dirToLight = light - pos;
 	return diffuse(normal, dirToLight, color);
 }
-
 
 const float ambient = .2;
 
@@ -40,6 +37,5 @@ void main(void) {
 	vec3 diff2 = diffuse(vNormal, lightPos2, vVertex, lightColor2) * lightWeight2;	
 
 	vec3 color = vec3(ambient) + diff0 + diff1 + diff2;
-
     gl_FragColor = vec4(color, 1.0);
 }

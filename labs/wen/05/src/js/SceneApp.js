@@ -4,6 +4,7 @@ var GL = bongiovi.GL, gl;
 var ViewNoise = require("./ViewNoise");
 var ViewNormal = require("./ViewNormal");
 var ViewBelt = require("./ViewBelt");
+var ViewPlane = require('./ViewPlane');
 
 function SceneApp() {
 	gl = GL.gl;
@@ -11,6 +12,9 @@ function SceneApp() {
 
 	this.camera._rx.value = -.5;
 	this.camera._ry.value = .3;
+
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -34,6 +38,7 @@ p._initViews = function() {
 	this._vNormal   = new ViewNormal();
 	this._vCopy     = new bongiovi.ViewCopy();
 	this._vBelt 	= new ViewBelt();
+	this._vPlane    = new ViewPlane();
 };
 
 p.render = function() {
@@ -53,9 +58,9 @@ p.render = function() {
 	this._vNormal.render(this.fboNoise.getTexture());
 	this.fboNormal.unbind();
 	GL.setViewport(0, 0, 256, 256);
-	this._vCopy.render(this.fboNoise.getTexture());
+	// this._vCopy.render(this.fboNoise.getTexture());
 	GL.setViewport(0, 270, 256, 256);
-	this._vCopy.render(this.fboNormal.getTexture());
+	// this._vCopy.render(this.fboNormal.getTexture());
 
 
 	GL.setViewport(0, 0, GL.width, GL.height);
@@ -71,7 +76,22 @@ p.render = function() {
 		var pos = [0, 0, params.beltWidth * i -totalWidth/2 + params.beltWidth*.5];
 		this._vBelt.render(this.fboNoise.getTexture(), this.fboNormal.getTexture(), pos, uvy);	
 	}
-	
+
+	var d = params.beltWidth * params.numBelts;
+	// this._vPlane.render([params.beltLength, 0, d]);
+	var c = 0;
+	for(var j=-1; j<=1; j++) {
+		for(var i=-1; i<=1; i++) {
+			// console.log(i + j);
+			var tx = params.beltLength * j;
+			var tz = d * i;
+			if( !(i == 0 && j == 0)) {
+				c ++ ;
+				this._vPlane.render([tx, 0, tz]);
+			}
+		}
+	}
+
 };
 
 p.resize = function() {
