@@ -9,6 +9,7 @@ function SceneApp() {
 	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
+	this.resize();
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -54,7 +55,11 @@ p.render = function() {
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	size = Math.min(size, 1024);
+	GL.canvas.style.marginLeft = -size/2 + 'px';
+	GL.canvas.style.marginTop = -size/2 + 'px';
+	GL.setSize(size, size);
 	this.camera.resize(GL.aspectRatio);
 };
 

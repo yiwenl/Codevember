@@ -26,18 +26,6 @@ p._init = function() {
 };
 
 p.render = function(bubbles) {
-	var bubblePos = [];
-	var bubbleSize = [];
-	for(var i=0; i<bubbles.length; i++) {
-		var p = bubbles[i];
-		var pos = p.update();
-
-		bubblePos.push(pos[0], pos[1], pos[2]);
-		bubbleSize.push(p.size);
-	}
-
-
-
 	this.time +=.05;
 	this.shader.bind();
 	this.shader.uniform("resolution", "uniform2fv", [GL.width, GL.height]);
@@ -46,9 +34,6 @@ p.render = function(bubbles) {
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
-
-	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);
-	this.shader.uniform("bubbleSize", "uniform1fv", bubbleSize);
 	GL.draw(this.mesh);
 };
 

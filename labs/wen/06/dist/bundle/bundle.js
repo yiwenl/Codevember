@@ -5,11 +5,11 @@ var dat = require("dat-gui");
 
 window.params = {
 	focus:2.0,
-	numIter:70,
+	numIter:100,
 	numBubble:5.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:6.0
+	maxDist:4.0
 };
 
 (function() {
@@ -39,8 +39,7 @@ window.params = {
 		this.gui.add(params,'focus', .1, 5.0);
 		this.gui.add(params,'metaK', .1, 9.0);
 		this.gui.add(params,'zGap', 0.1, 10.0);
-		this.gui.add(params,'maxDist', 5.0, 30.0);
-		this.gui.add(params,'numBubble', 2, 20).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
+		this.gui.add(params,'maxDist', 1.0, 10.0);
 		this.gui.add(params,'numIter', 10, 200).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
 	};
 
@@ -4520,6 +4519,7 @@ function SceneApp() {
 	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
+	this.resize();
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -4565,7 +4565,11 @@ p.render = function() {
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	size = Math.min(size, 1024);
+	GL.canvas.style.marginLeft = -size/2 + 'px';
+	GL.canvas.style.marginTop = -size/2 + 'px';
+	GL.setSize(size, size);
 	this.camera.resize(GL.aspectRatio);
 };
 
@@ -4579,7 +4583,7 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\n\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\n//\tINTERSECT / MAP / NORMAL\n\nfloat displacement(vec3 p) {\n\treturn sin(2.0*p.x+time)*sin(2.0*p.y+time*.57834)*sin(1.0*p.z+time*0.857834);\n}\n\nfloat map(vec3 pos) {\n\tpos.xz = rotate(pos.xz, time+pos.y);\n\n\tfloat d1 = sphere(pos, 2.0);\n\tfloat d2 = displacement(pos)*.1;\n\tfloat d3 = sphere(pos+vec3(.15, 0.0, 0.0), 2.0);\n\n\treturn max(d3, -(d1+d2));\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.01, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\nconst vec3 lightColorYellow = vec3(1.0, 1.0, .95);\nconst vec3 lightColorBlue = vec3(.95, .95, 1.0);\nconst vec3 lightDirection = vec3(1.0, .75, -1.0);\nconst vec4 lightBlue = vec4(186.0, 209.0, 222.0, 255.0)/255.0;\n// const vec3 lightDirection = vec3(1.0, 1.0, 0.0);\n\n\nfloat diffuse(vec3 normal) {\n\treturn max(dot(normal, normalize(lightDirection)), 0.0);\n}\n\nfloat specular(vec3 normal, vec3 dir) {\n\tvec3 h = normalize(normal - dir);\n\treturn pow(max(dot(h, normal), 0.0), 40.0);\n}\n\n//\tCOLOR\n\nfloat cubicIn(float t) {\n  return t * t * t;\n}\n\nvec3 cubicIn(vec3 value){\n\treturn vec3(cubicIn(value.r), cubicIn(value.g), cubicIn(value.b));\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat ambient = .2;\n\tfloat diff = diffuse(normal) * .75;\n\tfloat spec = specular(normal, dir) * .5;\n\tvec3 color = vec3(ambient + diff + spec * .5);\n\t// vec3 color = normalize(normal.rgg) + diff + spec;\n\n\treturn vec4(color, 1.0);\n}\n\nvoid main(void) {\n\tvec3 pos = vec3(0.0, 0.0, -10.0);\t\t//\tposition of camera\n\t// vec3 orgPos = vec3(0.0, 1.5, -10.0);\n\tvec3 dir = normalize(vec3(uv, focus));\t//\tray\n\t\n\tvec4 color = vec4(1.0, 1.0, .986, 1.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\tcolor = vec4(1.0);\n\t\t\tvec3 normal = computeNormal(pos);\n\t\t\tcolor = getColor(pos, dir, normal);\n\t\t\tbreak;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\t// if(length(pos) > maxDist) break;\n\t}\n\t\n\n    gl_FragColor = vec4(color);\n}";
+	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_ITER  = {{NUM_ITER}};\n\n\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float maxDist;\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\n//\tINTERSECT / MAP / NORMAL\n\nfloat displacement(vec3 p) {\n\treturn sin(2.0*p.x+time*.983265)*sin(2.0*p.y+time*.57834)*sin(1.0*p.z+time*0.857834) * .5 + .5;\n}\n\nfloat map(vec3 pos) {\n\tpos.xz = rotate(pos.xz, time+pos.y*1.5 + pos.x*.5);\n\n\tfloat sphereSize = 2.5;\n\tfloat d1 = sphere(pos, sphereSize);\n\tfloat d2 = displacement(pos)*.1;\n\tfloat d3 = sphere(pos+vec3(.15, 0.0, 0.0), sphereSize);\n\n\treturn max(d3, -(d1+d2));\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.01, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\nconst vec3 lightDirection = vec3(1.0, .75, -1.0);\n\n\nfloat diffuse(vec3 normal) {\n\treturn max(dot(normal, normalize(lightDirection)), 0.0);\n}\n\nfloat specular(vec3 normal, vec3 dir) {\n\tvec3 h = normalize(normal - dir);\n\treturn pow(max(dot(h, normal), 0.0), 40.0);\n}\n\n//\tCOLOR\n\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat ambient = .2;\n\tfloat diff = diffuse(normal) * .75;\n\tfloat spec = specular(normal, dir) * .5;\n\tvec3 color = vec3(ambient + diff + spec * .5);\n\treturn vec4(color, 1.0);\n}\n\nvoid main(void) {\n\tvec3 pos = vec3(0.0, 0.0, -10.0);\t\t//\tposition of camera\n\tvec3 dir = normalize(vec3(uv, focus));\t//\tray\n\t\n\n\tvec4 color = vec4(.1, .1, .1, 1.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\tcolor = vec4(1.0);\n\t\t\tvec3 normal = computeNormal(pos);\n\t\t\tcolor = getColor(pos, dir, normal);\n\t\t\tbreak;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\t\n\n    gl_FragColor = vec4(color);\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
 	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
@@ -4599,18 +4603,6 @@ p._init = function() {
 };
 
 p.render = function(bubbles) {
-	var bubblePos = [];
-	var bubbleSize = [];
-	for(var i=0; i<bubbles.length; i++) {
-		var p = bubbles[i];
-		var pos = p.update();
-
-		bubblePos.push(pos[0], pos[1], pos[2]);
-		bubbleSize.push(p.size);
-	}
-
-
-
 	this.time +=.05;
 	this.shader.bind();
 	this.shader.uniform("resolution", "uniform2fv", [GL.width, GL.height]);
@@ -4619,9 +4611,6 @@ p.render = function(bubbles) {
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
-
-	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);
-	this.shader.uniform("bubbleSize", "uniform1fv", bubbleSize);
 	GL.draw(this.mesh);
 };
 
