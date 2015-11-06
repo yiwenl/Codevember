@@ -21,23 +21,12 @@ vec2 rotate(vec2 pos, float angle) {
 }
 
 //	GEOMETRY
-float sphere(vec3 pos, float radius) {
-	return length(pos) - radius;
-}
-
-float plane(vec3 pos) {
-	return pos.y;
-}
-
-
-//	INTERSECT / MAP / NORMAL
-
-float displacement(vec3 p) {
-	return sin(2.0*p.x+time*.983265)*sin(2.0*p.y+time*.57834)*sin(1.0*p.z+time*0.857834) * .5 + .5;
-}
+float sphere(vec3 pos, float radius) {	return length(pos) - radius;	}
+float displacement(vec3 p) {	return sin(2.0*p.x+time*.983265)*sin(2.0*p.y+time*.57834)*sin(1.0*p.z+time*0.857834) * .5 + .5;	}
 
 float map(vec3 pos) {
-	pos.xz = rotate(pos.xz, time+pos.y*1.5 + pos.x*.5);
+	// pos.xz = rotate(pos.xz, time+pos.y*2.0 + pos.x*.5);
+	pos.xz = rotate(pos.xz, time+pos.y*2.0 + pos.x*.5);
 
 	float sphereSize = 2.5;
 	float d1 = sphere(pos, sphereSize);
@@ -61,11 +50,12 @@ vec3 computeNormal(vec3 pos) {
 
 //	LIGHTING
 
-const vec3 lightDirection = vec3(1.0, .75, -1.0);
-
-
-float diffuse(vec3 normal) {
+float diffuse(vec3 normal, vec3 lightDirection) {
 	return max(dot(normal, normalize(lightDirection)), 0.0);
+}
+
+vec3 diffuse(vec3 normal, vec3 lightDirection, vec3 lightColor) {
+	return lightColor * diffuse(normal, lightDirection);
 }
 
 float specular(vec3 normal, vec3 dir) {
@@ -73,22 +63,34 @@ float specular(vec3 normal, vec3 dir) {
 	return pow(max(dot(h, normal), 0.0), 40.0);
 }
 
-//	COLOR
+
+const vec3 lightPos0 = vec3(1.0, .75, -1.0);
+const vec3 lightColor0 = vec3(1.0, 1.0, .96);
+const float lightWeight0 = 0.75;
+
+const vec3 lightPos1 = vec3(-1.0, -0.75, 0.0);
+const vec3 lightColor1 = vec3(.96, .96, 1.0);
+const float lightWeight1 = 0.0;
 
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	float ambient = .2;
-	float diff = diffuse(normal) * .75;
-	float spec = specular(normal, dir) * .5;
-	vec3 color = vec3(ambient + diff + spec * .5);
+	vec3 diff0 = diffuse(normal, lightPos0, lightColor0) * lightWeight0;
+	vec3 diff1 = diffuse(normal, lightPos1, lightColor1) * lightWeight1;
+
+	float spec = specular(normal, dir) * .25;
+	vec3 color = vec3(ambient) + diff0 + diff1 + spec;
+
+	if(pos.z > 0.0) {
+		color *= vec3(.25);
+	}
+
 	return vec4(color, 1.0);
 }
 
 void main(void) {
-	vec3 pos = vec3(0.0, 0.0, -10.0);		//	position of camera
-	vec3 dir = normalize(vec3(uv, focus));	//	ray
-	
-
+	vec3 pos   = vec3(0.0, 0.0, -10.0);		//	position of camera
+	vec3 dir   = normalize(vec3(uv, focus));	//	ray
 	vec4 color = vec4(.1, .1, .1, 1.0);
 	float prec = pow(.1, 5.0);
 	float d;
@@ -97,9 +99,9 @@ void main(void) {
 		d = map(pos);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
-			color = vec4(1.0);
+			color       = vec4(1.0);
 			vec3 normal = computeNormal(pos);
-			color = getColor(pos, dir, normal);
+			color       = getColor(pos, dir, normal);
 			break;
 		}
 
