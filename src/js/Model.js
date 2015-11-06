@@ -2,6 +2,9 @@
 
 var Model = [
 	{
+		path:"labs/01/dist/index.html",
+		cover:"dist/assets/covers/00.jpg"
+	},{
 		path:"labs/wen/02/dist/index.html",
 		cover:"dist/assets/covers/01.jpg"
 	},
