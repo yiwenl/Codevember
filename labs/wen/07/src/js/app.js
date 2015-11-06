@@ -4,11 +4,11 @@ var dat = require("dat-gui");
 
 window.params = {
 	focus:2.5,
-	numIter:100,
+	numIter:80,
 	numBubble:5.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:4.0
+	maxDist:3.6
 };
 
 (function() {
@@ -34,8 +34,8 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		this.gui = new dat.GUI({width:300});
-		this.gui.add(params,'focus', .1, 5.0);
+		// this.gui = new dat.GUI({width:300});
+		// this.gui.add(params,'focus', .1, 5.0);
 		// this.gui.add(params,'metaK', .1, 9.0);
 		// this.gui.add(params,'zGap', 0.1, 10.0);
 		// this.gui.add(params,'maxDist', 1.0, 10.0);

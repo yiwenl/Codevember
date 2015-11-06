@@ -85,7 +85,7 @@ vec3 diffuse(vec3 normal, vec3 lightDirection, vec3 lightColor) {
 
 float specular(vec3 normal, vec3 dir) {
 	vec3 h = normalize(normal - dir);
-	return pow(max(dot(h, normal), 0.0), 40.0);
+	return pow(max(dot(h, normal), 0.0), 50.0);
 }
 
 
@@ -103,17 +103,24 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	vec3 diff0 = diffuse(normal, lightPos0, lightColor0) * lightWeight0;
 	vec3 diff1 = diffuse(normal, lightPos1, lightColor1) * lightWeight1;
 
-	float spec = specular(normal, dir) * .25;
-	vec3 color = vec3(ambient) + diff0 + diff1 + spec;
+	// float spec = specular(normal, dir) * 1.;
+	vec3 color = vec3(ambient) + diff0 + diff1;
 
 	return vec4(color, 1.0);
+}
+
+vec3 gradientMap(vec3 color) {
+	const vec3 color0 = vec3(18.0, 19.0, 24.0)/255.0;
+	const vec3 color1 = vec3(254.0, 248.0, 226.0)/255.0;
+	float p = length(color)/length(vec3(1.0));
+	return mix(color0, color1, p);
 }
 
 void main(void) {
 	vec3 pos   = vec3(sin(time*.1)*0.0, 0.0, -10.0);		//	position of camera
 	vec3 dir   = normalize(vec3(uv, focus));	//	ray
 	vec4 color = vec4(.1, .1, .1, 1.0);
-	float prec = pow(.1, 5.0);
+	float prec = pow(.1, 4.0);
 	float d;
 	
 	for(int i=0; i<NUM_ITER; i++) {
@@ -130,6 +137,6 @@ void main(void) {
 		if(length(pos) > maxDist) break;
 	}
 	
-
+	// color.rgb = gradientMap(color.rgb);
     gl_FragColor = vec4(color);
 }
