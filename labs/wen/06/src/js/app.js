@@ -34,12 +34,12 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		this.gui = new dat.GUI({width:300});
-		this.gui.add(params,'focus', .1, 5.0);
-		this.gui.add(params,'metaK', .1, 9.0);
-		this.gui.add(params,'zGap', 0.1, 10.0);
-		this.gui.add(params,'maxDist', 1.0, 10.0);
-		this.gui.add(params,'numIter', 10, 200).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
+		// this.gui = new dat.GUI({width:300});
+		// this.gui.add(params,'focus', .1, 5.0);
+		// this.gui.add(params,'metaK', .1, 9.0);
+		// this.gui.add(params,'zGap', 0.1, 10.0);
+		// this.gui.add(params,'maxDist', 1.0, 10.0);
+		// this.gui.add(params,'numIter', 10, 200).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
 	};
 
 	p._onParamsChanged = function() {
