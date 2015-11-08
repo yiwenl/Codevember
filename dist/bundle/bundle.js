@@ -20,12 +20,22 @@ p._init = function() {
 	this.btnBack.addEventListener('click', this._onBack.bind(this));
 	this._onExpBind = this._onExp.bind(this);
 
+	function getString(value) {
+		var s = value.toString();
+		while(s.length < 2) {
+			s = '0' + s;
+		}
+
+		return s;
+	}
+
 	for(var i=0; i<this.model.length; i++) {
 		var exp = this.model[i];
 		var btn = this.buttonTemplate.cloneNode(true);
 		btn.querySelector('img').src = exp.cover;
 		btn.classList.remove('is-Hidden');
 		this.container.appendChild(btn);
+		btn.querySelector('.number-index').innerHTML = '/ ' + getString(i+1);
 		btn.data = exp;
 		btn.addEventListener('click', this._onExpBind);
 	}
