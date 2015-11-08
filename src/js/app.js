@@ -1,5 +1,8 @@
 var Model = require("./Model");
+var LogoAnimation = require("./LogoAnimation");
 var bongiovi = require("./libs/bongiovi.min");
+
+window.bongiovi = bongiovi;
 
 function App() {
 	if(document.body) this._init();
@@ -38,6 +41,11 @@ p._init = function() {
 		btn.data = exp;
 		btn.addEventListener('click', this._onExpBind);
 	}
+
+	var canvas = document.body.querySelectorAll('canvas');
+	for(var i=0; i<canvas.length; i++) {
+		new LogoAnimation(canvas[i]);
+	}
 };
 
 p._onExp = function(e) {
@@ -47,15 +55,12 @@ p._onExp = function(e) {
 	document.body.classList.add('show-exp');
 };
 
-
 p._onBack = function(e) {
 	document.body.classList.remove('show-exp');
 	bongiovi.Scheduler.delay(this, this.clearExp, null, 1000);
 };
 
-
 p.clearExp = function() {
-	console.debug('Clear Iframe');
 	this.iframe.src = '';
 };
 
