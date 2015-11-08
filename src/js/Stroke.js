@@ -1,8 +1,8 @@
 // Stroke.js
 function Stroke() {
 	this.radius = new bongiovi.EaseNumber(0);
-	this.angleStart = new bongiovi.EaseNumber(-Math.PI/2);
-	this.angleEnd = new bongiovi.EaseNumber(-Math.PI/2);
+	this.angleStart = new bongiovi.EaseNumber(-Math.PI/2, .05);
+	this.angleEnd = new bongiovi.EaseNumber(-Math.PI/2, .05);
 }
 
 var p = Stroke.prototype;

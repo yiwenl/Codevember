@@ -96,7 +96,7 @@ Chars.D =
 	angles:[-Math.PI/2, -Math.PI/2],
 	radius:0
 },{
-	angles:[-Math.PI/2, -Math.PI-Math.PI/2],
+	angles:[-Math.PI/2,  Math.PI/2],
 	radius:.2
 }];
 
@@ -147,6 +147,7 @@ Chars.R =
 
 
 var characters = ['C', 'O', 'D', 'E', 'V', 'E', 'M', 'B', 'E', 'R'];
+// var characters = ['O', 'D'];
 
 function LogoAnimation(canvas) {
 	this._canvas = canvas;
@@ -174,7 +175,7 @@ p.nextChar = function() {
 		this.index = 0;
 	}
 
-	bongiovi.Scheduler.delay(this, this.nextChar, null, 1000);
+	bongiovi.Scheduler.delay(this, this.nextChar, null, 2000);
 };
 
 
@@ -272,8 +273,8 @@ module.exports = Model;
 // Stroke.js
 function Stroke() {
 	this.radius = new bongiovi.EaseNumber(0);
-	this.angleStart = new bongiovi.EaseNumber(-Math.PI/2);
-	this.angleEnd = new bongiovi.EaseNumber(-Math.PI/2);
+	this.angleStart = new bongiovi.EaseNumber(-Math.PI/2, .05);
+	this.angleEnd = new bongiovi.EaseNumber(-Math.PI/2, .05);
 }
 
 var p = Stroke.prototype;
