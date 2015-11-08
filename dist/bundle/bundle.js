@@ -78,6 +78,10 @@ var Model = [
 	{
 		path:"labs/wen/07/dist/index.html",
 		cover:"dist/assets/covers/05.jpg"
+	},
+	{
+		path:"labs/wen/08/dist/index.html",
+		cover:"dist/assets/covers/06.jpg"
 	}
 ];
 
