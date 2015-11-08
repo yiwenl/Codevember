@@ -55,31 +55,26 @@ button {
 .ExpButton {
   position: relative;
   width: 320px;
-  /*height: 450px;*/
   float: left;
   box-sizing: border-box;
   padding: 5px;
   overflow: hidden;
   transition: padding .25s ease-in-out, background .25s ease-in-out; }
   .ExpButton img {
-    width: 320px;
-    height: 320px;
+    width: 310px;
+    height: 310px;
     border: 0;
     pointer-events: none;
     transition: -webkit-transform .25s ease-in-out;
     transition: transform .25s ease-in-out; }
   .ExpButton span {
     position: absolute;
-    width: 295px;
-    height: 300px;
+    width: 290px;
+    height: 290px;
     border: 10px solid #252525;
     opacity: 0;
     pointer-events: none;
     transition: opacity .25s ease-out; }
-  .ExpButton.is-Hidden {
-    display: none; }
-  .ExpButton:hover span {
-    opacity: 1; }
   .ExpButton p {
     width: 100%;
     padding-top: 25px;
@@ -87,7 +82,15 @@ button {
     font-size: 9px;
     color: #181818;
     opacity: .9;
-    text-align: right; }
+    text-align: right;
+    transition: opacity .25s ease-out; }
+  .ExpButton.is-Hidden {
+    display: none; }
+  .ExpButton:hover span {
+    opacity: 1; }
+  .ExpButton:hover img {
+    -webkit-transform: scale(0.95);
+    transform: scale(0.95); }
 
 .Button-Back {
   position: fixed;

@@ -65,7 +65,6 @@ button {
 .ExpButton {
 	position: relative;
 	width: 320px;
-	/*height: 450px;*/
 	float: left;
 	box-sizing:border-box;
 	padding:5px;
@@ -73,19 +72,30 @@ button {
 	transition:padding .25s ease-in-out, background .25s ease-in-out;
 	
 	img {
-		width:320px;
-		height:320px;
+		width:310px;
+		height:310px;
 		border:0;
 		pointer-events:none;
 		transition:transform .25s ease-in-out;
 	}
 	span {
 		position: absolute;
-		width:295px;
-		height:300px;
+		width:290px;
+		height:290px;
 		border: 10px solid #252525;
 		opacity: 0;
 		pointer-events:none;
+		transition: opacity .25s ease-out;
+	}
+
+	p {
+		width:100%;
+		padding-top:25px;
+		padding-bottom:100px;
+		font-size:9px;
+		color:#181818;
+		opacity: .9;
+		text-align: right;
 		transition: opacity .25s ease-out;
 	}
 
@@ -97,18 +107,13 @@ button {
 		span {
 			opacity: 1;
 		}
+
+		img {
+			transform:scale(.95);
+		}
 	}
 
-	p {
-		width:100%;
-		padding-top:25px;
-		padding-bottom:100px;
-		font-size:9px;
-		color:#181818;
-		opacity: .9;
-		text-align: right;
-
-	}
+	
 }
 
 
