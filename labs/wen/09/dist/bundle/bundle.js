@@ -4,25 +4,34 @@ window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 
 window.params = {
-	focus:2.5,
-	numIter:100,
-	numBubble:5.0,
+	focus:1.5,
+	numIter:64,
+	numBubble:7.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:5.0
+	maxDist:7.0
 };
 
 (function() {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = [ "assets/light.jpg" ];
+
+		l.load(a, this, this._onLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onLoaded = function(img) {
+		window.images = img;
+
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -35,12 +44,13 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		// this.gui = new dat.GUI({width:300});
-		// this.gui.add(params,'focus', .1, 5.0);
-		// this.gui.add(params,'metaK', .1, 9.0);
-		// this.gui.add(params,'zGap', 0.1, 10.0);
-		// this.gui.add(params,'maxDist', 1.0, 10.0);
-		// this.gui.add(params,'numIter', 10, 200).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
+		this.gui = new dat.GUI({width:300});
+		this.gui.add(params,'focus', .1, 5.0);
+		this.gui.add(params,'metaK', .1, 9.0);
+		this.gui.add(params,'zGap', 0.1, 10.0);
+		this.gui.add(params,'maxDist', 5.0, 30.0);
+		this.gui.add(params,'numBubble', 2, 20).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
+		this.gui.add(params,'numIter', 10, 200).step(1).listen().onFinishChange(this._onParamsChanged.bind(this));
 	};
 
 	p._onParamsChanged = function() {
@@ -4486,7 +4496,7 @@ var random = function(min, max) { return min + Math.random() * (max - min);	}
 function Bubble(pos, size) {
 	this.pos      = glm.vec3.clone(pos);
 	this.size     = size;
-	this.speed    = random(.05, .1) * .1;
+	this.speed    = random(.05, .1) * .2;
 	this.axis     = glm.vec3.clone([random(-1, 1), random(-1, 1), random(-1, 1)]);
 	this.theta    = Math.random() * Math.PI * 2.0;
 	this.quat 	  = glm.quat.create();
@@ -4529,6 +4539,7 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
+	this._texture = new bongiovi.GLTexture(images.light);
 };
 
 p._initViews = function() {
@@ -4540,11 +4551,11 @@ p._initViews = function() {
 
 p.reset = function() {
 	this._bubbles = [];
-	var range = 0.25;
+	var range = 1.25;
 
 	for(var i=0; i<params.numBubble; i++) {
 		var pos = [random(-range, range), random(-range, range), random(-range, range)];
-		var size = random(1.5, 1.55);
+		var size = random(2.55, 1.0);
 		var b = new Bubble(pos, size);
 		this._bubbles.push(b);
 	}
@@ -4561,16 +4572,16 @@ p.render = function() {
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._bubbles);
+	this._vTrace.render(this._bubbles, this._texture);
 };
 
 p.resize = function() {
+	var MAX = 600;
 	var size = Math.min(window.innerWidth, window.innerHeight);
-	var maxSize = 600;
-	size = Math.min(size, maxSize);
-	GL.canvas.style.marginLeft = -size/2 + 'px';
-	GL.canvas.style.marginTop = -size/2 + 'px';
+	size = Math.min(MAX, size);
 	GL.setSize(size, size);
+	GL.canvas.style.marginLeft = -size*.5 + "px";
+	GL.canvas.style.marginTop = -size*.5 + "px";
 	this.camera.resize(GL.aspectRatio);
 };
 
@@ -4584,7 +4595,7 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\nconst int NUM_ITER  = {{NUM_ITER}};\n\n\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float maxDist;\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\treturn length(pos) - radius;\t}\nfloat displacement(vec3 p) {\treturn sin(2.0*p.x+time*.983265)*sin(2.0*p.y+time*.57834)*sin(1.0*p.z+time*0.857834) * .5 + .5;\t}\nfloat box(vec3 pos, vec3 size) {\treturn length(max(abs(pos) - size, 0.0)); }\n\nfloat substract(float d1, float d2) {\treturn max(-d1,d2);\t}\nfloat intersection(float d1, float d2) { return max(d1, d2);\t}\n\nconst float PI      = 3.141592657;\nconst float thickness = .05;\nconst float gap = .15;\nconst float numLayers = 7.0;\nconst float diff = .3;\nconst float sphereRadius = 3.0;\n\nfloat map(vec3 pos) {\n\tpos.yz = rotate(pos.yz, -PI*.15+sin(time*.5)*.05);\n\tpos.xz = rotate(pos.xz, -PI*.15+cos(time*.5)*.05);\n\tfloat d = sphere(pos, sphereRadius);\n\n\tfloat r = length(pos.xy);\n\tfloat a = atan(pos.y, pos.x);\n\tfloat dOffset = cos( (a+r*6.0)*1.0-time*.5) * .5 + .5;\n\tdOffset *= 1.0-r/sphereRadius;\n\td += dOffset * .2;\n\t\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.01, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\nfloat gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {\n\tvec3 H = normalize(lightDirection + viewDirection);\n\tfloat theta = acos(dot(H, surfaceNormal));\n\tfloat w = theta / shininess;\n\treturn exp(-w*w);\n}\n\nfloat orenNayarDiffuse(vec3 lightDirection,\tvec3 viewDirection,\tvec3 surfaceNormal,\tfloat roughness, float albedo) {\n\tfloat LdotV = dot(lightDirection, viewDirection);\n\tfloat NdotL = dot(lightDirection, surfaceNormal);\n\tfloat NdotV = dot(surfaceNormal, viewDirection);\n\n\tfloat s = LdotV - NdotL * NdotV;\n\tfloat t = mix(1.0, max(NdotL, NdotV), step(0.0, s));\n\n\tfloat sigma2 = roughness * roughness;\n\tfloat A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));\n\tfloat B = 0.45 * sigma2 / (sigma2 + 0.09);\n\n\treturn albedo * max(0.0, NdotL) * (A + B * s / t) / 3.14159265;\n}\n\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 1.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.5;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tvec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;\n\tvec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;\n\tfloat spec = gaussianSpecular(normalize(lightPos0), -dir, normal, .1) * 1.0;\n\tfloat _ao = ao(pos, normal);\n\n\tvec3 color = vec3(diff0 + diff1 + spec) * mix(_ao, 1.0, 1.0);\n\treturn vec4(color, 1.0);\n}\n\nvoid main(void) {\n\tvec3 pos   = vec3(sin(time*.1)*0.0, 0.0, -10.0);\t\t//\tposition of camera\n\tvec3 dir   = normalize(vec3(uv, focus));\t//\tray\n\tvec4 color = vec4(0.0);\n\tfloat bg = dot(dir, vec3(0.0, 0.0, -1.0));\n\tfloat prec = 0.0001;\n\tfloat d;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\tcolor       = vec4(1.0);\n\t\t\tvec3 normal = computeNormal(pos);\n\t\t\tcolor       = getColor(pos, dir, normal);\n\t\t\tbreak;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\t\n\t// color.rgb = gradientMap(color.rgb);\n    gl_FragColor = vec4(color);\n}";
+	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat box( vec3 p, vec3 b ) {\n  vec3 d = abs(p) - b;\n  return min(max(d.x,max(d.y,d.z)),0.0) +\n         length(max(d,0.0));\n}\n\nfloat box(vec3 p, float b) {\n\treturn box(p, vec3(b));\n}\n\n\n//\tINTERSECT / MAP / NORMAL\n\nfloat map(vec3 pos) {\n\tpos.xz = rotate(pos.xz, sin(time*.1));\n\tpos.yz = rotate(pos.yz, cos(time*.15));\n\tfloat d = box(pos - bubblePos[0], bubbleSize[0]);\n\n\tfor(int i=1; i<NUM_BALLS; i++) {\n\t\tvec3 bPos = bubblePos[i];\n\t\tfloat bSize = bubbleSize[i];\n\t\tfloat ds = box(pos - bubblePos[i], bubbleSize[i]);\n\t\td = smin(d, ds);\n\t}\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\n\n\nfloat gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {\n\tvec3 H = normalize(lightDirection + viewDirection);\n\tfloat theta = acos(dot(H, surfaceNormal));\n\tfloat w = theta / shininess;\n\treturn exp(-w*w);\n}\n\nfloat orenNayarDiffuse(vec3 lightDirection,\tvec3 viewDirection,\tvec3 surfaceNormal,\tfloat roughness, float albedo) {\n\tfloat LdotV = dot(lightDirection, viewDirection);\n\tfloat NdotL = dot(lightDirection, surfaceNormal);\n\tfloat NdotV = dot(surfaceNormal, viewDirection);\n\n\tfloat s = LdotV - NdotL * NdotV;\n\tfloat t = mix(1.0, max(NdotL, NdotV), step(0.0, s));\n\n\tfloat sigma2 = roughness * roughness;\n\tfloat A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));\n\tfloat B = 0.45 * sigma2 / (sigma2 + 0.09);\n\n\treturn albedo * max(0.0, NdotL) * (A + B * s / t) / 3.14159265;\n}\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\n//\tCOLOR\n\nvec3 envLight(vec3 normal, vec3 dir) {\n\tvec3 eye = -dir;\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vN.y = 1.0 - vN.y;\n    vec3 color = texture2D( texture, vN ).rgb;\n    color = max(color, vec3(0.0));\n    return color;\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat _ao = ao(pos, normal);\n\tvec3 env = envLight(normal, dir)*1.0;\n\treturn vec4(env*_ao, 1.0);\n}\n\nvoid main(void) {\n\tvec3 pos = vec3(0.0, 0.0, -10.0);\t\t//\tposition of camera\n\t// vec3 orgPos = vec3(0.0, 1.5, -10.0);\n\tvec3 dir = normalize(vec3(uv, focus));\t//\tray\n\t\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
 	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
@@ -4603,7 +4614,19 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(bubbles) {
+p.render = function(bubbles, texture) {
+	var bubblePos = [];
+	var bubbleSize = [];
+	for(var i=0; i<bubbles.length; i++) {
+		var p = bubbles[i];
+		var pos = p.update();
+
+		bubblePos.push(pos[0], pos[1], pos[2]);
+		bubbleSize.push(p.size);
+	}
+
+
+
 	this.time +=.05;
 	this.shader.bind();
 	this.shader.uniform("resolution", "uniform2fv", [GL.width, GL.height]);
@@ -4612,6 +4635,13 @@ p.render = function(bubbles) {
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
+
+	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);
+	this.shader.uniform("bubbleSize", "uniform1fv", bubbleSize);
+
+
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
 	GL.draw(this.mesh);
 };
 

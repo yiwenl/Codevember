@@ -1,8 +1,6 @@
 precision mediump float;
 
 varying vec2 uv;
-
-const float PI      = 3.141592657;
 const int NUM_ITER  = {{NUM_ITER}};
 
 
@@ -28,7 +26,7 @@ float box(vec3 pos, vec3 size) {	return length(max(abs(pos) - size, 0.0)); }
 float substract(float d1, float d2) {	return max(-d1,d2);	}
 float intersection(float d1, float d2) { return max(d1, d2);	}
 
-
+const float PI      = 3.141592657;
 const float thickness = .05;
 const float gap = .15;
 const float numLayers = 7.0;
@@ -71,18 +69,18 @@ float gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNorm
 }
 
 float orenNayarDiffuse(vec3 lightDirection,	vec3 viewDirection,	vec3 surfaceNormal,	float roughness, float albedo) {
-  float LdotV = dot(lightDirection, viewDirection);
-  float NdotL = dot(lightDirection, surfaceNormal);
-  float NdotV = dot(surfaceNormal, viewDirection);
+	float LdotV = dot(lightDirection, viewDirection);
+	float NdotL = dot(lightDirection, surfaceNormal);
+	float NdotV = dot(surfaceNormal, viewDirection);
 
-  float s = LdotV - NdotL * NdotV;
-  float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
+	float s = LdotV - NdotL * NdotV;
+	float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));
 
-  float sigma2 = roughness * roughness;
-  float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
-  float B = 0.45 * sigma2 / (sigma2 + 0.09);
+	float sigma2 = roughness * roughness;
+	float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));
+	float B = 0.45 * sigma2 / (sigma2 + 0.09);
 
-  return albedo * max(0.0, NdotL) * (A + B * s / t) / 3.14159265;
+	return albedo * max(0.0, NdotL) * (A + B * s / t) / 3.14159265;
 }
 
 const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
@@ -93,14 +91,28 @@ const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
 const float lightWeight1 = 0.5;
 
+float ao( in vec3 pos, in vec3 nor ){
+	float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float hr = 0.01 + 0.12*float(i)/4.0;
+        vec3 aopos =  nor * hr + pos;
+        float dd = map( aopos );
+        occ += -(dd-hr)*sca;
+        sca *= 0.95;
+    }
+    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
+}
+
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;
 	vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;
 	float spec = gaussianSpecular(normalize(lightPos0), -dir, normal, .1) * 1.0;
+	float _ao = ao(pos, normal);
 
-	vec3 color = vec3(diff0 + diff1 + spec);
-
+	vec3 color = vec3(diff0 + diff1 + spec) * mix(_ao, 1.0, 1.0);
 	return vec4(color, 1.0);
 }
 
