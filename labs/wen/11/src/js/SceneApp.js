@@ -20,6 +20,7 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 p._initTextures = function() {
 	console.log('Init Textures');
 	this._texture = new bongiovi.GLTexture(images.light);
+	this._textureWing = new bongiovi.GLTexture(images.b);
 };
 
 p._initViews = function() {
@@ -52,7 +53,7 @@ p.render = function() {
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._bubbles, this._texture);
+	this._vTrace.render(this._textureWing);
 };
 
 p.resize = function() {

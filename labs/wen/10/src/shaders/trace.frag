@@ -200,10 +200,8 @@ void main(void) {
 	vec3 pos = vec3( -0.5+3.5*cos(0.1*time + 6.0), 1.0 + 2.0, 0.5 + 3.5*sin(0.1*time + 6.0) );
 	vec3 ta = vec3( 0.0, 0.0, 0.0 );
 	
-	// camera-to-world transformation
     mat3 ca = setCamera( pos, ta, 0.0 );
     
-    // ray direction
 	vec3 dir = ca * normalize( vec3(uv,focus) );
 
 	vec4 color = vec4(.0);
@@ -217,9 +215,7 @@ void main(void) {
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
-			// finalIndex = index;
 		}
-		// finalIndex = index;
 
 		pos += d * dir;						//	move forward by
 		if(length(pos) > maxDist) break;
