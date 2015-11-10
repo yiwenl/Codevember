@@ -3,11 +3,11 @@ window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
 	focus:1.5,
-	numIter:64,
-	numBubble:7.0,
+	numIter:100,
+	numBubble:15.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:17.0
+	maxDist:7.0
 };
 
 (function() {

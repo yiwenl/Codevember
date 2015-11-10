@@ -32,8 +32,8 @@ p._initViews = function() {
 };
 
 p._initBalls = function() {
-	var numBalls = 10;
-	var range = 100;
+	var numBalls = params.numBubble;
+	var range = 150;
 	this._balls = [];
 	for(var i=0; i<numBalls; i++) {
 		var b = new Ball();
@@ -43,7 +43,7 @@ p._initBalls = function() {
 		this._balls.push(b);
 	}
 
-	this._checkPosition();
+	// this._checkPosition();
 };
 
 

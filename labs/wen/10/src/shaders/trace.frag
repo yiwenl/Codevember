@@ -66,7 +66,7 @@ float map(vec3 pos, out int index) {
 
 	for(int i=1; i<NUM_BALLS; i++) {
 		vec3 p = bubblePos[i]/100.0;
-		float s = bubbleSize[i]/50.0;
+		float s = bubbleSize[i]/100.0;
 		float ds = sphere(pos - p, s);
 
 		// d = min(d, ds);
@@ -84,7 +84,7 @@ float map(vec3 pos) {
 
 	for(int i=1; i<NUM_BALLS; i++) {
 		vec3 p = bubblePos[i]/100.0;
-		float s = bubbleSize[i]/50.0;
+		float s = bubbleSize[i]/100.0;
 		float ds = sphere(pos - p, s);
 
 		if(ds < d) {
@@ -165,13 +165,21 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, int index) {
 	// float grey = float(index)/float(NUM_BALLS);
 	vec3 orgPos = pos;
-	pos.xz = rotate(pos.xz, float(index) * .15);
-	pos.yz = rotate(pos.yz, float(index) * -.15);
+	float t = float(index);
+	float rnd = rand(vec2(t));
+	float fixRnd = mix(rnd, 1.0, .75);
 
-	float base = sin(pos.y*10.0-time*.2)*.5 + .5;
+	pos.xz = rotate(pos.xz, rnd * 3.0);
+	pos.yz = rotate(pos.yz, rnd * 3.0);
+
+	float base = sin(pos.y*25.0*fixRnd-time*.2)*.5 + .5;
 	base = smoothstep(.5, .55, base);
 
 	float _ao = ao(orgPos, normal);
