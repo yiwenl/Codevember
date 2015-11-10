@@ -64,9 +64,9 @@ float map(vec3 pos) {
 	pos.xz = rotate(pos.xz, sin(time*.2)*.5);
 	pos.yz = rotate(pos.yz, cos(time*.2)*.5);
 
-	float d = plane(pos);
+	// float d = plane(pos);
 	// float d = sphere(pos, 2.0);
-	// float d = box(pos, 2.0);
+	float d = box(pos, 2.0);
 
 	return d;
 }
@@ -144,9 +144,13 @@ vec3 envLight(vec3 normal, vec3 dir) {
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float _ao = ao(pos, normal);
-	vec3 env = envLight(normal, dir)*1.0;
-	return vec4(env*_ao, 1.0);
+
+	float base = sin((pos.y+normal.y) * 10.0) * .5 + .5;
+	base = smoothstep(.5, .51, base);
+	base *= 1.0;
+	// float _ao = ao(pos, normal);
+	vec3 env = envLight(normal, dir)*.5;
+	return vec4(env+base, 1.0);
 }
 
 void main(void) {

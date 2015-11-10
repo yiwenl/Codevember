@@ -7,7 +7,7 @@ const int NUM_BALLS = {{NUM_BALL}};
 const int NUM_ITER  = {{NUM_ITER}};
 // const float maxDist = 5.0;
 
-
+uniform sampler2D texture;
 uniform float time;
 uniform float focus;
 uniform float metaK;
@@ -36,38 +36,46 @@ float smin( float a, float b )
     return smin(a, b, 7.0);
 }
 
+float box( vec3 p, vec3 b ) {
+  vec3 d = abs(p) - b;
+  return min(max(d.x,max(d.y,d.z)),0.0) +
+         length(max(d,0.0));
+}
+
+float box( vec3 p, float b ) {
+	return box(p, vec3(b));
+}
+
 //	GEOMETRY
 float sphere(vec3 pos, float radius) {
 	return length(pos) - radius;
 }
 
-float box(vec3 pos, vec3 size) {
-    return length(max(abs(pos) - size, 0.0));
+float displacement(vec3 pos) {
+	return sin(2.0*pos.x)*sin(2.0*pos.z) * .5 + .5;
 }
 
-float box(vec3 pos, float size) {
-    return box(pos, vec3(size));
+float plane(vec3 pos) {
+	float displace = displacement(pos);
+	return pos.y + displace * .1;
 }
-
-//	INTERSECT / MAP / NORMAL
 
 float map(vec3 pos) {
-	pos.xz = rotate(pos.xz, PI * .15);
-	// pos.yz = rotate(pos.yz, PI * .35);
-	float d = box(pos - bubblePos[0], bubbleSize[0]);
+	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
 
 	for(int i=1; i<NUM_BALLS; i++) {
-		vec3 bPos = bubblePos[i];
-		float bSize = bubbleSize[i];
-		float ds = box(pos - bubblePos[i], bubbleSize[i]);
-		d = smin(d, ds);
+		vec3 p = bubblePos[i]/100.0;
+		float s = bubbleSize[i]/50.0;
+		float ds = sphere(pos - p, s);
+
+		d = min(d, ds);
 	}
 
 	return d;
 }
 
 vec3 computeNormal(vec3 pos) {
-	vec2 eps = vec2(0.01, 0.0);
+	vec2 eps = vec2(0.001, 0.0);
 
 	vec3 normal = vec3(
 		map(pos + eps.xyy) - map(pos - eps.xyy),
@@ -79,6 +87,8 @@ vec3 computeNormal(vec3 pos) {
 
 
 //	LIGHTING
+
+
 float gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {
 	vec3 H = normalize(lightDirection + viewDirection);
 	float theta = acos(dot(H, surfaceNormal));
@@ -101,52 +111,75 @@ float orenNayarDiffuse(vec3 lightDirection,	vec3 viewDirection,	vec3 surfaceNorm
 	return albedo * max(0.0, NdotL) * (A + B * s / t) / 3.14159265;
 }
 
-//	COLOR
-
+float ao( in vec3 pos, in vec3 nor ){
+	float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float hr = 0.01 + 0.12*float(i)/4.0;
+        vec3 aopos =  nor * hr + pos;
+        float dd = map( aopos );
+        occ += -(dd-hr)*sca;
+        sca *= 0.95;
+    }
+    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
+}
 
 const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = 0.35;
+const float lightWeight0 = 0.25;
 
 const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = 0.1;
+const float lightWeight1 = 0.15;
+
+//	COLOR
+
+vec3 envLight(vec3 normal, vec3 dir) {
+	vec3 eye    = -dir;
+	vec3 r      = reflect( eye, normal );
+	float m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+	vec2 vN     = r.xy / m + .5;
+	vN.y        = 1.0 - vN.y;
+	vec3 color  = texture2D( texture, vN ).rgb;
+	float power = 40.0;
+	color.r     = pow(color.r, power);
+	color       = color.rrr;
+    return color;
+}
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float base = sin(pos.y * 10.0) * .5 + .5;
-	base = pow(base, 50.0);
-
-	vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;
-	vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;
-	float spec = gaussianSpecular(normalize(lightPos0), -dir, normal, .25) * 1.5;
-
-	// vec3 color = vec3(diff0 + diff1 + spec) * base;
-	vec3 color = vec3(base + (diff0 + diff1) + spec);
-
-	return vec4(color, 1.0);
+	float _ao = ao(pos, normal);
+	vec3 env = envLight(normal, dir);
+	return vec4(vec3(_ao*env), 1.0);
 }
 
 void main(void) {
-	vec3 pos = vec3(0.0, 0.0, -10.0);		//	position of camera
+	vec3 pos = vec3(0.0, 0.5, -10.0);		//	position of camera
 	// vec3 orgPos = vec3(0.0, 1.5, -10.0);
 	vec3 dir = normalize(vec3(uv, focus));	//	ray
 	
 	vec4 color = vec4(.0);
-	float prec = .00001;
+	float prec = pow(.1, 5.0);
 	float d;
+	bool hit = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
 		d = map(pos);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
-			color = vec4(1.0);
-			vec3 normal = computeNormal(pos);
-			color = getColor(pos, dir, normal);
-			break;
+			hit = true;
 		}
 
 		pos += d * dir;						//	move forward by
 		if(length(pos) > maxDist) break;
+	}
+
+
+	if(hit) {
+		color = vec4(1.0);
+		vec3 normal = computeNormal(pos);
+		color = getColor(pos, dir, normal);
 	}
 	
 

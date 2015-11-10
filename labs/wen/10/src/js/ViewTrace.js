@@ -25,12 +25,12 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(bubbles) {
+p.render = function(bubbles, texture) {
 	var bubblePos = [];
 	var bubbleSize = [];
 	for(var i=0; i<bubbles.length; i++) {
 		var p = bubbles[i];
-		var pos = p.update();
+		var pos = p.position;
 
 		bubblePos.push(pos[0], pos[1], pos[2]);
 		bubbleSize.push(p.size);
@@ -49,6 +49,12 @@ p.render = function(bubbles) {
 
 	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);
 	this.shader.uniform("bubbleSize", "uniform1fv", bubbleSize);
+
+	if(texture) {
+		this.shader.uniform("texture", "uniform1i", 0);
+		texture.bind(0);	
+	}
+	
 	GL.draw(this.mesh);
 };
 

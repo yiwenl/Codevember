@@ -1,19 +1,16 @@
 // SceneApp.js
 
 var GL        = bongiovi.GL, gl;
+var ViewBall  = require("./ViewBall");
 var ViewTrace = require("./ViewTrace");
-var ViewBox   = require("./ViewBox");
-var ViewBg    = require("./ViewBg");
-var ViewPost  = require("./ViewPost");
-var Bubble    = require("./Bubble");
+var Ball      = require("./Ball");
+var vec3      = bongiovi.glm.vec3;
 var random    = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
-	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
-
-	this.resize();
+	this._initBalls();
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -23,82 +20,102 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
-	this._textureMap = new bongiovi.GLTexture(images.light);
-
-	var noiseSize = 1024;
-	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
-	this._fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
-	this._fboLight = new bongiovi.FrameBuffer(GL.width, GL.height);
-
+	this._texture = new bongiovi.GLTexture(images.light);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
-	this._vBox = new ViewBox();
-	this._vBg = new ViewBg();
-	this._vCopy = new bongiovi.ViewCopy();
-	this._vPost = new ViewPost();
-	this.reset();
+	this._vAxis     = new bongiovi.ViewAxis();
+	this._vDotPlane = new bongiovi.ViewDotPlane();
+	this._vBall     = new ViewBall();
+	this._vTrace    = new ViewTrace();
+};
+
+p._initBalls = function() {
+	var numBalls = 10;
+	var range = 100;
+	this._balls = [];
+	for(var i=0; i<numBalls; i++) {
+		var b = new Ball();
+		b.size = random(40, 60);
+		b.position = vec3.fromValues(random(-range, range), random(-range, range), random(-range, range));
+
+		this._balls.push(b);
+	}
+
+	this._checkPosition();
 };
 
 
-p.reset = function() {
-	this._bubbles = [];
-	var range = 1.5;
+p._checkPosition = function() {
+	function dir(a, b) {
+		var d = vec3.create();
+		vec3.sub(d, a.position, b.position);
 
-	for(var i=0; i<params.numBubble; i++) {
-		var pos = [random(-range, range), random(-range, range), random(-range, range)];
-		var size = random(0.55, 1.5);
-		var b = new Bubble(pos, size);
-		this._bubbles.push(b);
+		return d;
 	}
 
-	this._vTrace = new ViewTrace();	
+	function distance(a, b) {
+		var d = dir(a, b);
+		return vec3.length(d);
+	}
+
+	function touched(a, b) {
+		var dist = distance(a, b);
+		if(dist < a.size + b.size) {
+			return true;
+		}
+
+		return false;
+	}
+
+	function push(a, b) {
+		console.log('push');
+		var d = dir(a, b);
+		vec3.normalize(d, d);
+		var dist = distance(a, b);
+		vec3.scale(d, d, dist);
+
+		vec3.add(b.position, a.position, d);
+	}
+
+
+
+	var ballCurr, ballTarget;
+	for(var i=0; i<this._balls.length-1; i++) {
+		ballCurr = this._balls[i];
+		for(var j=i+1; j<this._balls.length; j++) {
+			ballTarget = this._balls[j];
+			if(ballTarget) {
+				if(touched(ballCurr, ballTarget)) {
+					push(ballCurr, ballTarget);
+				}	
+			}
+			
+		}
+	}
 };
 
 p.render = function() {
-	// this.camera._rx.value += .01;
-	// this.camera._ry.value += .01;
+	if(!this._balls) return;
+	this._vAxis.render();
+	this._vDotPlane.render();
 
-	GL.setMatrices(this.camera);
-	GL.rotate(this.sceneRotation.matrix);
-	GL.setViewport(0, 0, GL.width, GL.height);
-	this._fboRender.bind();
-	GL.clear(0, 0, 0, 0);
-	this._vBox.render(this._textureMap, true);
-	this._fboRender.unbind();
+	for(var i=0; i<this._balls.length; i++) {
+		var b = this._balls[i];
+		this._vBall.render(b.position, b.size);	
+	}
 
-	this._fboLight.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBox.render(this._textureMap, false);
-	this._fboLight.unbind();
 
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
-	GL.setViewport(0, 0, this._fboNoise.width, this._fboNoise.height);
-	this._fboNoise.bind();
-	GL.clear(0, 0, 0, 0);
-	this._vBg.render();
-	this._fboNoise.unbind();
 
-
-	//	FINAL RENDER
-	GL.clear(0, 0, 0, 0);
-	GL.setViewport(0, 0, GL.width, GL.height);
-	this._vPost.render(this._fboRender.getTexture(), this._fboNoise.getTexture());
-
-
-	gl.disable(gl.DEPTH_TEST);
-	GL.setViewport(0, 0, 512, 512);
-	this._vCopy.render(this._fboLight.getTexture());
-	gl.enable(gl.DEPTH_TEST);
+	this._vTrace.render(this._balls, this._texture);
+	
 };
 
 p.resize = function() {
-	var noiseSize = 1024;
-	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
-	this._fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
-
 	GL.setSize(window.innerWidth, window.innerHeight);
 	this.camera.resize(GL.aspectRatio);
 };
