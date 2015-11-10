@@ -60,6 +60,25 @@ float plane(vec3 pos) {
 	return pos.y + displace * .1;
 }
 
+float map(vec3 pos, out int index) {
+	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
+	index = 0;
+
+	for(int i=1; i<NUM_BALLS; i++) {
+		vec3 p = bubblePos[i]/100.0;
+		float s = bubbleSize[i]/50.0;
+		float ds = sphere(pos - p, s);
+
+		// d = min(d, ds);
+		if(ds < d) {
+			index = i;
+			d = ds;
+		}
+	}
+
+	return d;
+}
+
 float map(vec3 pos) {
 	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
 
@@ -68,7 +87,9 @@ float map(vec3 pos) {
 		float s = bubbleSize[i]/50.0;
 		float ds = sphere(pos - p, s);
 
-		d = min(d, ds);
+		if(ds < d) {
+			d = ds;
+		}
 	}
 
 	return d;
@@ -87,7 +108,13 @@ vec3 computeNormal(vec3 pos) {
 
 
 //	LIGHTING
+const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
+const vec3 lightColor0 = vec3(1.0, 1.0, .96);
+const float lightWeight0 = 0.25;
 
+const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
+const vec3 lightColor1 = vec3(.96, .96, 1.0);
+const float lightWeight1 = 0.15;
 
 float gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {
 	vec3 H = normalize(lightDirection + viewDirection);
@@ -125,16 +152,6 @@ float ao( in vec3 pos, in vec3 nor ){
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
 
-const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
-const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = 0.25;
-
-const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
-const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = 0.15;
-
-//	COLOR
-
 vec3 envLight(vec3 normal, vec3 dir) {
 	vec3 eye    = -dir;
 	vec3 r      = reflect( eye, normal );
@@ -148,10 +165,19 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float _ao = ao(pos, normal);
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal, int index) {
+	// float grey = float(index)/float(NUM_BALLS);
+	vec3 orgPos = pos;
+	pos.xz = rotate(pos.xz, float(index) * .15);
+	pos.yz = rotate(pos.yz, float(index) * -.15);
+
+	float base = sin(pos.y*10.0-time*.2)*.5 + .5;
+	base = smoothstep(.5, .55, base);
+
+	float _ao = ao(orgPos, normal);
 	vec3 env = envLight(normal, dir);
-	return vec4(vec3(_ao*env), 1.0);
+	return vec4(vec3(base+env)*_ao, 1.0);
+	// return vec4(vec3(_ao*env)+grey, 1.0);
 }
 
 void main(void) {
@@ -163,13 +189,16 @@ void main(void) {
 	float prec = pow(.1, 5.0);
 	float d;
 	bool hit = false;
+	int index = -1;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos);						//	distance to object
+		d = map(pos, index);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
+			// finalIndex = index;
 		}
+		// finalIndex = index;
 
 		pos += d * dir;						//	move forward by
 		if(length(pos) > maxDist) break;
@@ -179,7 +208,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal);
+		color = getColor(pos, dir, normal, index);
 	}
 	
 
