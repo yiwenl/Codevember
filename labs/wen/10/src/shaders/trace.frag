@@ -159,7 +159,7 @@ vec3 envLight(vec3 normal, vec3 dir) {
 	vec2 vN     = r.xy / m + .5;
 	vN.y        = 1.0 - vN.y;
 	vec3 color  = texture2D( texture, vN ).rgb;
-	float power = 40.0;
+	float power = 10.0;
 	color.r     = pow(color.r, power);
 	color       = color.rrr;
     return color;
@@ -170,29 +170,42 @@ float rand(vec2 co){
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, int index) {
-	// float grey = float(index)/float(NUM_BALLS);
-	vec3 orgPos = pos;
-	float t = float(index);
-	float rnd = rand(vec2(t));
+	vec3 orgPos  = pos;
+	float t      = float(index);
+	float rnd    = rand(vec2(t));
 	float fixRnd = mix(rnd, 1.0, .75);
-
-	pos.xz = rotate(pos.xz, rnd * 3.0);
-	pos.yz = rotate(pos.yz, rnd * 3.0);
-
-	float base = sin(pos.y*25.0*fixRnd-time*.2)*.5 + .5;
-	base = smoothstep(.5, .6, base);
-
-	float _ao = ao(orgPos, normal);
-	vec3 env = envLight(normal, dir);
+	
+	pos.xz       = rotate(pos.xz, rnd * 3.0);
+	pos.yz       = rotate(pos.yz, rnd * 3.0);
+	
+	float base   = sin(pos.y*25.0*fixRnd-time*0.5)*.5 + .5;
+	base         = smoothstep(.5, .6, base);
+	
+	float _ao    = ao(orgPos, normal);
+	vec3 env     = envLight(normal, dir);
 	return vec4(vec3(base+env)*_ao, 1.0);
 	// return vec4(vec3(_ao*env)+grey, 1.0);
 }
 
+mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
+{
+	vec3 cw = normalize(ta-ro);
+	vec3 cp = vec3(sin(cr), cos(cr),0.0);
+	vec3 cu = normalize( cross(cw,cp) );
+	vec3 cv = normalize( cross(cu,cw) );
+    return mat3( cu, cv, cw );
+}
+
 void main(void) {
-	vec3 pos = vec3(0.0, 0.5, -10.0);		//	position of camera
-	// vec3 orgPos = vec3(0.0, 1.5, -10.0);
-	vec3 dir = normalize(vec3(uv, focus));	//	ray
+	vec3 pos = vec3( -0.5+3.5*cos(0.1*time + 6.0), 1.0 + 2.0, 0.5 + 3.5*sin(0.1*time + 6.0) );
+	vec3 ta = vec3( 0.0, 0.0, 0.0 );
 	
+	// camera-to-world transformation
+    mat3 ca = setCamera( pos, ta, 0.0 );
+    
+    // ray direction
+	vec3 dir = ca * normalize( vec3(uv,focus) );
+
 	vec4 color = vec4(.0);
 	float prec = pow(.1, 5.0);
 	float d;

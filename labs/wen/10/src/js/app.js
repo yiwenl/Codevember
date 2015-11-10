@@ -4,10 +4,10 @@ var dat = require("dat-gui");
 window.params = {
 	focus:1.5,
 	numIter:100,
-	numBubble:15.0,
+	numBubble:10.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:7.0
+	maxDist:5.0
 };
 
 (function() {

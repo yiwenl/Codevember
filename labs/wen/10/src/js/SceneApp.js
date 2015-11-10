@@ -10,6 +10,7 @@ var random    = function(min, max) { return min + Math.random() * (max - min);	}
 function SceneApp() {
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
+	this.resize();
 	this._initBalls();
 
 	window.addEventListener("resize", this.resize.bind(this));
@@ -33,11 +34,11 @@ p._initViews = function() {
 
 p._initBalls = function() {
 	var numBalls = params.numBubble;
-	var range = 150;
+	var range = 100;
 	this._balls = [];
 	for(var i=0; i<numBalls; i++) {
 		var b = new Ball();
-		b.size = random(40, 60);
+		b.size = random(40, 80);
 		b.position = vec3.fromValues(random(-range, range), random(-range, range), random(-range, range));
 
 		this._balls.push(b);
@@ -116,7 +117,11 @@ p.render = function() {
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	size = Math.min(700, size);
+	GL.setSize(size, size);
+	GL.canvas.style.marginLeft = -size/2 + "px";
+	GL.canvas.style.marginTop = -size/2 + "px";
 	this.camera.resize(GL.aspectRatio);
 };
 
