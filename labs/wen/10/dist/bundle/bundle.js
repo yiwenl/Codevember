@@ -16,13 +16,22 @@ window.params = {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = [ "assets/light.jpg" ];
+
+		l.load(a, this, this._onLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onLoaded = function(img) {
+		window.images = img;
+
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -35,6 +44,7 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
+		return;
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params,'focus', .1, 5.0);
 		this.gui.add(params,'metaK', .1, 9.0);
@@ -58,7 +68,7 @@ window.params = {
 
 
 new App();
-},{"./SceneApp":6,"./libs/bongiovi.js":8,"dat-gui":2}],2:[function(require,module,exports){
+},{"./SceneApp":6,"./libs/bongiovi.js":11,"dat-gui":2}],2:[function(require,module,exports){
 module.exports = require('./vendor/dat.gui')
 module.exports.color = require('./vendor/dat.color')
 },{"./vendor/dat.color":3,"./vendor/dat.gui":4}],3:[function(require,module,exports){
@@ -4511,15 +4521,19 @@ module.exports = Bubble;
 },{}],6:[function(require,module,exports){
 // SceneApp.js
 
-var GL = bongiovi.GL, gl;
+var GL        = bongiovi.GL, gl;
 var ViewTrace = require("./ViewTrace");
-var Bubble = require("./Bubble");
-var random = function(min, max) { return min + Math.random() * (max - min);	}
+var ViewBox   = require("./ViewBox");
+var ViewBg    = require("./ViewBg");
+var ViewPost  = require("./ViewPost");
+var Bubble    = require("./Bubble");
+var random    = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
 	this.count = 0;
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
+
 	this.resize();
 
 	window.addEventListener("resize", this.resize.bind(this));
@@ -4530,11 +4544,21 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
+	this._textureMap = new bongiovi.GLTexture(images.light);
+
+	var noiseSize = 1024;
+	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
+	this._fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboLight = new bongiovi.FrameBuffer(GL.width, GL.height);
+
 };
 
 p._initViews = function() {
 	console.log('Init Views');
-	// this._vTrace = new ViewTrace();
+	this._vBox = new ViewBox();
+	this._vBg = new ViewBg();
+	this._vCopy = new bongiovi.ViewCopy();
+	this._vPost = new ViewPost();
 	this.reset();
 };
 
@@ -4554,29 +4578,147 @@ p.reset = function() {
 };
 
 p.render = function() {
-	// this._vAxis.render();
-	// this._vDotPlane.render();
+	// this.camera._rx.value += .01;
+	// this.camera._ry.value += .01;
 
+	GL.setMatrices(this.camera);
+	GL.rotate(this.sceneRotation.matrix);
+	GL.setViewport(0, 0, GL.width, GL.height);
+	this._fboRender.bind();
 	GL.clear(0, 0, 0, 0);
+	this._vBox.render(this._textureMap, true);
+	this._fboRender.unbind();
+
+	this._fboLight.bind();
+	GL.clear(0, 0, 0, 0);
+	this._vBox.render(this._textureMap, false);
+	this._fboLight.unbind();
 
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
+	GL.setViewport(0, 0, this._fboNoise.width, this._fboNoise.height);
+	this._fboNoise.bind();
+	GL.clear(0, 0, 0, 0);
+	this._vBg.render();
+	this._fboNoise.unbind();
 
-	this._vTrace.render(this._bubbles);
+
+	//	FINAL RENDER
+	GL.clear(0, 0, 0, 0);
+	GL.setViewport(0, 0, GL.width, GL.height);
+	this._vPost.render(this._fboRender.getTexture(), this._fboNoise.getTexture());
+
+
+	gl.disable(gl.DEPTH_TEST);
+	GL.setViewport(0, 0, 512, 512);
+	this._vCopy.render(this._fboLight.getTexture());
+	gl.enable(gl.DEPTH_TEST);
 };
 
 p.resize = function() {
-	var MAX = 1024;
-	var size = Math.min(window.innerWidth, window.innerHeight);
-	size = Math.min(size, MAX);
-	GL.setSize(size, size);
-	GL.canvas.style.marginLeft = -size/2 + 'px';
-	GL.canvas.style.marginTop = -size/2 + 'px';
+	var noiseSize = 1024;
+	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
+	this._fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
+
+	GL.setSize(window.innerWidth, window.innerHeight);
 	this.camera.resize(GL.aspectRatio);
 };
 
 module.exports = SceneApp;
-},{"./Bubble":5,"./ViewTrace":7}],7:[function(require,module,exports){
+},{"./Bubble":5,"./ViewBg":7,"./ViewBox":8,"./ViewPost":9,"./ViewTrace":10}],7:[function(require,module,exports){
+// ViewBg.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewBg() {
+	this.time = 0.0;
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\n// bg.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform float time;\n\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nvoid main(void) {\n\tfloat grey = snoise(vTextureCoord.y*15.0, time, 0.0) * .5 + .5;\n\tgrey = smoothstep(.5, .515, grey);\n    gl_FragColor = vec4(vec3(grey), 1.0);\n}");
+}
+
+var p = ViewBg.prototype = new bongiovi.View();
+p.constructor = ViewBg;
+
+
+p._init = function() {
+	gl = GL.gl;
+	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
+};
+
+p.render = function() {
+	this.time += 0.01;
+	this.shader.bind();
+	this.shader.uniform("time", "uniform1f", this.time);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewBg;
+},{}],8:[function(require,module,exports){
+// ViewBox.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewBox() {
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// box.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec3 aNormal;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n\n    vVertex = aVertexPosition;\n    vNormal = (normalMatrix * aNormal).rgb;\n}", "#define GLSLIFY 1\n\n// box.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n\nuniform vec3 cameraPosition;\nuniform float exportNormal;\nuniform sampler2D texture;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvec3 envLight(vec3 normal, vec3 eye) {\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vN.y = 1.0 - vN.y;\n    vec3 color = texture2D( texture, vN ).rgb;\n    color = max(color, vec3(0.0));\n    return color;\n}\n\n\nvec3 getColor() {\n\tvec3 color = vec3(1.0);\n\treturn color;\n}\n\nvoid main(void) {\n    if(exportNormal > 0.5) {\n    \tgl_FragColor = vec4(vNormal * .5 + .5, 1.0);\n    } else {\n    \tgl_FragColor = vec4(getColor(), 1.0);\n    }\n}");
+}
+
+var p = ViewBox.prototype = new bongiovi.View();
+p.constructor = ViewBox;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var size = 100;
+	this.mesh = bongiovi.MeshUtils.createCube(size, size, size, true);
+};
+
+p.render = function(texture, exportNormal) {
+	exportNormal = exportNormal === undefined ? true : exportNormal
+	this.shader.bind();
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
+	this.shader.uniform("exportNormal", "uniform1f", exportNormal ? 1.0 : 0.0);
+	this.shader.uniform("cameraPosition", "uniform3fv", GL.camera.position);
+	this.shader.uniform("normalMatrix", "uniformMatrix3fv", GL.normalMatrix);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewBox;
+},{}],9:[function(require,module,exports){
+// ViewPost.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewPost() {
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\n// post.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform sampler2D textureBg;\n\nvoid main(void) {\n\tvec2 uv = vTextureCoord;\n\tvec4 colorBox = texture2D(texture, vTextureCoord) * .5;\n\n\tvec2 uvOffset = colorBox.rg - vec2(.5);\n\tuv += uvOffset * .1;\n    gl_FragColor = texture2D(textureBg, uv);\n    gl_FragColor.a *= mix(colorBox.a, 1.0, .1);\n}");
+}
+
+var p = ViewPost.prototype = new bongiovi.View();
+p.constructor = ViewPost;
+
+
+p._init = function() {
+	gl = GL.gl;
+
+	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
+};
+
+p.render = function(texture, textureBg) {
+	this.shader.bind();
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
+	this.shader.uniform("textureBg", "uniform1i", 1);
+	textureBg.bind(1);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewPost;
+},{}],10:[function(require,module,exports){
 // ViewTrace.js
 
 var GL = bongiovi.GL;
@@ -4632,7 +4774,7 @@ p.render = function(bubbles) {
 };
 
 module.exports = ViewTrace;
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";

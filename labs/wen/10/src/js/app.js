@@ -15,13 +15,22 @@ window.params = {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = [ "assets/light.jpg" ];
+
+		l.load(a, this, this._onLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onLoaded = function(img) {
+		window.images = img;
+
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -34,6 +43,7 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
+		return;
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params,'focus', .1, 5.0);
 		this.gui.add(params,'metaK', .1, 9.0);
