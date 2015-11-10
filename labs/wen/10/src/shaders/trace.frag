@@ -180,7 +180,7 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal, int index) {
 	pos.yz = rotate(pos.yz, rnd * 3.0);
 
 	float base = sin(pos.y*25.0*fixRnd-time*.2)*.5 + .5;
-	base = smoothstep(.5, .55, base);
+	base = smoothstep(.5, .6, base);
 
 	float _ao = ao(orgPos, normal);
 	vec3 env = envLight(normal, dir);
