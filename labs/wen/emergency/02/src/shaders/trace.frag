@@ -60,6 +60,41 @@ float plane( vec3 p, vec4 n ) {
   return dot(p,n.xyz) + n.w;
 }
 
+vec3 n1 = vec3(1.000,0.000,0.000);
+vec3 n2 = vec3(0.000,1.000,0.000);
+vec3 n3 = vec3(0.000,0.000,1.000);
+vec3 n4 = vec3(0.577,0.577,0.577);
+vec3 n5 = vec3(-0.577,0.577,0.577);
+vec3 n6 = vec3(0.577,-0.577,0.577);
+vec3 n7 = vec3(0.577,0.577,-0.577);
+vec3 n8 = vec3(0.000,0.357,0.934);
+vec3 n9 = vec3(0.000,-0.357,0.934);
+vec3 n10 = vec3(0.934,0.000,0.357);
+vec3 n11 = vec3(-0.934,0.000,0.357);
+vec3 n12 = vec3(0.357,0.934,0.000);
+vec3 n13 = vec3(-0.357,0.934,0.000);
+vec3 n14 = vec3(0.000,0.851,0.526);
+vec3 n15 = vec3(0.000,-0.851,0.526);
+vec3 n16 = vec3(0.526,0.000,0.851);
+vec3 n17 = vec3(-0.526,0.000,0.851);
+vec3 n18 = vec3(0.851,0.526,0.000);
+vec3 n19 = vec3(-0.851,0.526,0.000);
+
+float icosahedral(vec3 p, float e, float r) {
+	float s = pow(abs(dot(p,n4)),e);
+	s += pow(abs(dot(p,n5)),e);
+	s += pow(abs(dot(p,n6)),e);
+	s += pow(abs(dot(p,n7)),e);
+	s += pow(abs(dot(p,n8)),e);
+	s += pow(abs(dot(p,n9)),e);
+	s += pow(abs(dot(p,n10)),e);
+	s += pow(abs(dot(p,n11)),e);
+	s += pow(abs(dot(p,n12)),e);
+	s += pow(abs(dot(p,n13)),e);
+	s = pow(s, 1./e);
+	return s-r;
+}
+
 const float gridSize = .5;
 
 float map(vec3 pos) {
@@ -68,6 +103,9 @@ float map(vec3 pos) {
 	float d = plane(pos, _plane);
 	float dBox = box(pos, 1.0);
 
+	float dIco = icosahedral(pos, 36.0, 2.0);
+
+	return dIco;
 	return min(d, dBox);
 }
 
@@ -84,13 +122,13 @@ vec3 computeNormal(vec3 pos) {
 
 
 //	LIGHTING
-const vec3 lightPos0 = vec3(20.0, 10.0, 20.0);
+const vec3 lightPos0 = vec3(0.0, 20.0, 0.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
 const float lightWeight0 = 0.25;
 
-const vec3 lightPos1 = vec3(-20.0, 0.0, -20.0);
+const vec3 lightPos1 = vec3(-20.0);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = 1.00000025;
+const float lightWeight1 = 0.25;
 
 float gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {
 	vec3 H = normalize(lightDirection + viewDirection);
@@ -141,6 +179,8 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
+
+
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
@@ -152,8 +192,9 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	vec3 diff0   = orenNayarDiffuse(L0, -dir, normal, 1.0, lightWeight0) * lightColor0;
 	vec3 diff1   = orenNayarDiffuse(L1, -dir, normal, 1.0, lightWeight1) * lightColor1;
 	vec3 spec0   = gaussianSpecular(L0, -dir, normal, .5) * lightColor0;
-	vec3 env     = envLight(normal, dir) * .00002 + .5;
-	return vec4(vec3(diff0 + diff1 + spec0 + env)*_ao, 1.0);
+	vec3 env     = envLight(normal, dir);
+	// return vec4(vec3(diff0 + diff1 + spec0 + env)*_ao, 1.0);
+	return vec4(vec3(env+diff0+diff1)*_ao, 1.0);
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
