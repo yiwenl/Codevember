@@ -1,14 +1,14 @@
 // SceneApp.js
 
 var GL        = bongiovi.GL, gl;
-var ViewBall  = require("./ViewBall");
 var ViewTrace = require("./ViewTrace");
-var Ball      = require("./Ball");
+var ViewBg    = require("./ViewBg");
 var vec3      = bongiovi.glm.vec3;
 var random    = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
 	gl = GL.gl;
+	gl.disable(gl.DEPTH_TEST);
 	bongiovi.Scene.call(this);
 	this.resize();
 	this._initBalls();
@@ -22,98 +22,46 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 p._initTextures = function() {
 	console.log('Init Textures');
 	this._texture = new bongiovi.GLTexture(images.light);
+	var noiseSize = 256;
+	this._fboBg = new bongiovi.FrameBuffer(noiseSize, noiseSize);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
-	this._vAxis     = new bongiovi.ViewAxis();
-	this._vDotPlane = new bongiovi.ViewDotPlane();
-	this._vBall     = new ViewBall();
 	this._vTrace    = new ViewTrace();
-};
+	this._vBg 		= new ViewBg();
+	this._vCopy 	= new bongiovi.ViewCopy();
+}
 
 p._initBalls = function() {
 	var numBalls = params.numBubble;
 	var range = 100;
 	this._balls = [];
-	for(var i=0; i<numBalls; i++) {
-		var b = new Ball();
-		b.size = random(40, 80);
-		b.position = vec3.fromValues(random(-range, range), random(-range, range), random(-range, range));
-
-		this._balls.push(b);
-	}
-
-	// this._checkPosition();
 };
 
-
-p._checkPosition = function() {
-	function dir(a, b) {
-		var d = vec3.create();
-		vec3.sub(d, a.position, b.position);
-
-		return d;
-	}
-
-	function distance(a, b) {
-		var d = dir(a, b);
-		return vec3.length(d);
-	}
-
-	function touched(a, b) {
-		var dist = distance(a, b);
-		if(dist < a.size + b.size) {
-			return true;
-		}
-
-		return false;
-	}
-
-	function push(a, b) {
-		console.log('push');
-		var d = dir(a, b);
-		vec3.normalize(d, d);
-		var dist = distance(a, b);
-		vec3.scale(d, d, dist);
-
-		vec3.add(b.position, a.position, d);
-	}
-
-
-
-	var ballCurr, ballTarget;
-	for(var i=0; i<this._balls.length-1; i++) {
-		ballCurr = this._balls[i];
-		for(var j=i+1; j<this._balls.length; j++) {
-			ballTarget = this._balls[j];
-			if(ballTarget) {
-				if(touched(ballCurr, ballTarget)) {
-					push(ballCurr, ballTarget);
-				}	
-			}
-			
-		}
-	}
-};
 
 p.render = function() {
 	if(!this._balls) return;
-	this._vAxis.render();
-	this._vDotPlane.render();
 
-	for(var i=0; i<this._balls.length; i++) {
-		var b = this._balls[i];
-		this._vBall.render(b.position, b.size);	
-	}
-
-	GL.clear(0, 0, 0, 0);
+	
 
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._balls, this._texture);
+
+	GL.setViewport(0, 0, this._fboBg.width, this._fboBg.height);
+	this._fboBg.bind();
+	GL.clear(0, 0, 0, 0);
+	this._vBg.render();
+	this._fboBg.unbind();
+
+	GL.setViewport(0, 0, GL.width, GL.height);
+	GL.clear(0, 0, 0, 0);
+	// this._vCopy.render(this._fboBg.getTexture());
+	this._vTrace.render(this._balls, this._texture, this._fboBg.getTexture());
 	
+	GL.setViewport(0, 0, 50, 50);
+	this._vCopy.render(this._fboBg.getTexture());
 };
 
 p.resize = function() {

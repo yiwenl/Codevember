@@ -8,13 +8,12 @@ const int NUM_ITER  = {{NUM_ITER}};
 // const float maxDist = 5.0;
 
 uniform sampler2D texture;
+uniform sampler2D textureBg;
 uniform float time;
 uniform float focus;
 uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
-uniform vec3 bubblePos[NUM_ITER];
-uniform float bubbleSize[NUM_ITER];
 
 
 //	TOOLS
@@ -103,7 +102,7 @@ float map(vec3 pos) {
 	float d = plane(pos, _plane);
 	float dBox = box(pos, 1.0);
 
-	float dIco = icosahedral(pos, 36.0, 2.0);
+	float dIco = icosahedral(pos, 36.0, 1.0);
 
 	return dIco;
 	return min(d, dBox);
@@ -186,6 +185,8 @@ float rand(vec2 co){
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+	vec2 uv 	 = (pos.xy*.5+vec2(.5)) + normal.xy * .52;
+	vec3 base 	 = texture2D(textureBg, uv).rgb;
 	float _ao    = ao(pos, normal);
 	vec3 L0 	 = normalize(lightPos0);
 	vec3 L1 	 = normalize(lightPos1);
@@ -194,7 +195,11 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	vec3 spec0   = gaussianSpecular(L0, -dir, normal, .5) * lightColor0;
 	vec3 env     = envLight(normal, dir);
 	// return vec4(vec3(diff0 + diff1 + spec0 + env)*_ao, 1.0);
-	return vec4(vec3(env+diff0+diff1)*_ao, 1.0);
+	// return vec4(vec3(env+diff0+diff1)*_ao, 1.0);
+	vec4 color 	 = vec4(0.0);
+	color.rgb 	 = base*.75 + env + diff0 + diff1;
+	color.a 	 = color.r;
+	return color;
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
@@ -207,13 +212,11 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 }
 
 void main(void) {
-	// vec3 pos = vec3( -0.5+3.5*cos(0.1*time + 6.0), 1.0 + 2.0, 0.5 + 1.5*sin(0.1*time + 6.0) );
-	vec3 pos = vec3( 3.5*cos(0.1*time), 10.0, 3.5*sin(0.1*time) );
-	vec3 ta = vec3( 0.0, 0.0, 0.0 );
-	
-    mat3 ca = setCamera( pos, ta, 0.0 );
-    
-	vec3 dir = ca * normalize( vec3(uv,focus) );
+	float radius = 5.0;
+	vec3 pos     = vec3( radius*cos(0.1*time), 0.0, radius*sin(0.1*time) );
+	vec3 ta      = vec3( 0.0, 0.0, 0.0 );
+	mat3 ca      = setCamera( pos, ta, 0.0 );
+	vec3 dir     = ca * normalize( vec3(uv,focus) );
 
 	vec4 color = vec4(.0);
 	float prec = pow(.1, 5.0);
