@@ -47,6 +47,21 @@ p._init = function() {
 	for(var i=0; i<canvas.length; i++) {
 		new LogoAnimation(canvas[i]);
 	}
+
+	//	CHECK OPEN PAGE :
+	var loc = window.location.href;
+	var reg = /#\d+/i;
+	var tmp = reg.exec(loc);
+	console.log(tmp, this.model.length);
+	if(tmp) {
+		var index = parseInt(tmp[0].replace('#', ''));
+		
+		if(index >0 && index <=this.model.length) {
+			this.iframe.src = this.model[index-1].path;
+			document.body.classList.remove('show-exp');
+			document.body.classList.add('show-exp');
+		}
+	}
 };
 
 p._onExp = function(e) {
