@@ -7,9 +7,7 @@ html, body {
   position: static;
   background: #424242;
   background: radial-gradient(ellipse at center, #424242 0%, black 100%);
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#424242', endColorstr='#000000',GradientType=1 );
-  background: url(../assets/bg.jpg) no-repeat;
-  background-size: 100% 100%; }
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#424242', endColorstr='#000000',GradientType=1 ); }
 
 html {
   -webkit-text-size-adjust: none;
