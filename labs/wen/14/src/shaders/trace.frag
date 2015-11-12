@@ -123,7 +123,7 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	bb = smoothstep(.0, .05, bb);
 	float _ao  = ao(pos, normal);
 	vec3 env   = envLight(normal, dir);
-	return vec4(vec3(grd*bb+env*.75)*_ao, 1.0);
+	return vec4(vec3(grd*bb+env)*_ao, 1.0);
 	// return vec4(vec3(_ao*env)+grey, 1.0);
 }
 
