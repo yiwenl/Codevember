@@ -44,28 +44,40 @@ float box( vec3 p, vec3 b ) {
 
 
 //	GEOMETRY
-float size = 1.5;
+float size = 3.0;
+
+vec3 ripple(vec3 pos, vec3 center, float waveHeight, float frequency) {
+	float l = distance(pos, center);
+	float y = sin(l*frequency-time*.25) * .5 + .5;
+	y = 1.0 - pow(y, 2.0);
+	float heightOffset = 1.0;
+	float radius = 3.0;
+	if(l > radius) {
+		heightOffset = 0.0;
+	}else {
+		heightOffset = 1.0 - l/radius;
+	}
+
+	y *= waveHeight * heightOffset;
+	vec3 returnPos = pos;
+	returnPos.y += y;
+	return returnPos;
+}
+
+
+const vec3 center0 = vec3( 1.0, .0, 1.0);
+const vec3 center1 = vec3(-1.0, .0, -0.5);
+// const vec3 center1 = vec3(-3.5, .0, -1.125);
+
 
 float map(vec3 pos) {
-	pos.xz = rotate(pos.xz, -PI*.25);
-	pos.yz = rotate(pos.yz, -PI*.025);
-	pos.x = abs(pos.x);
-	pos.xy = rotate(pos.xy, sin(pos.z*.5+time)*.8-.35);
-	float d = box(pos, vec3(size, .001, size));
+	pos = ripple(pos, center0, .05, 10.0);
+	pos = ripple(pos, center1, .015, 15.0);
+	float dBox = box(pos, vec3(size, .001, size));
 
-	return d;
+	return dBox;
 }
 
-float map(vec3 pos, out float rotation) {
-	pos.xz = rotate(pos.xz, -PI*.25);
-	pos.yz = rotate(pos.yz, -PI*.025);
-	pos.x = abs(pos.x);
-	rotation = sin(pos.z*.5+time)*.8-.35;
-	pos.xy = rotate(pos.xy, rotation);
-	float d = box(pos, vec3(size, .001, size));
-
-	return d;
-}
 
 vec3 computeNormal(vec3 pos) {
 	vec2 eps = vec2(0.001, 0.0);
@@ -122,7 +134,7 @@ const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
 const float lightWeight0 = 0.5;
 
-const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
+const vec3 lightPos1 = vec3(-1.0, 0.25, -.6);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
 const float lightWeight1 = 0.25;
 
@@ -143,17 +155,15 @@ float contrast(float value, float scale) {
 	return .5 + (value - .5) * scale;
 }
  
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float rotation) {
-	pos.xz     = rotate(pos.xz, -PI*.25);
-	vec2 uv    = pos.xz / size * .5 + .5;
-	float r    = abs(cos(rotation));
-	uv.x 	   = contrast(uv.x, 1.0/r);
-	vec4 color = texture2D(texture, uv);
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+	vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
 	vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;
 	vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;
 	vec3 spec  = gaussianSpecular(normalize(lightPos0), -dir, normal, .5) * lightColor0;
+	vec3 env = envLight(normal, dir);
 
-	color.rgb *= (diff0 + diff1 + spec);
+	// color.rgb = env + (diff0 + diff1);
+	color.rgb = env;
 
 	return color;
 }
@@ -167,25 +177,21 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main(void) {
-	float timeOffset = 0.25;
-	vec3 pos         = vec3(cos(time*timeOffset) * 5.5, 2.0, sin(time*timeOffset) * 5.5);
+	float timeOffset = 0.025;
+	vec3 pos         = vec3(cos(time*timeOffset) * 5.5, 4.0, sin(time*timeOffset) * 5.5);
 	vec3 ta          = vec3( 0.0, 0.0, 0.0 );
 	mat3 ca          = setCamera( pos, ta, 0.0 );
 	vec3 dir         = ca * normalize( vec3(uv,focus) );
 	vec4 color       = vec4(.0);
 	float prec       = .0001;
 	float d;
-	float rotation 	 = 0.0;
 	bool hit         = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos, rotation);						//	distance to object
+		d = map(pos);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
-			vec3 normal = computeNormal(pos);
-			vec4 t = getColor(pos, dir, normal, rotation);
-			if(t.a < 1.000) hit = false;
 		}
 
 		pos += d * dir;						//	move forward by
@@ -196,7 +202,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal, rotation);
+		color = getColor(pos, dir, normal);
 	}
 	
 
