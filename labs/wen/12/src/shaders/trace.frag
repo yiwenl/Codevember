@@ -140,7 +140,7 @@ void main(void) {
 		}
 
 		pos += d * dir;						//	move forward by
-		// if(length(pos) > maxDist) break;
+		if(length(pos) > maxDist) break;
 	}
 
 
