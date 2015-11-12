@@ -12,6 +12,9 @@ function SceneApp() {
 	bongiovi.Scene.call(this);
 	this.resize();
 	this._initBalls();
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
+	this.camera._ry.value = -Math.PI/2;
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -44,64 +47,14 @@ p._initBalls = function() {
 
 		this._balls.push(b);
 	}
-
-	// this._checkPosition();
 };
 
-
-p._checkPosition = function() {
-	function dir(a, b) {
-		var d = vec3.create();
-		vec3.sub(d, a.position, b.position);
-
-		return d;
-	}
-
-	function distance(a, b) {
-		var d = dir(a, b);
-		return vec3.length(d);
-	}
-
-	function touched(a, b) {
-		var dist = distance(a, b);
-		if(dist < a.size + b.size) {
-			return true;
-		}
-
-		return false;
-	}
-
-	function push(a, b) {
-		console.log('push');
-		var d = dir(a, b);
-		vec3.normalize(d, d);
-		var dist = distance(a, b);
-		vec3.scale(d, d, dist);
-
-		vec3.add(b.position, a.position, d);
-	}
-
-
-
-	var ballCurr, ballTarget;
-	for(var i=0; i<this._balls.length-1; i++) {
-		ballCurr = this._balls[i];
-		for(var j=i+1; j<this._balls.length; j++) {
-			ballTarget = this._balls[j];
-			if(ballTarget) {
-				if(touched(ballCurr, ballTarget)) {
-					push(ballCurr, ballTarget);
-				}	
-			}
-			
-		}
-	}
-};
 
 p.render = function() {
 	if(!this._balls) return;
 	this._vAxis.render();
-	this._vDotPlane.render();
+	this._vDotPlane.render
+	// this.camera._ry.value -= .001;
 
 	for(var i=0; i<this._balls.length; i++) {
 		var b = this._balls[i];
@@ -113,7 +66,7 @@ p.render = function() {
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._balls, this._texture, this._textureGrd);
+	this._vTrace.render(this._balls, this._texture, this._textureGrd, -this.camera._ry.value);
 	
 };
 

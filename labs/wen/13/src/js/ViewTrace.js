@@ -25,7 +25,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(bubbles, texture, textureMap) {
+p.render = function(bubbles, texture, textureMap, theta) {
 	var bubblePos = [];
 	var bubbleSize = [];
 	for(var i=0; i<bubbles.length; i++) {
@@ -45,6 +45,7 @@ p.render = function(bubbles, texture, textureMap) {
 	this.shader.uniform("focus", "uniform1f", params.focus);
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
+	this.shader.uniform("theta", "uniform1f", theta || 0);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
 
 	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);

@@ -4,8 +4,8 @@ window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
 	focus:1.5,
-	numIter:100,
-	numBubble:10.0,
+	numIter:64,
+	numBubble:7.0,
 	metaK:7.0,
 	zGap:2.0,
 	maxDist:5.0
@@ -4505,6 +4505,9 @@ function SceneApp() {
 	bongiovi.Scene.call(this);
 	this.resize();
 	this._initBalls();
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
+	this.camera._ry.value = -Math.PI/2;
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -4537,64 +4540,14 @@ p._initBalls = function() {
 
 		this._balls.push(b);
 	}
-
-	// this._checkPosition();
 };
 
-
-p._checkPosition = function() {
-	function dir(a, b) {
-		var d = vec3.create();
-		vec3.sub(d, a.position, b.position);
-
-		return d;
-	}
-
-	function distance(a, b) {
-		var d = dir(a, b);
-		return vec3.length(d);
-	}
-
-	function touched(a, b) {
-		var dist = distance(a, b);
-		if(dist < a.size + b.size) {
-			return true;
-		}
-
-		return false;
-	}
-
-	function push(a, b) {
-		console.log('push');
-		var d = dir(a, b);
-		vec3.normalize(d, d);
-		var dist = distance(a, b);
-		vec3.scale(d, d, dist);
-
-		vec3.add(b.position, a.position, d);
-	}
-
-
-
-	var ballCurr, ballTarget;
-	for(var i=0; i<this._balls.length-1; i++) {
-		ballCurr = this._balls[i];
-		for(var j=i+1; j<this._balls.length; j++) {
-			ballTarget = this._balls[j];
-			if(ballTarget) {
-				if(touched(ballCurr, ballTarget)) {
-					push(ballCurr, ballTarget);
-				}	
-			}
-			
-		}
-	}
-};
 
 p.render = function() {
 	if(!this._balls) return;
 	this._vAxis.render();
-	this._vDotPlane.render();
+	this._vDotPlane.render
+	// this.camera._ry.value -= .001;
 
 	for(var i=0; i<this._balls.length; i++) {
 		var b = this._balls[i];
@@ -4606,7 +4559,7 @@ p.render = function() {
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._balls, this._texture, this._textureGrd);
+	this._vTrace.render(this._balls, this._texture, this._textureGrd, -this.camera._ry.value);
 	
 };
 
@@ -4660,7 +4613,7 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat map(vec3 pos) {\n\tfloat d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);\n\n\tfor(int i=1; i<NUM_BALLS; i++) {\n\t\tvec3 p = bubblePos[i]/100.0;\n\t\tfloat s = bubbleSize[i]/100.0;\n\t\tfloat ds = sphere(pos - p, s);\n\n\t\td = smin(d, ds);\n\t}\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( texture, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat base = fract(pos.z-time*.1);\n\tvec3 grd   = texture2D(textureMap, vec2(base, .5)).rgb;\n\tfloat bb   = sin((pos.z-time*.1) * 20.0) * .5 + .5;\n\tbb = smoothstep(.0, .05, bb);\n\tfloat _ao  = ao(pos, normal);\n\tvec3 env   = envLight(normal, dir);\n\treturn vec4(vec3(grd*bb+env)*_ao, 1.0);\n\t// return vec4(vec3(_ao*env)+grey, 1.0);\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr )\n{\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\t// vec3 pos = vec3( -0.5+3.5*cos(0.1*time + 6.0), 1.0 + 2.0, 0.5 + 3.5*sin(0.1*time + 6.0) );\n\tfloat r = 5.0;\n\tvec3 pos = vec3(cos(time*.12) * r, 0.0, sin(time*.12)*r);\n\tvec3 ta = vec3( 0.0, 0.0, 0.0 );\n\t\n    mat3 ca = setCamera( pos, ta, 0.0 );\n    \n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
+	var fs = "#define GLSLIFY 1\n\nprecision mediump float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform float theta;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k )\n{\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b )\n{\n    return smin(a, b, 7.0);\n}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nfloat displacement(vec3 pos, int i) {\n\tfloat f = float(i);\n\tfloat seed = rand(vec2(f));\n\treturn sin((pos.x*5.0-time*.5)*seed)*sin((5.0*pos.z-time*.5)*seed)*sin(4.0*cos(time*.1)*pos.y);\n}\n\nfloat map(vec3 pos) {\n\tfloat d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);\n\n\tfor(int i=1; i<NUM_BALLS; i++) {\n\t\tvec3 p = bubblePos[i]/100.0;\n\t\tfloat s = bubbleSize[i]/100.0;\n\t\tfloat disp = displacement(pos, i);\n\t\tfloat ds = sphere(pos - p, s)+disp*.3;\n\n\t\td = smin(d, ds);\n\t}\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( texture, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat base = fract(pos.z-time*.1);\n\tvec3 grd   = texture2D(textureMap, vec2(base, .5)).rgb;\n\tfloat bb   = sin((pos.z-time*.1) * 20.0) * .5 + .5;\n\tbb = smoothstep(.0, .05, bb);\n\tfloat _ao  = ao(pos, normal);\n\tvec3 env   = envLight(normal, dir);\n\treturn vec4(vec3(grd*bb+env)*_ao, 1.0);\n\t// return vec4(vec3(_ao*env)+grey, 1.0);\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr )\n{\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tvec3 pos = vec3(cos(theta) * r, 0.0, sin(theta)*r);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 5.0);\n\tfloat d;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
 	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
@@ -4679,7 +4632,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(bubbles, texture, textureMap) {
+p.render = function(bubbles, texture, textureMap, theta) {
 	var bubblePos = [];
 	var bubbleSize = [];
 	for(var i=0; i<bubbles.length; i++) {
@@ -4699,6 +4652,7 @@ p.render = function(bubbles, texture, textureMap) {
 	this.shader.uniform("focus", "uniform1f", params.focus);
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
+	this.shader.uniform("theta", "uniform1f", theta || 0);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
 
 	this.shader.uniform("bubblePos", "uniform3fv", bubblePos);

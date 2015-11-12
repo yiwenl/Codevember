@@ -14,6 +14,7 @@ uniform float focus;
 uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
+uniform float theta;
 uniform vec3 bubblePos[NUM_ITER];
 uniform float bubbleSize[NUM_ITER];
 
@@ -42,13 +43,24 @@ float sphere(vec3 pos, float radius) {
 	return length(pos) - radius;
 }
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float displacement(vec3 pos, int i) {
+	float f = float(i);
+	float seed = rand(vec2(f));
+	return sin((pos.x*5.0-time*.5)*seed)*sin((5.0*pos.z-time*.5)*seed)*sin(4.0*cos(time*.1)*pos.y);
+}
+
 float map(vec3 pos) {
 	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
 
 	for(int i=1; i<NUM_BALLS; i++) {
 		vec3 p = bubblePos[i]/100.0;
 		float s = bubbleSize[i]/100.0;
-		float ds = sphere(pos - p, s);
+		float disp = displacement(pos, i);
+		float ds = sphere(pos - p, s)+disp*.3;
 
 		d = smin(d, ds);
 	}
@@ -104,10 +116,6 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
-float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
-
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
 	float base = fract(pos.z-time*.1);
 	vec3 grd   = texture2D(textureMap, vec2(base, .5)).rgb;
@@ -129,13 +137,10 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 }
 
 void main(void) {
-	// vec3 pos = vec3( -0.5+3.5*cos(0.1*time + 6.0), 1.0 + 2.0, 0.5 + 3.5*sin(0.1*time + 6.0) );
-	float r = 5.0;
-	vec3 pos = vec3(cos(time*.12) * r, 0.0, sin(time*.12)*r);
-	vec3 ta = vec3( 0.0, 0.0, 0.0 );
-	
-    mat3 ca = setCamera( pos, ta, 0.0 );
-    
+	float r  = 5.0;
+	vec3 pos = vec3(cos(theta) * r, 0.0, sin(theta)*r);
+	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
+	mat3 ca  = setCamera( pos, ta, 0.0 );
 	vec3 dir = ca * normalize( vec3(uv,focus) );
 
 	vec4 color = vec4(.0);
