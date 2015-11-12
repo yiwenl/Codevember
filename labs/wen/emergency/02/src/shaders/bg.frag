@@ -6,8 +6,6 @@ precision highp float;
 varying vec2 vTextureCoord;
 uniform float time;
 
-
-
 vec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }
 vec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }
 
@@ -72,8 +70,19 @@ float snoise(float x, float y, float z){
 	return snoise(vec3(x, y, z));
 }
 
+const float PI = 3.141592657;
+
 void main(void) {
-	float g = snoise(vTextureCoord.y * 8.0, time, 0.0) * .5 + .5;
-	g = smoothstep(0.5, 0.55, g);
-    gl_FragColor = vec4(vec3(g), 1.0);
+	// float g = snoise(vTextureCoord.y * 8.0, time, 0.0) * .5 + .5;
+	// g = smoothstep(0.5, 0.55, g);
+	// gl_FragColor = vec4(vec3(g), 1.0);
+
+	vec2 c       = vec2(.5);
+	vec2 p       = vTextureCoord - c;
+	float r      = length(p);
+	float a      = atan(p.y, p.x) + PI;
+	float seed   = 50.0 + snoise(vec3(vTextureCoord, time)) * 20.0;
+	float grey   = sin(r*r*seed + a - time*5.5) * .5 + .5;
+
+	gl_FragColor = vec4(vec3(grey), 1.0);
 }
