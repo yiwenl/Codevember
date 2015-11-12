@@ -7,7 +7,7 @@ window.params = {
 	numBubble:10.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:2.0
+	maxDist:4.0
 };
 
 (function() {
