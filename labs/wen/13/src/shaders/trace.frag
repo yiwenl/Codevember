@@ -53,6 +53,10 @@ float displacement(vec3 pos, int i) {
 	return sin((pos.x*5.0-time*.5)*seed)*sin((5.0*pos.z-time*.5)*seed)*sin(4.0*cos(time*.1)*pos.y);
 }
 
+float head(vec3 pos) {
+	
+}
+
 float map(vec3 pos) {
 	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
 

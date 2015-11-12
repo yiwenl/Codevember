@@ -11,6 +11,7 @@ uniform sampler2D texture;
 uniform sampler2D textureMap;
 uniform float time;
 uniform float focus;
+uniform float seed;
 uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
@@ -43,6 +44,10 @@ float sphere(vec3 pos, float radius) {
 	return length(pos) - radius;
 }
 
+float capsule(vec3 p, float r, float c) {
+	return mix(length(p.xz)-r, length(vec3(p.x,abs(p.y)-c,p.z))-r, step(c,abs(p.y)));
+}
+
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
@@ -53,19 +58,36 @@ float displacement(vec3 pos, int i) {
 	return sin((pos.x*5.0-time*.5)*seed)*sin((5.0*pos.z-time*.5)*seed)*sin(4.0*cos(time*.1)*pos.y);
 }
 
+float head(vec3 pos, float radius) {
+	pos += +vec3(0.0, -1.0, 0.0);
+	pos.xy = rotate(pos.xy, time * .5);
+	float dhead = sphere(pos, radius);
+	float disp = sin(pos.x*2.0+seed) * cos(pos.y*2.0+seed) * sin(cos(pos.z*2.0+seed));
+	return dhead + disp*.25;
+}
+
+float body(vec3 pos, float radius) {
+	pos.y /= 1.25;
+	float dBody = sphere(pos+vec3(0.0, .5, 0.0), radius);
+	float disp  = sin(pos.x*2.0+cos(seed)*5.0) * cos(pos.y*2.0+sin(seed)*10.0) * sin(cos(pos.z*2.0+seed));
+	return dBody + disp * .1;
+}
+
+float leg(vec3 pos, float r, float c, float t) {
+	pos.xy = rotate(pos.xy, t);
+	float dLeg = capsule(pos, r, c);
+	float disp  = sin(pos.x*25.0*r+cos(seed+t)*5.0) * cos(pos.y*c*15.0+seed) * sin(cos(pos.z*25.0*t+seed));
+
+	return dLeg + disp*.105;
+}
+
 float map(vec3 pos) {
-	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
+	float _head = head(pos, 1.0);
+	float _body = body(pos, .8);
+	float _leg1 = leg(pos+vec3(-.45, 1.0, -.75), .2, .45, .15);
+	float _leg2 = leg(pos+vec3(.45, 0.95, -.75), .2, .4, -.08);
 
-	for(int i=1; i<NUM_BALLS; i++) {
-		vec3 p = bubblePos[i]/100.0;
-		float s = bubbleSize[i]/100.0;
-		float disp = displacement(pos, i);
-		float ds = sphere(pos - p, s)+disp*.3;
-
-		d = smin(d, ds);
-	}
-
-	return d;
+	return min(_head, min(_body, min(_leg1, _leg2)));
 }
 
 vec3 computeNormal(vec3 pos) {
@@ -92,13 +114,12 @@ const float lightWeight1 = 0.15;
 float ao( in vec3 pos, in vec3 nor ){
 	float occ = 0.0;
     float sca = 1.0;
-    for( int i=0; i<5; i++ )
-    {
+    for( int i=0; i<5; i++ ) {
         float hr = 0.01 + 0.12*float(i)/4.0;
         vec3 aopos =  nor * hr + pos;
         float dd = map( aopos );
         occ += -(dd-hr)*sca;
-        sca *= 0.95;
+        sca *= 0.9;
     }
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
@@ -110,21 +131,15 @@ vec3 envLight(vec3 normal, vec3 dir) {
 	vec2 vN     = r.xy / m + .5;
 	vN.y        = 1.0 - vN.y;
 	vec3 color  = texture2D( texture, vN ).rgb;
-	float power = 10.0;
-	color.r     = pow(color.r, power);
-	color       = color.rrr;
     return color;
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float base = fract(pos.z-time*.1);
-	vec3 grd   = texture2D(textureMap, vec2(base, .5)).rgb;
-	float bb   = sin((pos.z-time*.1) * 20.0) * .5 + .5;
-	bb = smoothstep(.0, .05, bb);
-	float _ao  = ao(pos, normal);
-	vec3 env   = envLight(normal, dir);
-	return vec4(vec3(grd*bb+env)*_ao, 1.0);
-	// return vec4(vec3(_ao*env)+grey, 1.0);
+	vec3 base = vec3(1.0, 1.0, .96) * .85;
+	float _ao = ao(pos, normal);
+	// _ao       = mix(_ao, 1.0, .5);
+	vec3 env  = envLight(normal, dir);
+	return vec4(vec3(base+env*.2)*_ao, 1.0);
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
