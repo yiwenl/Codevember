@@ -4534,15 +4534,18 @@ p.render = function() {
 
 	GL.setViewport(0, 0, GL.width, GL.height);
 	GL.clear(0, 0, 0, 0);
-	// this._vCopy.render(this._fboBg.getTexture());
 	this._vTrace.render(this._balls, this._texture, this._fboBg.getTexture());
 	
-	GL.setViewport(0, 0, 50, 50);
-	this._vCopy.render(this._fboBg.getTexture());
+	// GL.setViewport(0, 0, 50, 50);
+	// this._vCopy.render(this._fboBg.getTexture());
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	size = Math.min(1024, size);
+	GL.setSize(size, size);
+	GL.canvas.style.marginLeft = -size * .5 + 'px';
+	GL.canvas.style.marginTop = -size * .5 + 'px';
 	this.camera.resize(GL.aspectRatio);
 };
 
