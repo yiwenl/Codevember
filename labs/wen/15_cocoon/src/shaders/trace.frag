@@ -71,36 +71,26 @@ const float sphereSize = 2.0;
 
 float displacement(vec3 pos) {
 	//	rotation
-	pos.xy = rotate(pos.xy,  .64);
-	pos.yz = rotate(pos.yz, -.4);
-
-	//	displacement
-	float r = length(pos.xy) / sphereSize;
+	// pos.xy = rotate(pos.xy,  .64);
+	// pos.yz = rotate(pos.yz, -.4);
+	float n1 = noise(vec2(pos.xy-time*.1));
+	float n2 = noise(vec2(n1, pos.z-time*.1));
+	float r = length(pos.xy) / sphereSize + n1;
 
 	float a = atan(pos.y, pos.x);
 	
-	float seed = a*20.0 - r*150.0;
-	float n0 = noise(vec2(seed-time));
-	float d1 = sin(seed) * .5 + .5 + .3 * n0;
+	float seed = a*20.0 - r*50.0;
+	float d1 = sin(seed) * .5 + .5 * n2;
 	return d1;
 }
 
-float map(vec3 pos, out float offset) {
-	float ds = sphere(pos, sphereSize);
-	float displace = displacement(pos);
-	float n = noise(pos.xy*20.0);
-
-	offset = displace;
-
-	return ds + displace * .01;
-}
 
 float map(vec3 pos) {
 	float ds = sphere(pos, sphereSize);
 	float displace = displacement(pos);
-	float n = noise(pos.xy*20.0);
+	float n = noise(pos.xz * 2.0 + sin(pos.z*cos(pos.x*sin(pos.y*time*.12373))));
 
-	return ds + displace * .01;
+	return ds + displace * .02 + n * .05;
 }
 
 vec3 computeNormal(vec3 pos) {
@@ -147,14 +137,10 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float offset) {
-	vec3 base = vec3(1.0, 1.0, .96) * .85;
-	vec3 grd = texture2D(textureMap, vec2(offset, fract(pos.x))).rgb;
-	base *= grd;
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+	vec3 base = vec3(1.0, 1.0, .96) * .55;
 	float _ao = ao(pos, normal);
-	// _ao       = mix(_ao, 1.0, .5);
 	vec3 env  = envLight(normal, dir);
-	// return vec4(vec3(offset), 1.0);
 	return vec4(vec3(base+env*.5)*_ao, 1.0);
 }
 
@@ -181,7 +167,7 @@ void main(void) {
 	bool hit = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos, offset);						//	distance to object
+		d = map(pos);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
@@ -195,7 +181,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal, offset);
+		color = getColor(pos, dir, normal);
 	}
 	
 
