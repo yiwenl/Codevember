@@ -134,7 +134,7 @@ void main(void) {
 			const float mixOffset = .95;
 			float aRotation = .0005 * mix(extra.x, 1.0, mixOffset);
 			float aRadius   = .01 * mix(extra.y, 1.0, mixOffset);
-			float aY 		= .005 * mix(extra.z, 1.0, mixOffset) + (1.0-yOffset) * .005;
+			float aY 		= .005 * mix(extra.z, 1.0, mixOffset) + cubicIn(1.0-yOffset) * .05;
 			
 			float ax 		= snoise(pos.x*posOffset+time, pos.y*posOffset+time, pos.z*posOffset+time) * aRadius;
 			float ay 		= (snoise(pos.y*posOffset+time, pos.z*posOffset+time, pos.x*posOffset+time) + .85) * aY;

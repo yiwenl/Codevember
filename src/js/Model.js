@@ -55,6 +55,10 @@ var Model = [
 	{
 		path:"labs/cp/12/dist/index.html",
 		cover:"dist/assets/covers/cp12.jpg"
+	},
+	{
+		path:"labs/wen/16_swirlingParticles/dist/index.html",
+		cover:"dist/assets/covers/wen11.jpg"
 	}
 ];
 
