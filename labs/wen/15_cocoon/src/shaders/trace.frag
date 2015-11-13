@@ -52,29 +52,53 @@ float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
+float hash( vec2 p ) {
+	float h = dot(p,vec2(127.1,311.7));	
+    return fract(sin(h)*43758.5453123);
+}
+float noise( in vec2 p ) {
+    vec2 i = floor( p );
+    vec2 f = fract( p );	
+	vec2 u = f*f*(3.0-2.0*f);
+    return -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), 
+                     hash( i + vec2(1.0,0.0) ), u.x),
+                mix( hash( i + vec2(0.0,1.0) ), 
+                     hash( i + vec2(1.0,1.0) ), u.x), u.y);
+}
+
 
 const float sphereSize = 2.0;
 
 float displacement(vec3 pos) {
 	//	rotation
+	pos.xy = rotate(pos.xy,  .64);
+	pos.yz = rotate(pos.yz, -.4);
 
 	//	displacement
 	float r = length(pos.xy) / sphereSize;
+
 	float a = atan(pos.y, pos.x);
 	
-	float seed = a*10.0 + r*50.0;
-	float rnd = sin(r + a) * .5 + .5;
-	rnd = mix(rnd, 1.0, .75);
-
-	float d1 = sin(seed*3.0) * .5 + .5;
-	// d1 = smoothstep(.25, .75, d1);
-	return d1 * rnd;
+	float seed = a*20.0 - r*150.0;
+	float n0 = noise(vec2(seed-time));
+	float d1 = sin(seed) * .5 + .5 + .3 * n0;
+	return d1;
 }
 
+float map(vec3 pos, out float offset) {
+	float ds = sphere(pos, sphereSize);
+	float displace = displacement(pos);
+	float n = noise(pos.xy*20.0);
+
+	offset = displace;
+
+	return ds + displace * .01;
+}
 
 float map(vec3 pos) {
 	float ds = sphere(pos, sphereSize);
 	float displace = displacement(pos);
+	float n = noise(pos.xy*20.0);
 
 	return ds + displace * .01;
 }
@@ -123,12 +147,15 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float offset) {
 	vec3 base = vec3(1.0, 1.0, .96) * .85;
+	vec3 grd = texture2D(textureMap, vec2(offset, fract(pos.x))).rgb;
+	base *= grd;
 	float _ao = ao(pos, normal);
 	// _ao       = mix(_ao, 1.0, .5);
 	vec3 env  = envLight(normal, dir);
-	return vec4(vec3(base+env*.2)*_ao, 1.0);
+	// return vec4(vec3(offset), 1.0);
+	return vec4(vec3(base+env*.5)*_ao, 1.0);
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
@@ -150,10 +177,11 @@ void main(void) {
 	vec4 color = vec4(.0);
 	float prec = pow(.1, 5.0);
 	float d;
+	float offset = 0.0;
 	bool hit = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos);						//	distance to object
+		d = map(pos, offset);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
@@ -167,7 +195,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal);
+		color = getColor(pos, dir, normal, offset);
 	}
 	
 
