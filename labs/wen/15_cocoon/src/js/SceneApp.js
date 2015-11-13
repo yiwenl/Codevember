@@ -54,7 +54,7 @@ p.render = function() {
 	if(!this._balls) return;
 	this._vAxis.render();
 	this._vDotPlane.render
-	this.camera._ry.value -= .05;
+	// this.camera._ry.value -= .001;
 
 	for(var i=0; i<this._balls.length; i++) {
 		var b = this._balls[i];

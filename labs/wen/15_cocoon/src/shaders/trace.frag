@@ -11,6 +11,7 @@ uniform sampler2D texture;
 uniform sampler2D textureMap;
 uniform float time;
 uniform float focus;
+uniform float seed;
 uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
@@ -43,30 +44,39 @@ float sphere(vec3 pos, float radius) {
 	return length(pos) - radius;
 }
 
+float capsule(vec3 p, float r, float c) {
+	return mix(length(p.xz)-r, length(vec3(p.x,abs(p.y)-c,p.z))-r, step(c,abs(p.y)));
+}
+
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float displacement(vec3 pos, int i) {
-	float f = float(i);
-	float seed = rand(vec2(f));
-	return sin((pos.x*5.0-time*.5)*seed)*sin((5.0*pos.z-time*.5)*seed)*sin(5.0*cos(time*.23)*pos.y);
+
+const float sphereSize = 2.0;
+
+float displacement(vec3 pos) {
+	//	rotation
+
+	//	displacement
+	float r = length(pos.xy) / sphereSize;
+	float a = atan(pos.y, pos.x);
+	
+	float seed = a*10.0 + r*50.0;
+	float rnd = sin(r + a) * .5 + .5;
+	rnd = mix(rnd, 1.0, .75);
+
+	float d1 = sin(seed*3.0) * .5 + .5;
+	// d1 = smoothstep(.25, .75, d1);
+	return d1 * rnd;
 }
 
 
 float map(vec3 pos) {
-	float d = sphere(pos - bubblePos[0]/100.0, bubbleSize[0]/100.0);
+	float ds = sphere(pos, sphereSize);
+	float displace = displacement(pos);
 
-	for(int i=1; i<NUM_BALLS; i++) {
-		vec3 p = bubblePos[i]/100.0;
-		float s = bubbleSize[i]/100.0;
-		float disp = displacement(pos, i);
-		float ds = sphere(pos - p, s)+disp*.3;
-
-		d = smin(d, ds);
-	}
-
-	return d;
+	return ds + displace * .01;
 }
 
 vec3 computeNormal(vec3 pos) {
@@ -93,13 +103,12 @@ const float lightWeight1 = 0.15;
 float ao( in vec3 pos, in vec3 nor ){
 	float occ = 0.0;
     float sca = 1.0;
-    for( int i=0; i<5; i++ )
-    {
+    for( int i=0; i<5; i++ ) {
         float hr = 0.01 + 0.12*float(i)/4.0;
         vec3 aopos =  nor * hr + pos;
         float dd = map( aopos );
         occ += -(dd-hr)*sca;
-        sca *= 0.95;
+        sca *= 0.9;
     }
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
@@ -111,21 +120,15 @@ vec3 envLight(vec3 normal, vec3 dir) {
 	vec2 vN     = r.xy / m + .5;
 	vN.y        = 1.0 - vN.y;
 	vec3 color  = texture2D( texture, vN ).rgb;
-	float power = 10.0;
-	color.r     = pow(color.r, power);
-	color       = color.rrr;
     return color;
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float base = fract(pos.z-time*.1);
-	vec3 grd   = texture2D(textureMap, vec2(base, .5)).rgb;
-	float bb   = sin((pos.z-time*.1) * 20.0) * .5 + .5;
-	bb = smoothstep(.0, .05, bb);
-	float _ao  = ao(pos, normal);
-	vec3 env   = envLight(normal, dir);
-	return vec4(vec3(grd*bb+env*.75)*_ao, 1.0);
-	// return vec4(vec3(_ao*env)+grey, 1.0);
+	vec3 base = vec3(1.0, 1.0, .96) * .85;
+	float _ao = ao(pos, normal);
+	// _ao       = mix(_ao, 1.0, .5);
+	vec3 env  = envLight(normal, dir);
+	return vec4(vec3(base+env*.2)*_ao, 1.0);
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )

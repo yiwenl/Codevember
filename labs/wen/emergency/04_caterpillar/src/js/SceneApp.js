@@ -54,7 +54,7 @@ p.render = function() {
 	if(!this._balls) return;
 	this._vAxis.render();
 	this._vDotPlane.render
-	this.camera._ry.value -= .05;
+	// this.camera._ry.value -= .001;
 
 	for(var i=0; i<this._balls.length; i++) {
 		var b = this._balls[i];
@@ -72,7 +72,7 @@ p.render = function() {
 
 p.resize = function() {
 	var size = Math.min(window.innerWidth, window.innerHeight);
-	size = Math.min(700, size);
+	size = Math.min(1000, size);
 	GL.setSize(size, size);
 	GL.canvas.style.marginLeft = -size/2 + "px";
 	GL.canvas.style.marginTop = -size/2 + "px";
