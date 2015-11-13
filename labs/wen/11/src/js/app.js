@@ -3,12 +3,12 @@ window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 
 window.params = {
-	focus:1.5,
-	numIter:64,
+	focus:1.0,
+	numIter:100,
 	numBubble:7.0,
 	metaK:7.0,
 	zGap:2.0,
-	maxDist:17.0
+	maxDist:27.0
 };
 
 (function() {
@@ -16,7 +16,7 @@ window.params = {
 
 	App = function() {
 		var l = new bongiovi.SimpleImageLoader();
-		var a = [ "assets/light.jpg" ];
+		var a = [ "assets/b.png", "assets/light.jpg" ];
 
 		l.load(a, this, this._onLoaded);
 	}

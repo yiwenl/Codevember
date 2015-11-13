@@ -42,31 +42,27 @@ float box( vec3 p, vec3 b ) {
          length(max(d,0.0));
 }
 
-float box( vec3 p, float b ) {
-	return box(p, vec3(b));
-}
 
 //	GEOMETRY
-float sphere(vec3 pos, float radius) {
-	return length(pos) - radius;
-}
-
-float displacement(vec3 pos) {
-	return sin(2.0*pos.x)*sin(2.0*pos.z) * .5 + .5;
-}
-
-float plane(vec3 pos) {
-	float displace = displacement(pos);
-	return pos.y + displace * .1;
-}
+float size = 1.5;
 
 float map(vec3 pos) {
-	pos.xz = rotate(pos.xz, sin(time*.2)*.5);
-	pos.yz = rotate(pos.yz, cos(time*.2)*.5);
+	pos.xz = rotate(pos.xz, -PI*.25);
+	pos.yz = rotate(pos.yz, -PI*.025);
+	pos.x = abs(pos.x);
+	pos.xy = rotate(pos.xy, sin(pos.z*.5+time)*.8-.35);
+	float d = box(pos, vec3(size, .001, size));
 
-	// float d = plane(pos);
-	// float d = sphere(pos, 2.0);
-	float d = box(pos, 2.0);
+	return d;
+}
+
+float map(vec3 pos, out float rotation) {
+	pos.xz = rotate(pos.xz, -PI*.25);
+	pos.yz = rotate(pos.yz, -PI*.025);
+	pos.x = abs(pos.x);
+	rotation = sin(pos.z*.5+time)*.8-.35;
+	pos.xy = rotate(pos.xy, rotation);
+	float d = box(pos, vec3(size, .001, size));
 
 	return d;
 }
@@ -124,11 +120,11 @@ float ao( in vec3 pos, in vec3 nor ){
 
 const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = 0.25;
+const float lightWeight0 = 0.5;
 
 const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = 0.15;
+const float lightWeight1 = 0.25;
 
 //	COLOR
 
@@ -143,31 +139,53 @@ vec3 envLight(vec3 normal, vec3 dir) {
     return color;
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
+float contrast(float value, float scale) {
+	return .5 + (value - .5) * scale;
+}
+ 
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float rotation) {
+	pos.xz     = rotate(pos.xz, -PI*.25);
+	vec2 uv    = pos.xz / size * .5 + .5;
+	float r    = abs(cos(rotation));
+	uv.x 	   = contrast(uv.x, 1.0/r);
+	vec4 color = texture2D(texture, uv);
+	vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;
+	vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;
+	vec3 spec  = gaussianSpecular(normalize(lightPos0), -dir, normal, .5) * lightColor0;
 
-	float base = sin((pos.y+normal.y) * 10.0) * .5 + .5;
-	base = smoothstep(.5, .51, base);
-	base *= 1.0;
-	// float _ao = ao(pos, normal);
-	vec3 env = envLight(normal, dir)*.5;
-	return vec4(env+base, 1.0);
+	color.rgb *= (diff0 + diff1 + spec);
+
+	return color;
+}
+
+mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
+	vec3 cw = normalize(ta-ro);
+	vec3 cp = vec3(sin(cr), cos(cr),0.0);
+	vec3 cu = normalize( cross(cw,cp) );
+	vec3 cv = normalize( cross(cu,cw) );
+    return mat3( cu, cv, cw );
 }
 
 void main(void) {
-	vec3 pos = vec3(0.0, 0.5, -10.0);		//	position of camera
-	// vec3 orgPos = vec3(0.0, 1.5, -10.0);
-	vec3 dir = normalize(vec3(uv, focus));	//	ray
-	
-	vec4 color = vec4(.0);
-	float prec = pow(.1, 5.0);
+	float timeOffset = 0.25;
+	vec3 pos         = vec3(cos(time*timeOffset) * 5.5, 2.0, sin(time*timeOffset) * 5.5);
+	vec3 ta          = vec3( 0.0, 0.0, 0.0 );
+	mat3 ca          = setCamera( pos, ta, 0.0 );
+	vec3 dir         = ca * normalize( vec3(uv,focus) );
+	vec4 color       = vec4(.0);
+	float prec       = .0001;
 	float d;
-	bool hit = false;
+	float rotation 	 = 0.0;
+	bool hit         = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos);						//	distance to object
+		d = map(pos, rotation);						//	distance to object
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
+			vec3 normal = computeNormal(pos);
+			vec4 t = getColor(pos, dir, normal, rotation);
+			if(t.a < 1.000) hit = false;
 		}
 
 		pos += d * dir;						//	move forward by
@@ -178,7 +196,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal);
+		color = getColor(pos, dir, normal, rotation);
 	}
 	
 
