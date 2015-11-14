@@ -12,6 +12,7 @@ uniform float time;
 uniform float focus;
 uniform float metaK;
 uniform float zGap;
+uniform float ry;
 uniform float maxDist;
 uniform vec3 bubblePos[NUM_ITER];
 uniform float bubbleSize[NUM_ITER];
@@ -33,7 +34,7 @@ float smin( float a, float b, float k )
 
 float smin( float a, float b )
 {
-    return smin(a, b, 7.0);
+    return smin(a, b, 12.0);
 }
 
 float box( vec3 p, vec3 b ) {
@@ -43,20 +44,34 @@ float box( vec3 p, vec3 b ) {
 }
 
 
-//	GEOMETRY
-float size = 3.0;
+float hash( vec2 p ) {
+	float h = dot(p,vec2(127.1,311.7));	
+    return fract(sin(h)*43758.5453123);
+}
+float noise( in vec2 p ) {
+    vec2 i = floor( p );
+    vec2 f = fract( p );	
+	vec2 u = f*f*(3.0-2.0*f);
+    return -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), 
+                     hash( i + vec2(1.0,0.0) ), u.x),
+                mix( hash( i + vec2(0.0,1.0) ), 
+                     hash( i + vec2(1.0,1.0) ), u.x), u.y);
+}
 
-vec3 ripple(vec3 pos, vec3 center, float waveHeight, float frequency) {
+
+//	GEOMETRY
+
+
+vec3 ripple(vec3 pos, vec3 center, float waveHeight, float frequency, float waveSpeed) {
 	float l = distance(pos, center);
-	float y = sin(l*frequency-time*.25) * .5 + .5;
-	y = 1.0 - pow(y, 2.0);
-	float heightOffset = 1.0;
+	vec3 dirToCenter = pos - center;
+
+	float y = sin(l*frequency-time*waveSpeed) * .5 + .5;
+	y = 1.0 - pow(y, 1.25);
+	
 	float radius = 3.0;
-	if(l > radius) {
-		heightOffset = 0.0;
-	}else {
-		heightOffset = 1.0 - l/radius;
-	}
+	float heightOffset = 1.0 - smoothstep(0.0, radius, l);
+	
 
 	y *= waveHeight * heightOffset;
 	vec3 returnPos = pos;
@@ -64,18 +79,37 @@ vec3 ripple(vec3 pos, vec3 center, float waveHeight, float frequency) {
 	return returnPos;
 }
 
-
 const vec3 center0 = vec3( 1.0, .0, 1.0);
 const vec3 center1 = vec3(-1.0, .0, -0.5);
-// const vec3 center1 = vec3(-3.5, .0, -1.125);
+const vec3 center2 = vec3( 1.0, .0, -0.5);
 
+const float size = 1.0;
+const float width = .2;
+const float slices = size*2.0/width;
+const float halfSlices = slices/2.0;
+
+float contrast(float value, float scale) {
+	return (value-scale)*.5 + .5;
+}
+
+vec2 contrast(vec2 value, float scale) {
+	return vec2(contrast(value.x, scale), contrast(value.y, scale));
+}
 
 float map(vec3 pos) {
-	pos = ripple(pos, center0, .05, 10.0);
-	pos = ripple(pos, center1, .015, 15.0);
-	float dBox = box(pos, vec3(size, .001, size));
+	vec3 org = pos;
+	float d = 9999.0;
+	float x, dbox;
+	for(float i=0.0; i<slices; i++) {
+		pos.xy = rotate(pos.xy, time*.1);
+		x = -halfSlices * width + i*width;
+		dbox = box(pos+vec3(0.0, 0.0, x), vec3(size, size, width*.5));
+		d = min(d, dbox);
+	}
 
-	return dBox;
+	// dbox = box(pos+vec3(0.0, 0.0, 1.0), vec3(size, size, width));
+
+	return d;
 }
 
 
@@ -92,14 +126,6 @@ vec3 computeNormal(vec3 pos) {
 
 
 //	LIGHTING
-
-
-float gaussianSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float shininess) {
-	vec3 H = normalize(lightDirection + viewDirection);
-	float theta = acos(dot(H, surfaceNormal));
-	float w = theta / shininess;
-	return exp(-w*w);
-}
 
 float orenNayarDiffuse(vec3 lightDirection,	vec3 viewDirection,	vec3 surfaceNormal,	float roughness, float albedo) {
 	float LdotV = dot(lightDirection, viewDirection);
@@ -130,40 +156,37 @@ float ao( in vec3 pos, in vec3 nor ){
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
 
-const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
-const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = 0.5;
+const float lighty       = 1.01;
 
-const vec3 lightPos1 = vec3(-1.0, 0.25, -.6);
-const vec3 lightColor1 = vec3(.96, .96, 1.0);
-const float lightWeight1 = 0.25;
+const vec3 lightPos0     = vec3(1.0, lighty, -1.0);
+const vec3 lightColor0   = vec3(1.0, 1.0, .96);
+const float lightWeight0 = .5;
 
-//	COLOR
+const vec3 lightPos1     = vec3(-1.0, lighty, -.6);
+const vec3 lightColor1   = vec3(.96, .96, 1.0);
+const float lightWeight1 = .5;
 
 vec3 envLight(vec3 normal, vec3 dir) {
-	vec3 eye = -dir;
-	vec3 r = reflect( eye, normal );
-    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
-    vec2 vN = r.xy / m + .5;
-    vN.y = 1.0 - vN.y;
-    vec3 color = texture2D( texture, vN ).rgb;
-    color = max(color, vec3(0.0));
+	vec3 eye    = -dir;
+	vec3 r      = reflect( eye, normal );
+	float m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+	vec2 vN     = r.xy / m + .5;
+	vN.y        = 1.0 - vN.y;
+	vec3 color  = texture2D( texture, vN ).rgb;
     return color;
 }
 
-float contrast(float value, float scale) {
-	return .5 + (value - .5) * scale;
-}
- 
+//	COLOR
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
-	vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, 1.1, lightWeight0) * lightColor0;
-	vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, 1.1, lightWeight1) * lightColor1;
-	vec3 spec  = gaussianSpecular(normalize(lightPos0), -dir, normal, .5) * lightColor0;
+	vec4 color = vec4(lightColor0, 1.0);
+	float roughness = 5.0;
+	// vec3 diff0 = orenNayarDiffuse(normalize(lightPos0), -dir, normal, roughness, lightWeight0) * lightColor0;
+	// vec3 diff1 = orenNayarDiffuse(normalize(lightPos1), -dir, normal, roughness, lightWeight1) * lightColor1;
 	vec3 env = envLight(normal, dir);
+	float _ao = ao(pos, normal);
 
-	// color.rgb = env + (diff0 + diff1);
-	color.rgb = env;
+	// color.rgb = ((diff0 + diff1)+env) * _ao;
+	color.rgb = (env) * _ao;
 
 	return color;
 }
@@ -177,12 +200,14 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main(void) {
-	float timeOffset = 0.025;
-	vec3 pos         = vec3(cos(time*timeOffset) * 5.5, 4.0, sin(time*timeOffset) * 5.5);
+	float timeOffset = 0.0;
+	float radius     = 4.5;
+	vec3 pos         = vec3(cos(ry) * radius, 0.0, sin(ry) * radius);
+
 	vec3 ta          = vec3( 0.0, 0.0, 0.0 );
 	mat3 ca          = setCamera( pos, ta, 0.0 );
 	vec3 dir         = ca * normalize( vec3(uv,focus) );
-	vec4 color       = vec4(.0);
+	vec4 color       = vec4(0.0);
 	float prec       = .0001;
 	float d;
 	bool hit         = false;
@@ -197,7 +222,6 @@ void main(void) {
 		pos += d * dir;						//	move forward by
 		if(length(pos) > maxDist) break;
 	}
-
 
 	if(hit) {
 		color = vec4(1.0);
