@@ -316,6 +316,10 @@ var Model = [
 	{
 		path:"labs/wen/18_ripple/dist/index.html",
 		cover:"dist/assets/covers/wen12.jpg"
+	},
+	{
+		path:"labs/wen/20_sphereParticles/dist/index.html",
+		cover:"dist/assets/covers/wen13.jpg"
 	}
 ];
 
