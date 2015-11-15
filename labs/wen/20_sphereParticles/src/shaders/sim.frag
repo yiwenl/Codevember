@@ -4,6 +4,10 @@ precision mediump float;
 uniform sampler2D texture;
 varying vec2 vTextureCoord;
 
+const int NUM_DOTS = 5;
+uniform vec4 dots[NUM_DOTS];
+uniform float radius[NUM_DOTS];
+
 
 vec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }
 vec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }
@@ -76,15 +80,47 @@ float rand(vec2 co){
 
 uniform float time;
 uniform float sphereSize;
+uniform float sound0;
 
 void main(void) {
     if(vTextureCoord.y < .5) {
 		if(vTextureCoord.x < .5) {
+			vec2 uvVel = vTextureCoord + vec2(.5, .0);
 			vec3 pos = texture2D(texture, vTextureCoord).rgb;
+			vec3 vel = texture2D(texture, uvVel).rgb;
+			pos += vel;
 			pos = normalize(pos) * sphereSize;
 			gl_FragColor = vec4(pos, 1.0);
 		} else {
-			gl_FragColor = vec4(0.0);	
+			const float posOffset = .01;
+
+			vec2 uvPos   = vTextureCoord + vec2(-.5, .0);
+			vec2 uvExtra = vTextureCoord + vec2(-.5, .5);
+			vec3 pos     = texture2D(texture, uvPos).rgb;
+			vec3 vel     = texture2D(texture, vTextureCoord).rgb;
+			vec3 extra   = texture2D(texture, uvExtra).rgb;
+
+			const float mixOffset = .45;
+			float ax = snoise(pos.xyz * posOffset * mix(extra.x, 1.0, mixOffset) + time);
+			float ay = snoise(pos.yzx * posOffset * mix(extra.y, 1.0, mixOffset) + time);
+			float az = snoise(pos.zxy * posOffset * mix(extra.z, 1.0, mixOffset) + time);
+			vel += vec3(ax, ay, az) * (.02-sound0*0.175);
+
+
+			for(int i =0; i<NUM_DOTS; i++) {
+				vec3 posDot = dots[i].xyz;
+				float r = dots[i].w * (1.0 +sound0 * 30.0);
+				float d = distance(pos, posDot);
+				if(d < r) {
+					vec3 dir = normalize(pos - posDot);
+					float f = 1.0 / d;
+					vel += dir * f * (.5 + sound0*.5);
+				}
+			}
+
+			vel *= .976;
+
+			gl_FragColor = vec4(vel, 1.0);	
 		}
     } else {
     	gl_FragColor = texture2D(texture, vTextureCoord);

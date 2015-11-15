@@ -5,13 +5,20 @@ var SoundCloudLoader = require("./SoundCloudLoader");
 var ViewSave = require("./ViewSave");
 var ViewRender = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
+var ViewLightSphere = require("./ViewLight");
+var ViewDot = require("./ViewDot");
+var Dot = require("./Dot");
 
 function SceneApp() {
 	gl = GL.gl;
 	this.sum = 0;
+	this.max = 0;
 	this.easeSum = new bongiovi.EaseNumber(0, .25);
 	this._initSound();
+	this._initDots();
 	bongiovi.Scene.call(this);
+	gl.disable(gl.DEPTH_TEST);
+	GL.enableAdditiveBlending();
 
 	window.addEventListener("resize", this.resize.bind(this));
 
@@ -27,13 +34,21 @@ function SceneApp() {
 
 var p = SceneApp.prototype = new bongiovi.Scene();
 
+p._initDots = function() {
+	this._dots = [];
+	for(var i=0; i<params.numDots; i++) {
+		var d = new Dot();
+		this._dots.push(d);
+	}
+};
+
 p._initSound = function() {
 	var that = this;
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 0.0,
+	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -46,6 +61,8 @@ p._initSound = function() {
 p._initTextures = function() {
 	console.log('Init Textures');
 	if(!gl) gl = GL.gl;
+
+	this.textureParticle = new bongiovi.GLTexture(images.particle);
 
 	var num = params.numParticles;
 	var o = {
@@ -64,6 +81,8 @@ p._initViews = function() {
 	this._vCopy 	= new bongiovi.ViewCopy();
 	this._vRender 	= new ViewRender();
 	this._vSim 		= new ViewSimulation();
+	this._vLight    = new ViewLightSphere();
+	this._vDot 		= new ViewDot();
 
 
 	GL.setMatrices(this.cameraOtho);
@@ -83,7 +102,7 @@ p.updateFbo = function() {
 	this._fboTarget.bind();
 	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
 	GL.clear(0, 0, 0, 0);
-	this._vSim.render(this._fboCurrent.getTexture() );
+	this._vSim.render(this._fboCurrent.getTexture(), this._dots );
 	this._fboTarget.unbind();
 
 
@@ -99,20 +118,25 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	// GL.clear(0, 0, 0, 1);
 	this.updateFbo();
 	GL.setViewport(0, 0, GL.width, GL.height);
 	this._getSoundData();
 	
-	this._vAxis.render();
+	// this._vAxis.render();
 	// this._vDotPlane.render();
-	this._vRender.render(this._fboCurrent.getTexture());
-
+	
+	this._vLight.render();
+	for(var i=0; i<this._dots.length; i++) {
+		this._vDot.render(this._dots[i].update(), this.textureParticle);
+	}
+	this._vRender.render(this._fboCurrent.getTexture(), this.textureParticle);
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
-
-	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	GL.setViewport(0, 0, 256, 256);
 	// this._vCopy.render(this._fboCurrent.getTexture());
+	// this._vCopy.render(this.textureParticle);
 };
 
 
@@ -144,8 +168,18 @@ p._getSoundData = function() {
 		this.easeSum.value = 0;
 	}
 
-	this.sum -= this.sum * .1;
+
+	// this.sum -= this.sum * .15;
+	this.sum += -this.sum * .25;
 	if(this.sum < 0) this.sum = 0;
+	
+	// console.log(this.sum);
+	if(this.sum > this.max) {
+		this.max = this.sum;
+	}
+
+	var max = 150;
+	params.sum = Math.min(this.sum, max)/max;
 };
 
 p.resize = function() {

@@ -6,7 +6,7 @@ html, body {
   overflow: hidden;
   position: static;
   background: #424242;
-  background: radial-gradient(ellipse at center, #424242 0%, black 100%);
+  background: radial-gradient(ellipse at center, #212121 0%, black 100%);
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#424242', endColorstr='#000000',GradientType=1 ); }
 
 html {
