@@ -7,7 +7,7 @@ window.params = {
 	numParticles:128,
 	sphereSize:100,
 	sum:0,
-	numDots:5
+	numDots:3
 };
 
 (function() {

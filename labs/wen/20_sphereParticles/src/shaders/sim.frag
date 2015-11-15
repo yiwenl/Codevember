@@ -4,7 +4,7 @@ precision mediump float;
 uniform sampler2D texture;
 varying vec2 vTextureCoord;
 
-const int NUM_DOTS = 5;
+const int NUM_DOTS = 3;
 uniform vec4 dots[NUM_DOTS];
 uniform float radius[NUM_DOTS];
 
@@ -104,12 +104,12 @@ void main(void) {
 			float ax = snoise(pos.xyz * posOffset * mix(extra.x, 1.0, mixOffset) + time);
 			float ay = snoise(pos.yzx * posOffset * mix(extra.y, 1.0, mixOffset) + time);
 			float az = snoise(pos.zxy * posOffset * mix(extra.z, 1.0, mixOffset) + time);
-			vel += vec3(ax, ay, az) * (.02-sound0*0.175);
+			vel += vec3(ax, ay, az) * (.02+sound0*0.1);
 
 
 			for(int i =0; i<NUM_DOTS; i++) {
 				vec3 posDot = dots[i].xyz;
-				float r = dots[i].w * (1.0 +sound0 * 30.0);
+				float r = dots[i].w * (1.0 +sound0 * 10.0);
 				float d = distance(pos, posDot);
 				if(d < r) {
 					vec3 dir = normalize(pos - posDot);
