@@ -32,6 +32,15 @@ function bundle() {
     return b;
 }
 
+function bundleProd() {
+	return bundle()
+	.pipe(uglify())
+	.pipe(gulp.dest('./dist/bundle/'))
+	.pipe(reload({stream: true}));
+}
+
+gulp.task('bundleProd', bundleProd);
+
 gulp.task('watch', function() {
 	gulp.watch('./src/scss/*.scss', ['sass']);
 });
@@ -68,3 +77,4 @@ gulp.task('browser-sync', function() {
 });
 
 gulp.task('default', ['browserify', 'sass', 'browser-sync', 'watch']);
+gulp.task('build', ['bundleProd', 'sass', 'browser-sync', 'watch']);

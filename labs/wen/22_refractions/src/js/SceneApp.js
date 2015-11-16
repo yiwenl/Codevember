@@ -27,7 +27,7 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/Oscillate.mp3'],
+	    url: ['assets/audio/02.mp3'],
 	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
@@ -62,7 +62,7 @@ p.render = function() {
 	this.count += .01;
 	this._getSoundData();
 	// console.log(params.currSum);
-	this.camera._ry.value += -params.sum - .025;
+	this.camera._ry.value += -params.sum*.1 - .01;
 	this.camera._rx.value = Math.sin(this.count) * .2;
 	GL.setMatrices(this.camera);
 	GL.rotate(this.sceneRotation.matrix);
