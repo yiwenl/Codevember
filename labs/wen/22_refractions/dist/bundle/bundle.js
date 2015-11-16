@@ -116,7 +116,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: .1,
+	    volume: 1.,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
