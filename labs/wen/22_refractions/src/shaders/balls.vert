@@ -46,7 +46,7 @@ vec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) {
 }
 
 void main(void) {
-	vec3 pos = aVertexPosition*scale*(1.0+frequency*1.0) + position;
+	vec3 pos = aVertexPosition*scale*(1.0+frequency*.5) + position;
 	vec4 mvPosition = uMVMatrix * vec4(pos, 1.0);
     gl_Position = uPMatrix * mvPosition;
     vTextureCoord = aTextureCoord;

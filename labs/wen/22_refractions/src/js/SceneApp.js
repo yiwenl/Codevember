@@ -27,8 +27,8 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/02.mp3'],
-	    volume: 1.0,
+	    url: ['assets/audio/Oscillate.mp3'],
+	    volume: .1,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -42,20 +42,21 @@ p._initTextures = function() {
 	this.textureLight = new bongiovi.GLTexture(images.light);
 	console.log('Init Textures');
 
-	this._fboBg = new bongiovi.FrameBuffer(GL.width, GL.height);
-	this._fboLight = new bongiovi.FrameBuffer(GL.width, GL.height);
-	this._fboNormal = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboBg        = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboLight     = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboNormal    = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboOrgNormal = new bongiovi.FrameBuffer(GL.width/2, GL.height/2);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
-	this._vAxis = new bongiovi.ViewAxis();
+	this._vAxis     = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
-	this._vCopy = new bongiovi.ViewCopy();
-	this._vBg = new ViewBg();
-	this._vBalls = new ViewBalls();
-	this._vCubes = new ViewCubes();
-	this._vPost = new ViewPost();
+	this._vCopy     = new bongiovi.ViewCopy();
+	this._vBg       = new ViewBg();
+	this._vBalls    = new ViewBalls();
+	this._vCubes    = new ViewCubes();
+	this._vPost     = new ViewPost();
 };
 
 p.render = function() {
@@ -68,18 +69,25 @@ p.render = function() {
 	GL.rotate(this.sceneRotation.matrix);
 	this._fboLight.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight, this.frequencies);
-	this._vCubes.render(this.textureLight, this.frequencies);
+	this._vBalls.render(this.textureLight, this.frequencies, 0.0);
+	this._vCubes.render(this.textureLight, this.frequencies, 0.0);
 	this._fboLight.unbind();
 
 	this._fboNormal.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight, this.frequencies, true);
-	this._vCubes.render(this.textureLight, this.frequencies, true);
+	this._vBalls.render(this.textureLight, this.frequencies, .5);
+	this._vCubes.render(this.textureLight, this.frequencies, .5);
 	this._fboNormal.unbind();
 
+	GL.setViewport(0, 0, this._fboOrgNormal.width, this._fboOrgNormal.height);
+	this._fboOrgNormal.bind();
+	GL.clear(0, 0, 0, 0);
+	this._vBalls.render(this.textureLight, this.frequencies, 1.0);
+	this._vCubes.render(this.textureLight, this.frequencies, 1.0);
+	this._fboOrgNormal.unbind();
 
 
+	GL.setViewport(0, 0, GL.width, GL.height);
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 	this._fboBg.bind();
@@ -91,11 +99,10 @@ p.render = function() {
 	GL.clear(0, 0, 0, 0);
 	gl.disable(gl.DEPTH_TEST);
 	this._vCopy.render(this._fboBg.getTexture());
-	// this._vCopy.render(this._fboLight.getTexture());
-	
-	this._vPost.render(this._fboLight.getTexture(), this._fboNormal.getTexture(), this._fboBg.getTexture());
+	this._vPost.render(this._fboLight.getTexture(), this._fboNormal.getTexture(), this._fboBg.getTexture(), this._fboOrgNormal.getTexture());
 
 	// GL.setViewport(0, 0, 256, 256/GL.aspectRatio);
+	// this._vCopy.render(this._fboOrgNormal.getTexture());
 	// this._vCopy.render(this._fboNormal.getTexture());
 	gl.enable(gl.DEPTH_TEST);
 };
@@ -148,9 +155,10 @@ p.resize = function() {
 	GL.setSize(window.innerWidth, window.innerHeight);
 	this.camera.resize(GL.aspectRatio);
 
-	this._fboBg = new bongiovi.FrameBuffer(GL.width, GL.height);
-	this._fboLight = new bongiovi.FrameBuffer(GL.width, GL.height);
-	this._fboNormal = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboBg        = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboLight     = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboNormal    = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this._fboOrgNormal = new bongiovi.FrameBuffer(GL.width/2, GL.height/2);
 };
 
 module.exports = SceneApp;

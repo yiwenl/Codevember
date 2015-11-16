@@ -17,7 +17,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture, textureNormal, textureBg) {
+p.render = function(texture, textureNormal, textureBg, textureOrgNormal) {
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
 	texture.bind(0);
@@ -25,6 +25,8 @@ p.render = function(texture, textureNormal, textureBg) {
 	textureNormal.bind(1);
 	this.shader.uniform("textureBg", "uniform1i", 2);
 	textureBg.bind(2);
+	this.shader.uniform("textureOrgNormal", "uniform1i", 3);
+	textureOrgNormal.bind(3);
 	GL.draw(this.mesh);
 };
 

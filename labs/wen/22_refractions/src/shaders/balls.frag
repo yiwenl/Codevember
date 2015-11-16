@@ -24,11 +24,16 @@ vec3 envLight(vec3 eye, vec3 normal) {
     return color.rrr;
 }
 
+
 void main(void) {
 	vec3 env = envLight(vEye, vNormal);
+    
     gl_FragColor = vec4(env, 1.0);
-
-    if(exportNormal > 0.0) {
-    	gl_FragColor.rgb = vRotateNormal * .5 + .5;
+    if(exportNormal <0.3) {
+        // gl_FragColor = vec4(env, 1.0);
+    } else if(exportNormal < .7) {
+        gl_FragColor.rgb = vRotateNormal * .5 + .5;
+    } else {
+        gl_FragColor.rgb = vNormal * .5 + .5;
     }
 }

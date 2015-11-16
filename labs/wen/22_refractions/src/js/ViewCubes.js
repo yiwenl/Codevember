@@ -25,10 +25,9 @@ p._init = function() {
 };
 
 p.render = function(texture, frequencies, exportNormal) {
-	exportNormal = exportNormal === undefined ? false : exportNormal;
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
-	this.shader.uniform("exportNormal", "uniform1f", exportNormal ? 1 : 0);
+	this.shader.uniform("exportNormal", "uniform1f", exportNormal);
 	texture.bind(0);
 
 	for(var i=0; i<this._dots.length; i++) {
