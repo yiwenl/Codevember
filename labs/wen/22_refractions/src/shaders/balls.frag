@@ -10,12 +10,16 @@ varying vec3 vNormal;
 varying vec3 vRotateNormal;
 varying vec3 vEye;
 
+float contrast(float value, float s) {
+    return .5 + (value - .5) * s;
+}
+
 vec3 envLight(vec3 eye, vec3 normal) {
 	vec3 r = reflect( eye, normal );
     float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
     vec2 vN = r.xy / m + .5;
     vec3 color = texture2D(texture, vN).rgb;
-    color.r = pow(color.r+.2, 3.0);
+    color.r = pow(color.r, 10.0);
 
     return color.rrr;
 }

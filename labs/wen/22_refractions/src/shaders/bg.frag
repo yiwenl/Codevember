@@ -85,7 +85,7 @@ uniform float sound0;
 void main(void) {
 	vec2 uv = vTextureCoord.xy;
 	uv = rotate(uv, time * .1);
-	float g = snoise(vec3(uv.yy * (10.0-sound0*4.0), time));
+	float g = snoise(vec3(uv.yy * (10.0-sound0*1.0), time));
 	g = smoothstep(.25, .26, g);
     gl_FragColor = vec4(g, g, g, 1.0);
     // gl_FragColor = vec4(g, g, g, 1.0);

@@ -19,7 +19,7 @@ p._init = function() {
 };
 
 p.render = function() {
-	this.time += .01 + params.sum * .01;
+	this.time += .01 + params.sum * .03;
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.time);
 	this.shader.uniform("sound0", "uniform1f", params.currSum);
