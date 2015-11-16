@@ -13,6 +13,7 @@ uniform vec3 position;
 uniform float scale;
 uniform vec3 axis;
 uniform float angle;
+uniform float frequency;
 
 varying vec2 vTextureCoord;
 varying vec3 vNormal;
@@ -45,7 +46,7 @@ vec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) {
 }
 
 void main(void) {
-	vec3 pos = aVertexPosition*scale + position;
+	vec3 pos = aVertexPosition*scale*(1.0+frequency*1.0) + position;
 	vec4 mvPosition = uMVMatrix * vec4(pos, 1.0);
     gl_Position = uPMatrix * mvPosition;
     vTextureCoord = aTextureCoord;

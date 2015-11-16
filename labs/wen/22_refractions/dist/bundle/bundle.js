@@ -4,7 +4,7 @@ window.bongiovi = require("./libs/bongiovi.js");
 window.Sono     = require("./libs/sono.min.js");
 // var dat = require("dat-gui");
 window.params = {
-	numBalls:10,
+	numBalls:7,
 	sum:0,
 	currSum:0
 };
@@ -65,7 +65,7 @@ function Dot() {
 	this.angle = Math.random() * Math.PI * 2.0;
 	this.speed = random(.01, .02) * .2;
 	this.pos = vec3.fromValues(random(-1, 1), random(-.25, .25), random(-1, 1));
-	vec3.scale(this.pos, this.pos, random(10, 300));
+	vec3.scale(this.pos, this.pos, random(10, 200));
 	this.finalPos = vec3.create();
 	this.quat = quat.create();
 	this.radius = random(.2, 1.1);
@@ -156,14 +156,14 @@ p.render = function() {
 	GL.rotate(this.sceneRotation.matrix);
 	this._fboLight.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight);
-	this._vCubes.render(this.textureLight);
+	this._vBalls.render(this.textureLight, this.frequencies);
+	this._vCubes.render(this.textureLight, this.frequencies);
 	this._fboLight.unbind();
 
 	this._fboNormal.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight, true);
-	this._vCubes.render(this.textureLight, true);
+	this._vBalls.render(this.textureLight, this.frequencies, true);
+	this._vCubes.render(this.textureLight, this.frequencies, true);
 	this._fboNormal.unbind();
 
 
@@ -195,8 +195,7 @@ p._getSoundData = function() {
 		return;
 	}
 
-	var f = this.analyser.getFrequencies();
-
+	var f = this.frequencies;
 	var sum = 0;
 	var max = 150;
 
@@ -253,7 +252,7 @@ var Dot = require("./Dot");
 
 function ViewBalls() {
 
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// balls.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 position;\nuniform float scale;\nuniform vec3 axis;\nuniform float angle;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\n\nvec2 rotate(vec2 p, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * p;\n}\n\nvec4 quat_from_axis_angle(vec3 axis, float angle) { \n\tvec4 qr;\n\tfloat half_angle = (angle * 0.5) * 3.14159 / 180.0;\n\tqr.x = axis.x * sin(half_angle);\n\tqr.y = axis.y * sin(half_angle);\n\tqr.z = axis.z * sin(half_angle);\n\tqr.w = cos(half_angle);\n\treturn qr;\n}\n\n\nvec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) { \n\tvec4 q = quat_from_axis_angle(axis, angle);\n\tvec3 v = position.xyz;\n\treturn v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition*scale + position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = normalMatrix * normalize(aVertexPosition);\n    vEye = normalize(mvPosition.xyz);\n\n    vRotateNormal = vNormal;\n    vRotateNormal.xy = rotate(vNormal.xy, angle);\n    vRotateNormal.yz = rotate(vNormal.yz, angle * .25);\n}", "#define GLSLIFY 1\n\n// balls.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform float exportNormal;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\nfloat contrast(float value, float s) {\n    return .5 + (value - .5) * s;\n}\n\nvec3 envLight(vec3 eye, vec3 normal) {\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vec3 color = texture2D(texture, vN).rgb;\n    color.r = pow(color.r, 10.0);\n\n    return color.rrr;\n}\n\nvoid main(void) {\n\tvec3 env = envLight(vEye, vNormal);\n    gl_FragColor = vec4(env, 1.0);\n\n    if(exportNormal > 0.0) {\n    \tgl_FragColor.rgb = vRotateNormal * .5 + .5;\n    }\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// balls.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 position;\nuniform float scale;\nuniform vec3 axis;\nuniform float angle;\nuniform float frequency;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\n\nvec2 rotate(vec2 p, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * p;\n}\n\nvec4 quat_from_axis_angle(vec3 axis, float angle) { \n\tvec4 qr;\n\tfloat half_angle = (angle * 0.5) * 3.14159 / 180.0;\n\tqr.x = axis.x * sin(half_angle);\n\tqr.y = axis.y * sin(half_angle);\n\tqr.z = axis.z * sin(half_angle);\n\tqr.w = cos(half_angle);\n\treturn qr;\n}\n\n\nvec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) { \n\tvec4 q = quat_from_axis_angle(axis, angle);\n\tvec3 v = position.xyz;\n\treturn v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition*scale*(1.0+frequency*1.0) + position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = normalMatrix * normalize(aVertexPosition);\n    vEye = normalize(mvPosition.xyz);\n\n    vRotateNormal = vNormal;\n    vRotateNormal.xy = rotate(vNormal.xy, angle);\n    vRotateNormal.yz = rotate(vNormal.yz, angle * .25);\n}", "#define GLSLIFY 1\n\n// balls.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform float exportNormal;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\nfloat contrast(float value, float s) {\n    return .5 + (value - .5) * s;\n}\n\nvec3 envLight(vec3 eye, vec3 normal) {\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vec3 color = texture2D(texture, vN).rgb;\n    color.r = pow(color.r, 10.0);\n\n    return color.rrr;\n}\n\nvoid main(void) {\n\tvec3 env = envLight(vEye, vNormal);\n    gl_FragColor = vec4(env, 1.0);\n\n    if(exportNormal > 0.0) {\n    \tgl_FragColor.rgb = vRotateNormal * .5 + .5;\n    }\n}");
 }
 
 var p = ViewBalls.prototype = new bongiovi.View();
@@ -271,7 +270,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createSphere(50, 36);
 };
 
-p.render = function(texture, exportNormal) {
+p.render = function(texture, frequencies, exportNormal) {
 	exportNormal = exportNormal === undefined ? false : exportNormal;
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
@@ -284,6 +283,7 @@ p.render = function(texture, exportNormal) {
 		this.shader.uniform("axis", "uniform3fv", d.axis);
 		this.shader.uniform("angle", "uniform1f", d.angle);
 		this.shader.uniform("scale", "uniform1f", d.radius);
+		this.shader.uniform("frequency", "uniform1f", frequencies ? frequencies[i*5]/255 : 0);
 		this.shader.uniform("normalMatrix", "uniformMatrix3fv", GL.normalMatrix)
 		GL.draw(this.mesh);
 	}
@@ -330,7 +330,7 @@ var gl;
 var Dot = require("./Dot");
 
 function ViewCubes() {
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// cubes.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 position;\nuniform float scale;\nuniform vec3 axis;\nuniform float angle;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\n\nvec2 rotate(vec2 p, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * p;\n}\n\nvec4 quat_from_axis_angle(vec3 axis, float angle) { \n\tvec4 qr;\n\tfloat half_angle = (angle * 0.5) * 3.14159 / 180.0;\n\tqr.x = axis.x * sin(half_angle);\n\tqr.y = axis.y * sin(half_angle);\n\tqr.z = axis.z * sin(half_angle);\n\tqr.w = cos(half_angle);\n\treturn qr;\n}\n\n\nvec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) { \n\tvec4 q = quat_from_axis_angle(axis, angle);\n\tvec3 v = position.xyz;\n\treturn v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition*scale;\n\tpos = rotate_vertex_position(pos, axis, angle*20.0);\n\tpos +=  position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vec3 N = rotate_vertex_position(aNormal, axis, angle*20.0);\n    vNormal = normalMatrix * normalize(N);\n    vEye = normalize(mvPosition.xyz);\n\n    vRotateNormal = vNormal;\n    vRotateNormal.xy = rotate(vNormal.xy, angle);\n    vRotateNormal.yz = rotate(vNormal.yz, angle * .25);\n}", "#define GLSLIFY 1\n\n// balls.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform float exportNormal;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\nfloat contrast(float value, float s) {\n    return .5 + (value - .5) * s;\n}\n\nvec3 envLight(vec3 eye, vec3 normal) {\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vec3 color = texture2D(texture, vN).rgb;\n    color.r = pow(color.r, 10.0);\n\n    return color.rrr;\n}\n\nvoid main(void) {\n\tvec3 env = envLight(vEye, vNormal);\n    gl_FragColor = vec4(env, 1.0);\n\n    if(exportNormal > 0.0) {\n    \tgl_FragColor.rgb = vRotateNormal * .5 + .5;\n    }\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// cubes.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 position;\nuniform float scale;\nuniform vec3 axis;\nuniform float angle;\nuniform float frequency;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\n\nvec2 rotate(vec2 p, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * p;\n}\n\nvec4 quat_from_axis_angle(vec3 axis, float angle) { \n\tvec4 qr;\n\tfloat half_angle = (angle * 0.5) * 3.14159 / 180.0;\n\tqr.x = axis.x * sin(half_angle);\n\tqr.y = axis.y * sin(half_angle);\n\tqr.z = axis.z * sin(half_angle);\n\tqr.w = cos(half_angle);\n\treturn qr;\n}\n\n\nvec3 rotate_vertex_position(vec3 position, vec3 axis, float angle) { \n\tvec4 q = quat_from_axis_angle(axis, angle);\n\tvec3 v = position.xyz;\n\treturn v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition*scale*(1.0+frequency*1.1);\n\tpos = rotate_vertex_position(pos, axis, angle*20.0);\n\tpos += position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vec3 N = rotate_vertex_position(aNormal, axis, angle*20.0);\n    vNormal = normalMatrix * normalize(N);\n    vEye = normalize(mvPosition.xyz);\n\n    vRotateNormal = vNormal;\n    vRotateNormal.xy = rotate(vNormal.xy, angle);\n    vRotateNormal.yz = rotate(vNormal.yz, angle * .25);\n}", "#define GLSLIFY 1\n\n// balls.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform float exportNormal;\nvarying vec3 vNormal;\nvarying vec3 vRotateNormal;\nvarying vec3 vEye;\n\nfloat contrast(float value, float s) {\n    return .5 + (value - .5) * s;\n}\n\nvec3 envLight(vec3 eye, vec3 normal) {\n\tvec3 r = reflect( eye, normal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n    vec3 color = texture2D(texture, vN).rgb;\n    color.r = pow(color.r, 10.0);\n\n    return color.rrr;\n}\n\nvoid main(void) {\n\tvec3 env = envLight(vEye, vNormal);\n    gl_FragColor = vec4(env, 1.0);\n\n    if(exportNormal > 0.0) {\n    \tgl_FragColor.rgb = vRotateNormal * .5 + .5;\n    }\n}");
 }
 
 var p = ViewCubes.prototype = new bongiovi.View();
@@ -348,7 +348,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createCube(50, 50, 50, true);
 };
 
-p.render = function(texture, exportNormal) {
+p.render = function(texture, frequencies, exportNormal) {
 	exportNormal = exportNormal === undefined ? false : exportNormal;
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
@@ -361,6 +361,7 @@ p.render = function(texture, exportNormal) {
 		this.shader.uniform("axis", "uniform3fv", d.axis);
 		this.shader.uniform("angle", "uniform1f", d.angle);
 		this.shader.uniform("scale", "uniform1f", d.radius);
+		this.shader.uniform("frequency", "uniform1f", frequencies ? frequencies[i*5+params.numBalls]/255 : 0);
 		this.shader.uniform("normalMatrix", "uniformMatrix3fv", GL.normalMatrix)
 		GL.draw(this.mesh);
 	}

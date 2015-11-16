@@ -68,14 +68,14 @@ p.render = function() {
 	GL.rotate(this.sceneRotation.matrix);
 	this._fboLight.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight);
-	this._vCubes.render(this.textureLight);
+	this._vBalls.render(this.textureLight, this.frequencies);
+	this._vCubes.render(this.textureLight, this.frequencies);
 	this._fboLight.unbind();
 
 	this._fboNormal.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vBalls.render(this.textureLight, true);
-	this._vCubes.render(this.textureLight, true);
+	this._vBalls.render(this.textureLight, this.frequencies, true);
+	this._vCubes.render(this.textureLight, this.frequencies, true);
 	this._fboNormal.unbind();
 
 
@@ -107,8 +107,7 @@ p._getSoundData = function() {
 		return;
 	}
 
-	var f = this.analyser.getFrequencies();
-
+	var f = this.frequencies;
 	var sum = 0;
 	var max = 150;
 

@@ -25,7 +25,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createSphere(50, 36);
 };
 
-p.render = function(texture, exportNormal) {
+p.render = function(texture, frequencies, exportNormal) {
 	exportNormal = exportNormal === undefined ? false : exportNormal;
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
@@ -38,6 +38,7 @@ p.render = function(texture, exportNormal) {
 		this.shader.uniform("axis", "uniform3fv", d.axis);
 		this.shader.uniform("angle", "uniform1f", d.angle);
 		this.shader.uniform("scale", "uniform1f", d.radius);
+		this.shader.uniform("frequency", "uniform1f", frequencies ? frequencies[i*5]/255 : 0);
 		this.shader.uniform("normalMatrix", "uniformMatrix3fv", GL.normalMatrix)
 		GL.draw(this.mesh);
 	}

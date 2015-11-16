@@ -11,7 +11,7 @@ function Dot() {
 	this.angle = Math.random() * Math.PI * 2.0;
 	this.speed = random(.01, .02) * .2;
 	this.pos = vec3.fromValues(random(-1, 1), random(-.25, .25), random(-1, 1));
-	vec3.scale(this.pos, this.pos, random(10, 300));
+	vec3.scale(this.pos, this.pos, random(10, 200));
 	this.finalPos = vec3.create();
 	this.quat = quat.create();
 	this.radius = random(.2, 1.1);
