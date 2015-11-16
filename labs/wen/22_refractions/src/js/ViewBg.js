@@ -22,6 +22,7 @@ p.render = function() {
 	this.time += .01;
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.time);
+	this.shader.uniform("sound0", "uniform1f", params.currSum);
 	GL.draw(this.mesh);
 };
 

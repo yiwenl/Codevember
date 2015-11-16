@@ -15,7 +15,7 @@ vec3 envLight(vec3 eye, vec3 normal) {
     float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
     vec2 vN = r.xy / m + .5;
     vec3 color = texture2D(texture, vN).rgb;
-    color.r = pow(color.r, 2.0);
+    color.r = pow(color.r+.2, 3.0);
 
     return color.rrr;
 }

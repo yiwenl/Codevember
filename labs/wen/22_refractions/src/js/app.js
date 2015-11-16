@@ -1,8 +1,11 @@
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
+window.Sono     = require("./libs/sono.min.js");
 // var dat = require("dat-gui");
 window.params = {
-	numBalls:10
+	numBalls:10,
+	sum:0,
+	currSum:0
 };
 
 

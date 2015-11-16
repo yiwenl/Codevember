@@ -10,7 +10,7 @@ function Dot() {
 	vec3.normalize(this.axis, this.axis);
 	this.angle = Math.random() * Math.PI * 2.0;
 	this.speed = random(.01, .02) * .2;
-	this.pos = vec3.fromValues(random(-1, 1), random(-.5, .5), random(-1, 1));
+	this.pos = vec3.fromValues(random(-1, 1), random(-.25, .25), random(-1, 1));
 	vec3.scale(this.pos, this.pos, random(10, 300));
 	this.finalPos = vec3.create();
 	this.quat = quat.create();
