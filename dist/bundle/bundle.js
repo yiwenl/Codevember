@@ -320,6 +320,10 @@ var Model = [
 	{
 		path:"labs/wen/20_sphereParticles/dist/index.html",
 		cover:"dist/assets/covers/wen13.jpg"
+	},
+	{
+		path:"labs/wen/22_refractions/dist/index.html",
+		cover:"dist/assets/covers/wen14.jpg"
 	}
 ];
 
