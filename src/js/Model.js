@@ -71,6 +71,10 @@ var Model = [
 	{
 		path:"labs/wen/22_refractions/dist/index.html",
 		cover:"dist/assets/covers/wen14.jpg"
+	},
+	{
+		path:"labs/wen/23_breakingSphere/dist/index.html",
+		cover:"dist/assets/covers/wen15.jpg"
 	}
 ];
 
