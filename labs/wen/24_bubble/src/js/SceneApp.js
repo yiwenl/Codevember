@@ -4,6 +4,7 @@ var GL = bongiovi.GL, gl;
 
 var ViewSphere = require("./ViewSphere");
 var ViewPost = require("./ViewPost");
+var ViewDot = require("./ViewDot");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -50,6 +51,7 @@ p._initViews = function() {
 	this._vCopy = new bongiovi.ViewCopy();
 	this._vSphere = new ViewSphere();
 	this._vPost = new ViewPost();
+	this._vDot = new ViewDot();
 };
 
 p.render = function() {

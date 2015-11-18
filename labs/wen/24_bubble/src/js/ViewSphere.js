@@ -22,7 +22,7 @@ p._init = function() {
 	var positions = [];
 	var coords = [];
 	var indices = [];
-	var numSeg = 100;
+	var numSeg = 60;
 	var index = 0;
 
 	for(var i=0; i<numSeg; i++) {

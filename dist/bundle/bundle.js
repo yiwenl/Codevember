@@ -328,6 +328,10 @@ var Model = [
 	{
 		path:"labs/wen/23_breakingSphere/dist/index.html",
 		cover:"dist/assets/covers/wen15.jpg"
+	},
+	{
+		path:"labs/wen/25_jellyFish/dist/index.html",
+		cover:"dist/assets/covers/wen17.jpg"
 	}
 ];
 

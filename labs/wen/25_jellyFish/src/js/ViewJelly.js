@@ -6,7 +6,9 @@ var glslify = require("glslify");
 
 function ViewJelly() {
 	this.time = Math.random() * 0xFF;
-	bongiovi.View.call(this, glslify("../shaders/jelly.vert"), glslify("../shaders/jelly.frag"));
+	var fs = glslify("../shaders/jelly.frag");
+	fs = fs.replace('{{numPoints}}', Math.floor(params.numDots));
+	bongiovi.View.call(this, glslify("../shaders/jelly.vert"), fs);
 }
 
 var p = ViewJelly.prototype = new bongiovi.View();
@@ -44,24 +46,30 @@ p._init = function() {
 		}
 	}
 
-	console.log(positions.length, indices.length);
+	// console.log(positions.length, indices.length);
 	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.TRIANGLES);
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
 };
 
-p.render = function(texture) {
+p.render = function(dots, texture) {
 	this.time += .01;
 	this.shader.bind();
 
-	if(texture) {
-		this.shader.uniform("texture", "uniform1i", 0);
-		texture.bind(0);	
+	var points = [];
+	for(var i=0; i<dots.length; i++) {
+		var d = dots[i];
+		points.push(d.finalPos[0]);
+		points.push(d.finalPos[1]);
+		points.push(d.finalPos[2]);
 	}
 
 	this.shader.uniform("radius", "uniform1f", params.sphereSize);
 	this.shader.uniform("time", "uniform1f", this.time);
+	this.shader.uniform("points", "uniform3fv", points);
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
 	GL.draw(this.mesh);
 };
 

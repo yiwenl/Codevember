@@ -82,9 +82,15 @@ float snoise(float x, float y, float z){
 	return snoise(vec3(x, y, z));
 }
 
+float exponentialIn(float t) {
+  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));
+}
+
 vec3 getFinalPosition(vec3 v) {
 	float posOffset = .01;
 	float offset = 1.0-(v.y + radius) / radius / 2.0;
+	offset = pow(offset, 3.0);
+	// offset = exponentialIn(offset);
 	offset = mix(offset, 1.0, .1);
 	posOffset *= (1.0+offset);
 	float n = snoise(v*posOffset + time) * .2 * offset;

@@ -3,20 +3,30 @@
 window.bongiovi = require("./libs/bongiovi.js");
 var dat = require("dat-gui");
 window.params = {
-	sphereSize:100
+	sphereSize:100,
+	numDots:35
 };
 
 (function() {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = ["assets/map.jpg"];
+
+		l.load(a, this, this._onImageLoaded);
+	}
+
+	var p = App.prototype;
+
+
+	p._onImageLoaded = function(img) {
+		window.images = img;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -40,7 +50,7 @@ window.params = {
 
 
 new App();
-},{"./SceneApp":5,"./libs/bongiovi.js":7,"dat-gui":2}],2:[function(require,module,exports){
+},{"./SceneApp":6,"./libs/bongiovi.js":9,"dat-gui":2}],2:[function(require,module,exports){
 module.exports = require('./vendor/dat.gui')
 module.exports.color = require('./vendor/dat.color')
 },{"./vendor/dat.color":3,"./vendor/dat.gui":4}],3:[function(require,module,exports){
@@ -4461,15 +4471,63 @@ dat.utils.common),
 dat.dom.dom,
 dat.utils.common);
 },{}],5:[function(require,module,exports){
+// Dot.js
+
+var quat = bongiovi.glm.quat;
+var vec3 = bongiovi.glm.vec3;
+
+var random = function(min, max) { return min + Math.random() * (max - min);	}
+
+function Dot() {
+	this.time     = Math.random() * 0xFF;
+	this.axis     = vec3.fromValues(random(-1, 1), random(-.1, .1), random(-1, 1));
+	vec3.normalize(this.axis, this.axis);
+	this.angle    = Math.random() * Math.PI * 2.0;
+	this.speed    = random(.01, .02) * .75;
+	this.pos      = vec3.fromValues(random(-1, 1), random(-.25, .25), random(-1, 1));
+	this.radius   = random(params.sphereSize-30, params.sphereSize-40);
+	vec3.scale(this.pos, this.pos, this.radius);
+	this.finalPos = vec3.create();
+	this.quat     = quat.create();
+	// this.radius   = random(.2, 1.1);
+	this.update();
+}
+
+
+var p = Dot.prototype;
+
+p.update = function() {
+	this.angle += this.speed;
+	this.time += .01;
+	quat.setAxisAngle(this.quat, this.axis, this.angle);
+	vec3.transformQuat(this.finalPos, this.pos, this.quat);
+	vec3.normalize(this.finalPos, this.finalPos);
+	var r = this.radius + Math.sin(this.time) * 30.0;
+	vec3.scale(this.finalPos, this.finalPos, r);
+
+	return this.finalPos;
+};
+
+
+module.exports = Dot;
+},{}],6:[function(require,module,exports){
 // SceneApp.js
 
 var GL = bongiovi.GL, gl;
 var ViewJelly = require("./ViewJelly");
+var ViewDot = require("./ViewDot");
+var Dot = require("./Dot");
 
 function SceneApp() {
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
 	// gl.disable(gl.CULL_FACE);
+
+	this._dots = [];
+	for(var i=0; i<params.numDots; i++) {
+		var d = new Dot();
+		this._dots.push(d);
+	}
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -4479,6 +4537,7 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
+	this._textureMap = new bongiovi.GLTexture(images.map);
 };
 
 p._initViews = function() {
@@ -4487,13 +4546,23 @@ p._initViews = function() {
 	this._vDotPlane = new bongiovi.ViewDotPlane();
 
 	this._vJelly = new ViewJelly();
+	this._vDot = new ViewDot();
 };
 
 p.render = function() {
-	this._vAxis.render();
-	this._vDotPlane.render();
+	GL.clear(0, 0, 0, 0);
+	// this._vAxis.render();
+	// this._vDotPlane.render();
 
-	this._vJelly.render();
+	// gl.disable(gl.DEPTH_TEST);
+	for(var i=0; i<this._dots.length; i++) {
+		var dot = this._dots[i];
+		dot.update();
+		// this._vDot.render(dot.update());
+	}
+	// gl.enable(gl.DEPTH_TEST);
+
+	this._vJelly.render(this._dots, this._textureMap);
 };
 
 p.resize = function() {
@@ -4502,7 +4571,41 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewJelly":6}],6:[function(require,module,exports){
+},{"./Dot":5,"./ViewDot":7,"./ViewJelly":8}],7:[function(require,module,exports){
+// ViewDot.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewDot() {
+	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+}
+
+var p = ViewDot.prototype = new bongiovi.View();
+p.constructor = ViewDot;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var positions = [];
+	var coords = [];
+	var indices = []; 
+
+	this.mesh = bongiovi.MeshUtils.createSphere(3,24);
+};
+
+p.render = function(pos) {
+	this.shader.bind();
+	this.shader.uniform("position", "uniform3fv", pos || [0, 0, 0]);
+	this.shader.uniform("scale", "uniform3fv", [1,1,1]);
+	this.shader.uniform("color", "uniform3fv", [1,1,1]);
+	this.shader.uniform("opacity", "uniform1f", 1);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewDot;
+},{}],8:[function(require,module,exports){
 // ViewJelly.js
 
 var GL = bongiovi.GL;
@@ -4511,7 +4614,9 @@ var gl;
 
 function ViewJelly() {
 	this.time = Math.random() * 0xFF;
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// jelly.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform float radius;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nconst float PI = 3.141592657;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nvec3 getFinalPosition(vec3 v) {\n\tfloat posOffset = .01;\n\tfloat offset = 1.0-(v.y + radius) / radius / 2.0;\n\toffset = mix(offset, 1.0, .1);\n\tposOffset *= (1.0+offset);\n\tfloat n = snoise(v*posOffset + time) * .2 * offset;\n\tvec3 pos = v * (1.0+n);\n\tpos.y *= 1.1;\n\treturn pos;\n}\n\nvec3 getPosition(vec3 v) {\n\tvec3 pos = vec3(0.0);\n\n\tfloat rx = (v.y/v.z) * PI - PI*.5;\n\tfloat ry = (v.x/v.z) * PI * 2.0;\n\tpos.y = sin(rx) * radius;\n\tfloat r = cos(rx) * radius;\n\tpos.x = cos(ry) * r;\n\tpos.z = sin(ry) * r;\n\n\treturn pos;\n}\n\nvoid main(void) {\n\tvec3 pos       = getPosition(aVertexPosition);\n\tvec3 posRight  = getPosition(aVertexPosition+vec3(1.0, 0.0, 0.0));\n\tvec3 posBottom = getPosition(aVertexPosition+vec3(0.0, 1.0, 0.0));\n\tpos            = getFinalPosition(pos);\n\tposRight       = getFinalPosition(posRight);\n\tposBottom      = getFinalPosition(posBottom);\n\t\n\tvec3 vRight    = posRight - pos;\n\tvec3 vBottom   = posBottom - pos;\n\tvNormal        = normalize(cross(vBottom, vRight));\n\t\n\t\n\tgl_Position    = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n\tvTextureCoord  = aTextureCoord;\n\t\n\tvVertex        = pos;\n    \n}", "#define GLSLIFY 1\n\n// jelly.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\n// uniform sampler2D texture;\n\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvoid main(void) {\n    gl_FragColor = vec4(vNormal * .5 + .5, 1.0);\n}");
+	var fs = "#define GLSLIFY 1\n\n// jelly.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\nuniform sampler2D texture;\n\nconst int NUM_DOTS = {{numPoints}};\nuniform vec3 points[NUM_DOTS];\n\nvarying vec3 vNormal;\nvarying vec3 vVertex;\nconst float radius = 100.0;\n\nconst float fade = .92;\nconst vec3 light0 = vec3(200.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst vec3 light1 = vec3(-200.0, -200.0, 400.0);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nfloat exponentialIn(float t) {\n  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));\n}\n\nfloat diffuse(vec3 light, vec3 normal, float weight) {\n\tfloat lambert = max(dot(normalize(light), normal), 0.0);\n\treturn lambert * weight;\n}\n\nfloat diffuse(vec3 light, vec3 pos, vec3 normal, float weight) {\n\tvec3 distToLight = light-pos;\n\tvec3 dirToLight = normalize(distToLight);\n\tfloat dist = length(distToLight);\n\tfloat lambert = max(dot(dirToLight, normal), 0.0);\n\n\tfloat offset = 0.0;\n\tif(dist < radius) {\n\t\toffset = 1.0-dist/radius;\n\t}\n\toffset = exponentialIn(offset);\n\n\treturn lambert * weight * offset;\n}\n\n\nvoid main(void) {\n\n\tfloat grey = 0.0;\n\tfor(int i=0; i<NUM_DOTS; i++) {\n\t\tvec3 p = points[i];\n\t\tgrey += diffuse(p, vVertex, -vNormal, 1.0);\n\t}\n\n\tvec3 d0 = diffuse(light0, vNormal, .25) * lightColor0;\n\tvec3 d1 = diffuse(light1, vNormal, .15) * lightColor1;\n\tvec3 color = d0 + d1 + grey;\n\n\tfloat b = length(color) / length(vec3(1.0));\n\tvec2 uv = vec2(b, .5);\n\tvec3 colorMap = texture2D(texture, uv).rgb;\n\tcolorMap = mix(colorMap, color, .5);\n\n    gl_FragColor = vec4(colorMap, 1.0);\n}";
+	fs = fs.replace('{{numPoints}}', Math.floor(params.numDots));
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// jelly.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform float radius;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nconst float PI = 3.141592657;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nfloat exponentialIn(float t) {\n  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));\n}\n\nvec3 getFinalPosition(vec3 v) {\n\tfloat posOffset = .01;\n\tfloat offset = 1.0-(v.y + radius) / radius / 2.0;\n\toffset = pow(offset, 3.0);\n\t// offset = exponentialIn(offset);\n\toffset = mix(offset, 1.0, .1);\n\tposOffset *= (1.0+offset);\n\tfloat n = snoise(v*posOffset + time) * .2 * offset;\n\tvec3 pos = v * (1.0+n);\n\tpos.y *= 1.1;\n\treturn pos;\n}\n\nvec3 getPosition(vec3 v) {\n\tvec3 pos = vec3(0.0);\n\n\tfloat rx = (v.y/v.z) * PI - PI*.5;\n\tfloat ry = (v.x/v.z) * PI * 2.0;\n\tpos.y = sin(rx) * radius;\n\tfloat r = cos(rx) * radius;\n\tpos.x = cos(ry) * r;\n\tpos.z = sin(ry) * r;\n\n\treturn pos;\n}\n\nvoid main(void) {\n\tvec3 pos       = getPosition(aVertexPosition);\n\tvec3 posRight  = getPosition(aVertexPosition+vec3(1.0, 0.0, 0.0));\n\tvec3 posBottom = getPosition(aVertexPosition+vec3(0.0, 1.0, 0.0));\n\tpos            = getFinalPosition(pos);\n\tposRight       = getFinalPosition(posRight);\n\tposBottom      = getFinalPosition(posBottom);\n\t\n\tvec3 vRight    = posRight - pos;\n\tvec3 vBottom   = posBottom - pos;\n\tvNormal        = normalize(cross(vBottom, vRight));\n\t\n\t\n\tgl_Position    = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n\tvTextureCoord  = aTextureCoord;\n\t\n\tvVertex        = pos;\n    \n}", fs);
 }
 
 var p = ViewJelly.prototype = new bongiovi.View();
@@ -4549,29 +4654,35 @@ p._init = function() {
 		}
 	}
 
-	console.log(positions.length, indices.length);
+	// console.log(positions.length, indices.length);
 	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.TRIANGLES);
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
 };
 
-p.render = function(texture) {
+p.render = function(dots, texture) {
 	this.time += .01;
 	this.shader.bind();
 
-	if(texture) {
-		this.shader.uniform("texture", "uniform1i", 0);
-		texture.bind(0);	
+	var points = [];
+	for(var i=0; i<dots.length; i++) {
+		var d = dots[i];
+		points.push(d.finalPos[0]);
+		points.push(d.finalPos[1]);
+		points.push(d.finalPos[2]);
 	}
 
 	this.shader.uniform("radius", "uniform1f", params.sphereSize);
 	this.shader.uniform("time", "uniform1f", this.time);
+	this.shader.uniform("points", "uniform3fv", points);
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
 	GL.draw(this.mesh);
 };
 
 module.exports = ViewJelly;
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";

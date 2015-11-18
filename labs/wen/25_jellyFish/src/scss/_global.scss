@@ -7,7 +7,15 @@ html, body {
 
 	overflow:hidden;
 	position: static;
-	background: #222222;
+	background: rgb(66,66,66);
+	background: -moz-radial-gradient(center, ellipse cover,  rgba(66,66,66,1) 0%, rgba(0,0,0,1) 100%);
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,rgba(66,66,66,1)), color-stop(100%,rgba(0,0,0,1)));
+	background: -webkit-radial-gradient(center, ellipse cover,  rgba(66,66,66,1) 0%,rgba(0,0,0,1) 100%);
+	background: -o-radial-gradient(center, ellipse cover,  rgba(66,66,66,1) 0%,rgba(0,0,0,1) 100%);
+	background: -ms-radial-gradient(center, ellipse cover,  rgba(66,66,66,1) 0%,rgba(0,0,0,1) 100%);
+	background: radial-gradient(ellipse at center,  rgba(66,66,66,1) 0%,rgba(0,0,0,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#424242', endColorstr='#000000',GradientType=1 );
+	/*background: black;*/
 }
 
 html {

@@ -62,20 +62,20 @@ vec3 getFinalPosition(vec3 posSphere, vec3 vertex) {
 
 void main(void) {
 	vec3 position = getPosition(aVertexPosition);
-	float gap = 1.0;
-	vec3 p1 = getPosition(aVertexPosition.x + gap, aVertexPosition.y, aVertexPosition.z);
-	vec3 p2 = getPosition(aVertexPosition.x, aVertexPosition.y + gap, aVertexPosition.z);
-	vec3 fp = getFinalPosition(position, aVertexPosition);
-	vec3 fp1 = getFinalPosition(p1, aVertexPosition + vec3(gap, 0.0, 0.0) );
-	vec3 fp2 = getFinalPosition(p2, aVertexPosition + vec3(0.0, gap, 0.0) );
+	float gap     = 1.0;
+	vec3 p1       = getPosition(aVertexPosition.x + gap, aVertexPosition.y, aVertexPosition.z);
+	vec3 p2       = getPosition(aVertexPosition.x, aVertexPosition.y + gap, aVertexPosition.z);
+	vec3 fp       = getFinalPosition(position, aVertexPosition);
+	vec3 fp1      = getFinalPosition(p1, aVertexPosition + vec3(gap, 0.0, 0.0) );
+	vec3 fp2      = getFinalPosition(p2, aVertexPosition + vec3(0.0, gap, 0.0) );
 
-	vec3 v1 = fp1 - fp;
-	vec3 v2 = fp2 - fp;
-
+	vec3 v1         = fp1 - fp;
+	vec3 v2         = fp2 - fp;
+	
 	vec4 mvPosition = uMVMatrix * vec4(fp, 1.0);
-    gl_Position = uPMatrix * mvPosition;
-    vTextureCoord = aTextureCoord;
-    vNormal = normalize( normalMatrix * cross(v2, v1) );
-
-    eye = normalize( mvPosition.rgb );
+	gl_Position     = uPMatrix * mvPosition;
+	vTextureCoord   = aTextureCoord;
+	vNormal         = normalize( normalMatrix * cross(v2, v1) );
+	
+	eye             = normalize( mvPosition.rgb );
 }
