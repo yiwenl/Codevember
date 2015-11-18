@@ -1,0 +1,27 @@
+# Max2Mtl Version 4.0 Mar 10th, 2001
+#
+newmtl 3_-_Default
+Ka  0.00 0.00 0.00
+Kd  1.00 1.00 1.00
+Ks  0.00 0.00 0.00
+d  1.00
+Ns  10.00
+illum 2
+#
+newmtl balloon_tip
+Ka  1.00 0.00 0.00
+Kd  1.00 0.00 0.00
+Ks  0.82 1.00 1.00
+d  1.00
+Ns  7.60
+illum 2
+#
+newmtl balloon
+Ka  1.00 0.00 0.00
+Kd  1.00 0.00 0.00
+Ks  0.82 1.00 1.00
+d  1.00
+Ns  7.60
+illum 2
+#
+# EOF
