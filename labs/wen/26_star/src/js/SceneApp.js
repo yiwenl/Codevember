@@ -17,8 +17,8 @@ function SceneApp() {
 
 	window.addEventListener("resize", this.resize.bind(this));
 
-	this.camera.lockRotation(false);
-	this.sceneRotation.lock(true);
+	// this.camera.lockRotation(false);
+	// this.sceneRotation.lock(true);
 
 	this.camera._rx.value = -.3;
 	this.camera._ry.value = -.1;
