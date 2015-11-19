@@ -5,7 +5,7 @@ var dat         = require("dat-gui");
 
 window.params = {
 	numParticles:256*2,
-	sphereSize:100
+	sphereSize:50
 };
 
 (function() {

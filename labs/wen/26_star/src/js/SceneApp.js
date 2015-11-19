@@ -11,6 +11,7 @@ function SceneApp() {
 	gl = GL.gl;
 	this.sum = 0;
 	this.easeSum = new bongiovi.EaseNumber(0, .25);
+	GL.enableAdditiveBlending();
 	// this._initSound();
 	bongiovi.Scene.call(this);
 
@@ -47,7 +48,8 @@ p._initSound = function() {
 p._initTextures = function() {
 	console.log('Init Textures');
 	if(!gl) gl = GL.gl;
-
+	this._textureParticle   = new bongiovi.GLTexture(images.particle);
+	this._textureColor		= new bongiovi.GLTexture(images.blue);
 	var num = params.numParticles;
 	var o = {
 		minFilter:gl.NEAREST,
@@ -101,15 +103,17 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	// this.camera._ry.value += .02;
 	GL.clear(0, 0, 0, 0)
 	this.updateFbo();
 	GL.setViewport(0, 0, GL.width, GL.height);
 	// this._getSoundData();
 	
-	this._vAxis.render();
-	this._vDotPlane.render();
+	// this._vAxis.render();
+	// this._vDotPlane.render();
 	this._vSphere.render();
-	this._vRender.render(this._fboCurrent.getTexture());
+	this._vRender.render(this._fboCurrent.getTexture(), this._textureParticle, this._textureColor);
+	
 
 
 	GL.setMatrices(this.cameraOtho);

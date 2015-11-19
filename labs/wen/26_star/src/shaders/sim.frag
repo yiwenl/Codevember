@@ -79,7 +79,6 @@ uniform float sphereSize;
 
 
 void main(void) {
-	float maxRadius = 250.0;
 
     if(vTextureCoord.y < .5) {
 		if(vTextureCoord.x < .5) {
@@ -91,7 +90,7 @@ void main(void) {
 			vec3 extra = texture2D(texture, uvExtra).rgb;
 			pos += vel;
 
-			float maxRadius = 150.0 + uvExtra.x * 100.0;
+			float maxRadius = 50.0 + uvExtra.x * 100.0;
 			if(length(pos) < sphereSize) {
 				pos = normalize(pos) * sphereSize;
 			} else if(length(pos) > maxRadius) {
@@ -100,7 +99,7 @@ void main(void) {
 			
 			gl_FragColor = vec4(pos, 1.0);
 		} else {
-			const float posOffset = .02;
+			const float posOffset = .04;
 
 			vec2 uvPos   = vTextureCoord + vec2(-.5, .0);
 			vec2 uvExtra = vTextureCoord + vec2(-.5, .5);
@@ -108,13 +107,13 @@ void main(void) {
 			vec3 vel     = texture2D(texture, vTextureCoord).rgb;
 			vec3 extra   = texture2D(texture, uvExtra).rgb;
 
-			const float mixOffset = .65;
+			const float mixOffset = .95;
 			float ax = snoise(pos.xyz * posOffset * mix(extra.x, 1.0, mixOffset) + time);
 			float ay = snoise(pos.yzx * posOffset * mix(extra.y, 1.0, mixOffset) + time);
 			float az = snoise(pos.zxy * posOffset * mix(extra.z, 1.0, mixOffset) + time);
-			vel += vec3(ax, ay, az) * .02;
-			vel += normalize(pos) * .003;
-			vel *= .976;
+			vel += vec3(ax, ay, az) * .04;
+			vel += normalize(pos) * .006;
+			vel *= .94;
 
 
 			gl_FragColor = vec4(vel, 1.0);	
