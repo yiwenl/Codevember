@@ -332,6 +332,10 @@ var Model = [
 	{
 		path:"labs/wen/25_jellyFish/dist/index.html",
 		cover:"dist/assets/covers/wen17.jpg"
+	},
+	{
+		path:"labs/wen/26_star/dist/index.html",
+		cover:"dist/assets/covers/wen18.jpg"
 	}
 ];
 
