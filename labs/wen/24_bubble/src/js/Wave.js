@@ -4,9 +4,9 @@ var random = function(min, max) { return min + Math.random() * (max - min);	}
 function Wave() {
 	this.center = [.5, .5];
 	this.waveFront = .0;
-	this.duration = random(11000, 5000);
-	this.waveLength = random(.1, .25);
-	this.waveHeight = random(1, 3) * 2;
+	this.duration = random(1000, 2000);
+	this.waveLength = random(.01, .02);
+	this.waveHeight = random(2, 4) ;
 	this.tween;
 }
 
