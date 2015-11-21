@@ -2,7 +2,9 @@
 window.bongiovi = require("./libs/bongiovi.js");
 // var dat = require("dat-gui");
 window.params = {
-	sphereSize:50
+	sphereSize:100,
+	ribbonWidth:1.5,
+	ribbonLength:100
 };
 
 
@@ -10,13 +12,20 @@ window.params = {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = ["assets/grd.jpg"];
+		l.load(a, this, this._onImageLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onImageLoaded = function(img) {
+		window.images = img;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");

@@ -3,7 +3,9 @@
 window.bongiovi = require("./libs/bongiovi.js");
 // var dat = require("dat-gui");
 window.params = {
-	sphereSize:50
+	sphereSize:100,
+	ribbonWidth:1.5,
+	ribbonLength:100
 };
 
 
@@ -11,13 +13,20 @@ window.params = {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+		var l = new bongiovi.SimpleImageLoader();
+		var a = ["assets/grd.jpg"];
+		l.load(a, this, this._onImageLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onImageLoaded = function(img) {
+		window.images = img;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -41,24 +50,28 @@ window.params = {
 
 
 new App();
-},{"./SceneApp":2,"./libs/bongiovi.js":5}],2:[function(require,module,exports){
+},{"./SceneApp":2,"./libs/bongiovi.js":8}],2:[function(require,module,exports){
 // SceneApp.js
 
-var GL = bongiovi.GL, gl;
+var GL         = bongiovi.GL, gl;
 var ViewSphere = require("./ViewSphere");
-var ViewDot = require("./ViewDot");
-var glm = bongiovi.glm;
-var vec3 = glm.vec3;
-var quat = glm.quat;
+var ViewDot    = require("./ViewDot");
+var ViewRibbon = require("./ViewRibbon");
+var ViewPost   = require("./ViewPost");
+var glm        = bongiovi.glm;
+var vec3       = glm.vec3;
+var quat       = glm.quat;
+var Utils      = require("./Utils");
 var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function SceneApp() {
 	gl = GL.gl;
-	
 
 	this.count = .01;
+	this.points = [];
+	this.lines = [];
 	
-	this.point = vec3.fromValues(params.sphereSize+5, 0, 0);
+	this.point = vec3.fromValues(params.sphereSize+10, 0, 0);
 	this.orgPoint = vec3.clone(this.point);
 	this.axis  = vec3.fromValues(random(-1, 1), random(-1, 1), random(-1, 1));
 	
@@ -78,20 +91,21 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
+	this.fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
+	this.texture = new bongiovi.GLTexture(images.grd);
 };
 
 p._initViews = function() {
-	console.log('Init Views');
-	this._vAxis = new bongiovi.ViewAxis();
-	this._vDotPlane = new bongiovi.ViewDotPlane();
-
 	this._vSphere = new ViewSphere();
 	this._vDot = new ViewDot();
+	this._vRibbon = new ViewRibbon();
+	this._vCopy = new bongiovi.ViewCopy();
+	this._vPost = new ViewPost();
 };
 
 p.render = function() {
 	this.count += .01;
-	this.angle += .05;
+	this.angle += .02;
 	this.axis[0] += Math.sin(this.count) * .1;
 	this.axis[1] -= Math.cos(this.count*2) * .1;
 	this.axis[2] += -Math.sin(this.count) * .1;
@@ -99,21 +113,100 @@ p.render = function() {
 	quat.setAxisAngle(this.quat, this.axis, this.angle);
 	vec3.transformQuat(this.point, this.orgPoint, this.quat);
 
+	this.points.push(vec3.clone(this.point));
+	if(this.points.length > params.ribbonLength) {
+		this.points.shift();
+	}
 
-	this._vAxis.render();
-	this._vDotPlane.render();
+	if(this.points.length < 3) return;
 
-	this._vSphere.render();
-	this._vDot.render(vec3.clone(this.point));
+
+	var l2 = Utils.getLinePoints(this.points, 10);
+	var l1 = Utils.getLinePoints(this.points, 5);
+	var l = Utils.getLinePoints(this.points);
+	this.lines[0] = Utils.getLinePoints(l2.left);
+	this.lines[1] = Utils.getLinePoints(l1.left);
+	this.lines[2] = l;
+	this.lines[3] = Utils.getLinePoints(l1.right);
+	this.lines[4] = Utils.getLinePoints(l2.right);
+
+
+
+	// this._vAxis.render();
+	// this._vDotPlane.render();
+	this.fboRender.bind();
+	GL.clear(0, 0, 0, 0);
+	this._vSphere.render(vec3.clone(this.point));
+	// this._vDot.render(vec3.clone(this.point));
+	gl.disable(gl.CULL_FACE);
+	for(var i=0; i<this.lines.length; i++) {
+		var line = this.lines[i];
+		this._vRibbon.render(line);	
+	}
+	this.fboRender.unbind();
+
+
+	gl.enable(gl.CULL_FACE);
+	GL.clear(0, 0, 0, 0);
+	GL.setMatrices(this.cameraOtho);
+	GL.rotate(this.rotationFront);
+	// this._vCopy.render(this.fboRender.getTexture());
+	this._vPost.render(this.fboRender.getTexture(), this.texture);
 };
 
 p.resize = function() {
+	this.fboRender = new bongiovi.FrameBuffer(GL.width, GL.height);
 	GL.setSize(window.innerWidth, window.innerHeight);
 	this.camera.resize(GL.aspectRatio);
 };
 
 module.exports = SceneApp;
-},{"./ViewDot":3,"./ViewSphere":4}],3:[function(require,module,exports){
+},{"./Utils":3,"./ViewDot":4,"./ViewPost":5,"./ViewRibbon":6,"./ViewSphere":7}],3:[function(require,module,exports){
+// Utils.js
+
+var glm = bongiovi.glm;
+var vec3 = glm.vec3;
+var mat4 = glm.mat4;
+var quat = glm.quat;
+
+var Utils = {};
+
+
+Utils.getLinePoints = function(points, width) {
+	width = width === undefined ? params.ribbonWidth : width;
+	var left = [];
+	var right = [];
+	var curr, next, dir = vec3.create(), axis = vec3.create(), q = quat.create();
+
+	for(var i=0; i<points.length-1; i++) {
+		curr = points[i];
+		next = points[i+1];
+		vec3.subtract(dir, next, curr);
+		vec3.normalize(axis, curr);
+		vec3.normalize(dir, dir);
+
+		var l = vec3.clone(dir);
+		vec3.scale(l, l, width);
+		quat.setAxisAngle(q, axis, -Math.PI/2);
+		vec3.transformQuat(l, l, q);
+		vec3.add(l, l, curr);
+		left.push(l);
+
+		var r = vec3.clone(dir);
+		vec3.scale(r, r, width);
+		quat.setAxisAngle(q, axis, Math.PI/2);
+		vec3.transformQuat(r, r, q);
+		vec3.add(r, r, curr);
+		right.push(r);
+	}
+
+
+	return {left:left, right:right};
+}
+
+
+module.exports = Utils;
+},{}],4:[function(require,module,exports){
 // ViewDot.js
 
 var GL = bongiovi.GL;
@@ -143,7 +236,99 @@ p.render = function(pos) {
 };
 
 module.exports = ViewDot;
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
+// ViewPost.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewPost() {
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision mediump float;\n\nuniform sampler2D texture;\nuniform sampler2D textureGrd;\nvarying vec2 vTextureCoord;\n\nvec3 blendOverlay(vec3 base, vec3 blend) {\n    return mix(1.0 - 2.0 * (1.0 - base) * (1.0 - blend), 2.0 * base * blend, step(base, vec3(0.5)));\n}\n\nvoid main(void) {\n\tvec4 color0 = texture2D(texture, vTextureCoord);\n\tvec4 color1 = texture2D(textureGrd, vTextureCoord);\n\n    // gl_FragColor = vec4(blendOverlay(color0.rgb, color1.rgb), 1.0);\n   \n\n    gl_FragColor = color0;\n    gl_FragColor.rgb = blendOverlay(color0.rgb, color1.rgb);\n}");
+}
+
+var p = ViewPost.prototype = new bongiovi.View();
+p.constructor = ViewPost;
+
+
+p._init = function() {
+	gl = GL.gl;
+
+	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
+};
+
+p.render = function(texture, textureGrd) {
+	this.shader.bind();
+	this.shader.uniform("texture", "uniform1i", 0);
+	texture.bind(0);
+	this.shader.uniform("textureGrd", "uniform1i", 1);
+	textureGrd.bind(1);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewPost;
+},{}],6:[function(require,module,exports){
+// ViewRibbon.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewRibbon() {
+	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\n// ribbon.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform sampler2D texture;\n\nvoid main(void) {\n\tfloat a = smoothstep(0.0, .2, vTextureCoord.x);\n    gl_FragColor = vec4(1.0, 1.0, 0.96, a);\n}");
+}
+
+var p = ViewRibbon.prototype = new bongiovi.View();
+p.constructor = ViewRibbon;
+
+
+p._init = function() {
+	gl = GL.gl;
+	
+};
+
+
+p._updateMesh = function(line) {
+	var positions = [];
+	var coords = [];
+	var indices = []; 
+	var count = 0;
+	var left = line.left;
+	var right = line.right;
+
+	for(var i=0; i<left.length; i++) {
+		positions.push(left[i]);
+		coords.push([i/left.length, 0]);
+		indices.push(count);
+		count++;
+
+		positions.push(right[i]);
+		coords.push([i/left.length, 0]);
+		indices.push(count);
+		count++;
+	}
+
+	if(!this.mesh) {
+		this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.TRIANGLE_STRIP);	
+	}
+	this.mesh.bufferVertex(positions, gl.DYNAMIC_DRAW);
+	this.mesh.bufferTexCoords(coords, gl.DYNAMIC_DRAW);
+	this.mesh.bufferIndices(indices, gl.DYNAMIC_DRAW);
+};
+
+p.render = function(line) {
+	this._updateMesh(line);
+	this.shader.bind();
+	this.shader.uniform("color", "uniform3fv", [1, 1, .96]);
+	this.shader.uniform("opacity", "uniform1f", 1);
+	// this.shader.uniform("texture", "uniform1i", 0);
+	// texture.bind(0);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewRibbon;
+},{}],7:[function(require,module,exports){
 // ViewSphere.js
 
 var GL = bongiovi.GL;
@@ -151,8 +336,9 @@ var gl;
 
 
 function ViewSphere() {
+	this.time = Math.random() * 0xFF;
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// sphere.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    vNormal = normalize(aVertexPosition);\n}", "#define GLSLIFY 1\n\n// sphere.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nuniform sampler2D texture;\n\n\nconst vec3 lightPos = vec3(100.0);\n\nvoid main(void) {\n\tfloat diff = max(dot(normalize(lightPos), vNormal), 0.0);\n\tdiff = pow(diff, 3.0);\n    gl_FragColor = vec4(diff * .75);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// sphere.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 lightPos;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vLightPos;\n\nconst float maxRadius = 200.0;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\n\tfloat d = distance(pos, lightPos);\n\tif(d < maxRadius) {\n\t\tvec3 dir = normalize(pos - lightPos);\n\t\tfloat offset = 1.0 - d/maxRadius;\n\t\tpos += dir * offset*30.0 + sin(time);\n\t}\n\n\n\tgl_Position   = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n\tvTextureCoord = aTextureCoord;\n\tvNormal       = normalMatrix*normalize(aVertexPosition);\n\tvLightPos     = lightPos;\n}", "#define GLSLIFY 1\n\n// sphere.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nuniform sampler2D texture;\nvarying vec3 vLightPos;\n\n// const vec3 lightPos = vec3(100.0);\n\nconst vec3 front = vec3(0.0, 0.0, 1.0);\n\nvoid main(void) {\n\tfloat g = 1.0 - dot(vNormal, front);\n\tg = pow(g, 2.0);\n\tfloat diff = max(dot(normalize(vLightPos), vNormal), 0.0);\n\tdiff = pow(diff, 3.0) * .5;\n    gl_FragColor = vec4(vec3(diff)+g, 1.0);\n}");
 }
 
 var p = ViewSphere.prototype = new bongiovi.View();
@@ -162,22 +348,21 @@ p.constructor = ViewSphere;
 p._init = function() {
 	gl = GL.gl;
 
-	this.mesh = bongiovi.MeshUtils.createSphere(params.sphereSize, 25);
+	this.mesh = bongiovi.MeshUtils.createSphere(params.sphereSize, 50);
 };
 
-p.render = function(texture) {
+p.render = function(light) {
+	this.time += .1;
 	this.shader.bind();
-	if(texture) {
-		this.shader.uniform("texture", "uniform1i", 0);
-		texture.bind(0);	
-	}
+	this.shader.uniform("lightPos", "uniform3fv", light);
 	this.shader.uniform("color", "uniform3fv", [.1, .1, .1]);
 	this.shader.uniform("opacity", "uniform1f", 1);
+	this.shader.uniform("time", "uniform1f", this.time);
 	GL.draw(this.mesh);
 };
 
 module.exports = ViewSphere;
-},{}],5:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
