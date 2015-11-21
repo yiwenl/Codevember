@@ -87,6 +87,10 @@ var Model = [
 	{
 		path:"labs/wen/24_bubble/dist/index.html",
 		cover:"dist/assets/covers/wen16.jpg"
+	},
+	{
+		path:"labs/wen/27_sphereLines/dist/index.html",
+		cover:"dist/assets/covers/wen19.jpg"
 	}
 ];
 
