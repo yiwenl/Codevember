@@ -123,7 +123,7 @@ void main(void) {
 			float az = snoise(pos.zxy * mix(1.0, extra.z, mixOffset*t)*posOffset + time * .5);
 
 			t = cos(time*.5) * .5 + .5;
-			vel += vec3(ax, ay, az) * (.1 + t * .05);
+			vel += vec3(ax, ay, az) * (.15 + t * .1);
 
 			float maxRadius = 70.0 + snoise(pos.x*.005, time, sin(time)) * 50.0;
 			float r = length(pos.yz);

@@ -5,7 +5,9 @@ html, body {
   padding: 0;
   overflow: hidden;
   position: static;
-  background: #222222; }
+  background: #222222;
+  background: radial-gradient(ellipse at center, #424242 0%, black 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#424242', endColorstr='#000000',GradientType=1 ); }
 
 html {
   -webkit-text-size-adjust: none;

@@ -5,23 +5,22 @@ var ViewSave         = require("./ViewSave");
 var ViewRender       = require("./ViewRender");
 var ViewSimulation   = require("./ViewSimulation");
 var ViewDot          = require("./ViewDot");
+var ViewRibbon 		 = require("./ViewRibbon");
 var Dot              = require("./Dot");
 
 function SceneApp() {
 	gl = GL.gl;
-	this.sum = 0;
-	this.easeSum = new bongiovi.EaseNumber(0, .25);
 	this._initDots();
 	bongiovi.Scene.call(this);
 
 	window.addEventListener("resize", this.resize.bind(this));
 
 	this.camera.lockRotation(false);
+	console.log(this.camera.near, this.camera.far);
 	this.sceneRotation.lock(true);
 
-	this.camera._rx.value = -.3;
-	this.camera._ry.value = -.1;
-
+	// this.camera._rx.value = -.3;
+	// this.camera._ry.value = Math.PI/2;
 	this.resize();
 }
 
@@ -45,8 +44,15 @@ p._initTextures = function() {
 		minFilter:gl.NEAREST,
 		magFilter:gl.NEAREST
 	}
-	this._fboCurrent 	= new bongiovi.FrameBuffer(num*2, num*2, o);
-	this._fboTarget 	= new bongiovi.FrameBuffer(num*2, num*2, o);
+	// this._fboCurrent 	= new bongiovi.FrameBuffer(num*2, num*2, o);
+	// this._fboTarget 	= new bongiovi.FrameBuffer(num*2, num*2, o);
+
+	this._fbos = [];
+	for(var i=0; i<params.ribbonLength; i++) {
+		var fbo = new bongiovi.FrameBuffer(num*2, num*2, o);
+		fbo.id = "FBO" + i;
+		this._fbos.push(fbo);
+	}
 };
 
 p._initViews = function() {
@@ -54,19 +60,27 @@ p._initViews = function() {
 	this._vAxis     = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
 	this._vSave     = new ViewSave();
-	this._vCopy 	= new bongiovi.ViewCopy();
-	this._vRender 	= new ViewRender();
-	this._vSim 		= new ViewSimulation();
-	this._vDot  	= new ViewDot();
+	this._vCopy     = new bongiovi.ViewCopy();
+	this._vRender   = new ViewRender();
+	this._vSim      = new ViewSimulation();
+	this._vDot      = new ViewDot();
+	this._vRibbon   = new ViewRibbon();
 
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
-	this._fboCurrent.bind();
-	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	// this._fboCurrent.bind();
+	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	// this._vSave.render();
+	// this._fboCurrent.unbind();
+
+	var lastFbo = this._fbos[this._fbos.length-1];
+	GL.setViewport(0, 0, lastFbo.width, lastFbo.height);
+	lastFbo.bind();
+	GL.clear(0, 0, 0, 0);
 	this._vSave.render();
-	this._fboCurrent.unbind();
+	lastFbo.unbind();
 };
 
 
@@ -74,16 +88,33 @@ p.updateFbo = function() {
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
-	this._fboTarget.bind();
-	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	// this._fboTarget.bind();
+	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	// GL.clear(0, 0, 0, 0);
+	// this._vSim.render(this._fboCurrent.getTexture(), this._dots );
+	// this._fboTarget.unbind();
+
+	var fbo = this._fbos.shift();
+	var fboLast = this._fbos[this._fbos.length-1];
+	// console.log(fbo.id, ":", fboLast.id);
+
+	fbo.bind();
+	GL.setViewport(0, 0, fbo.width, fbo.height);
 	GL.clear(0, 0, 0, 0);
-	this._vSim.render(this._fboCurrent.getTexture(), this._dots );
-	this._fboTarget.unbind();
+	this._vSim.render(fboLast.getTexture(), this._dots );
+	fbo.unbind();
+	this._fbos.push(fbo);
 
 
-	var tmp = this._fboTarget;
-	this._fboTarget = this._fboCurrent;
-	this._fboCurrent = tmp;
+	// var fbo = this._fbos.shift();
+	// fbo.bind();
+	// this._vCopy.render(this._fboTarget.getTexture());
+	// fbo.unbind();
+	
+
+	// var tmp = this._fboTarget;
+	// this._fboTarget = this._fboCurrent;
+	// this._fboCurrent = tmp;
 
 
 	GL.setMatrices(this.camera);
@@ -93,23 +124,34 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	this.camera._ry.value += .02;
 	this.updateFbo();
-	GL.setViewport(0, 0, GL.width, GL.height);
+	// GL.setViewport(0, 0, GL.width, GL.height);
+	GL.clear(0, 0, 0, 0);
 
 	for(var i=0; i<this._dots.length; i++) {
-		this._vDot.render(this._dots[i].update());
+		this._dots[i].update();
 	}
 
-	this._vAxis.render();
-	this._vDotPlane.render();
-	this._vRender.render(this._fboCurrent.getTexture());
+	var fboLast = this._fbos[this._fbos.length-1];
+	// this._vAxis.render();
+	// this._vDotPlane.render();
+	// this._vRender.render(this._fboCurrent.getTexture());
+	// this._vRender.render(fboLast.getTexture());
 
+	gl.disable(gl.CULL_FACE);
+	this._vRibbon.render(this._fbos);
+	gl.enable(gl.CULL_FACE);
 
+/*
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
-	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
-	// this._vCopy.render(this._fboCurrent.getTexture());
+	gl.disable(gl.DEPTH_TEST);
+	GL.setViewport(0, 0, fboLast.width, fboLast.height);
+	this._vCopy.render(fboLast.getTexture());
+	gl.enable(gl.DEPTH_TEST);
+*/
 };
 
 
