@@ -124,7 +124,7 @@ p.updateFbo = function() {
 
 
 p.render = function() {
-	this.camera._ry.value += .02;
+	// this.camera._ry.value += .02;
 	this.updateFbo();
 	// GL.setViewport(0, 0, GL.width, GL.height);
 	GL.clear(0, 0, 0, 0);
