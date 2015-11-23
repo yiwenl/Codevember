@@ -129,7 +129,7 @@ void main(void) {
 			float r = length(pos.yz);
 			if(r > maxRadius) {
 				vec2 dir = normalize(pos.yz);
-				float f = (r - maxRadius) * .001;
+				float f = (r - maxRadius) * .001 ;
 				vel.yz -= dir * f;
 			}
 

@@ -16,7 +16,7 @@ p.constructor = ViewRibbon;
 
 p.createRibbon = function() {
 	var num = params.ribbonLength;
-	var ribbonSize = params.ribbonSize;
+	var ribbonSize = random(params.ribbonSize*.1, params.ribbonSize);
 	var numParticle = params.numParticles;
 	var ux = (this.index % numParticle) / numParticle;
 	var uy = Math.floor(this.index/numParticle) / numParticle;
