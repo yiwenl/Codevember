@@ -54,13 +54,14 @@ window.bongiovi = require("./libs/bongiovi.js");
 
 
 new App();
-},{"./SceneApp":2,"./libs/bongiovi.js":6}],2:[function(require,module,exports){
+},{"./SceneApp":2,"./libs/bongiovi.js":7}],2:[function(require,module,exports){
 // SceneApp.js
 
 var GL = bongiovi.GL, gl;
 var ViewBox = require("./ViewBox");
 var ViewSphere = require("./ViewSphere");
 var ViewTop = require("./ViewTop");
+var ViewTotem = require("./ViewTotem");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -71,6 +72,8 @@ function SceneApp() {
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
 	this.camera.radius.value = 150;
+	this.camera._rx.value = -.3;
+	this.camera._ry.value = .1;
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -92,15 +95,17 @@ p._initViews = function() {
 	this._vCube     = new ViewBox();
 	this._vSphere   = new ViewSphere();
 	this._vTop      = new ViewTop();
+	this._vTotem 	= new ViewTotem();
 };
 
 p.render = function() {
-	this._vAxis.render();
-	this._vDotPlane.render();
+	// this._vAxis.render();
+	// this._vDotPlane.render();
 
-	this._vCube.render(this.cubeTexture);
+	// this._vCube.render(this.cubeTexture);
 	// this._vSphere.render([0, 0, 0]);
-	this._vTop.render();
+	// this._vTop.render();
+	this._vTotem.render(this.cubeTexture);
 };
 
 p.resize = function() {
@@ -109,7 +114,7 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewBox":3,"./ViewSphere":4,"./ViewTop":5}],3:[function(require,module,exports){
+},{"./ViewBox":3,"./ViewSphere":4,"./ViewTop":5,"./ViewTotem":6}],3:[function(require,module,exports){
 // ViewBox.js
 
 var GL = bongiovi.GL;
@@ -291,6 +296,69 @@ p.render = function() {
 
 module.exports = ViewTop;
 },{}],6:[function(require,module,exports){
+// ViewTotem.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewTotem() {
+	this.ry = 0;
+	this.time = 0;
+	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// totem.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform mat3 nMtx;\nuniform float scale;\nuniform float ry;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvarying vec3 vEye;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(c, -s, s, c);\n\treturn r * v;\n}\n\nvoid main(void) {\n\tvec3 pos        = aVertexPosition * scale;\n\tpos.y \t\t\t-= 10.0;\n\tfloat t \t\t= sin(time) * .5 + .5;\n\tt \t\t\t\t= smoothstep(.5, 1.0, t);\n\tpos.xy \t\t\t= rotate(pos.xy, t * 0.02);\n\tpos.xz \t\t\t= rotate(pos.xz, ry);\n\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n\tgl_Position     = uPMatrix * mvPosition;\n\tvTextureCoord   = aTextureCoord;\n\t\n\tvVertex         = pos;\n\n\tvec3 N \t\t\t= aNormal;\n\tN.xz \t\t\t= rotate(N.xz, ry);\n\tvNormal         = normalMatrix * N;\n\tvEye            = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n\n// totem.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform mat3 invertMVMatrix;\nuniform samplerCube texture;\nvarying vec3 vNormal;\n\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\n\nfloat diffuse(vec3 n, vec3 l) {\n\treturn max(dot(n, normalize(l)), 0.0);\n}\n\n\nconst vec3 l0 = vec3(1.0);\nconst vec3 l1 = vec3(-1.0);\nconst float fade = .92;\nconst vec3 lc0 = vec3(1.0, 1.0, fade);\nconst vec3 lc1 = vec3(fade, fade, 1.0);\n\nvoid main(void) {\n\tvec3 N = vNormal.grb;\n\tvec3 d0 = diffuse(N, l0) * lc0;\n\tvec3 d1 = diffuse(N, l1) * lc1;\n\n\tvec3 color = .2 + d0 + d1;\n\n\tgl_FragColor = vec4(color, 1.0);\n}");
+}
+
+var p = ViewTotem.prototype = new bongiovi.View();
+p.constructor = ViewTotem;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var positions = [];
+	var coords = [];
+	var indices = []; 
+
+	var l = new bongiovi.ObjLoader();
+	l.load('assets/totem.obj', this._onObjLoaded.bind(this), null, false);
+};
+
+
+p._onObjLoaded = function(mesh, o) {
+	console.log('OBJ Loaded ', o);
+	// this.mesh = mesh;
+	var indices = o.indices;
+	indices.reverse();
+	this.mesh = new bongiovi.Mesh(o.positions.length, o.indices.length, GL.gl.TRIANGLES);
+	this.mesh.bufferVertex(o.positions);
+	this.mesh.bufferTexCoords(o.coords);
+	this.mesh.bufferIndices(indices);
+	this.mesh.bufferData(o.normals, "aNormal", 3);
+};
+
+p.render = function(texture) {
+	if(!this.mesh) return;
+	this.time += .03;
+	this.ry += 0.5;
+	// console.log(GL.normalMatrix);
+	this.shader.bind();
+	if(texture){
+		this.shader.uniform("texture", "uniform1i", 0);
+		texture.bind(0);	
+	}
+
+	this.shader.uniform("scale", "uniform1f", 10);
+	this.shader.uniform("ry", "uniform1f", this.ry);
+	this.shader.uniform("time", "uniform1f", this.time);
+	// this.shader.uniform("invertMVMatrix", "uniformMatrix3fv", GL.invertMVMatrix);
+	// this.shader.uniform("nMtx", "uniformMatrix3fv", GL.normalMatrix);
+	
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewTotem;
+
+},{}],7:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";

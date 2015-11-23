@@ -4,6 +4,7 @@ var GL = bongiovi.GL, gl;
 var ViewBox = require("./ViewBox");
 var ViewSphere = require("./ViewSphere");
 var ViewTop = require("./ViewTop");
+var ViewTotem = require("./ViewTotem");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -14,6 +15,8 @@ function SceneApp() {
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
 	this.camera.radius.value = 150;
+	this.camera._rx.value = -.3;
+	this.camera._ry.value = .1;
 
 	window.addEventListener("resize", this.resize.bind(this));
 }
@@ -35,15 +38,17 @@ p._initViews = function() {
 	this._vCube     = new ViewBox();
 	this._vSphere   = new ViewSphere();
 	this._vTop      = new ViewTop();
+	this._vTotem 	= new ViewTotem();
 };
 
 p.render = function() {
-	this._vAxis.render();
-	this._vDotPlane.render();
+	// this._vAxis.render();
+	// this._vDotPlane.render();
 
-	this._vCube.render(this.cubeTexture);
+	// this._vCube.render(this.cubeTexture);
 	// this._vSphere.render([0, 0, 0]);
-	this._vTop.render();
+	// this._vTop.render();
+	this._vTotem.render(this.cubeTexture);
 };
 
 p.resize = function() {
