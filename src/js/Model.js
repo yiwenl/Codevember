@@ -93,6 +93,9 @@ var Model = [
 		cover:"dist/assets/covers/wen19.jpg"
 	},
 	{
+		path:"labs/cp/22/dist/index.html",
+		cover:"dist/assets/covers/cp22.jpg"
+	},
 		path:"labs/wen/28_windtunnel/dist/index.html",
 		cover:"dist/assets/covers/wen20.jpg"
 	},
