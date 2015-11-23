@@ -1,29 +1,26 @@
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
 window.Sono     = require("./libs/sono.min.js");
-var dat         = require("dat-gui");
 
 window.params = {
-	numParticles:40,
-	range:500.0,
-	numDots:10,
+	numParticles:64,
 	ribbonLength:10,
-	ribbonSize:5
+	ribbonSize:4
 };
 
 (function() {
 	var SceneApp = require("./SceneApp");
 
-	
 	App = function() {
+
 		var l = new bongiovi.SimpleImageLoader();
-		var a = ["assets/grd.jpg"];
-		l.load(a, this, this._onImageLoaded);
+		var a = ['assets/gold.jpg', 'assets/blue.jpg'];
+		l.load(a, this, this._onImageLoader);
 	}
 
 	var p = App.prototype;
 
-	p._onImageLoaded = function(img) {
+	p._onImageLoader = function(img) {
 		window.images = img;
 		if(document.body) this._init();
 		else {
