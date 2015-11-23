@@ -44,14 +44,9 @@ void main(void) {
 	vec3 colorMap = texture2D(textureMap, uv).rgb;
 	color *= colorMap;
 	
-	float d      = sin(vTextureCoord.y * PI);
-	d            = smoothstep(0.0, .46, d);
-	d            = mix(d, 1.0, .9);
-
-	color 		 *= d;
 	float l 	 = length(color) / length(vec3(1.0));
 	vec3 colorGrd = mix(color0, color1, l);
 	color 		 = mix(color, colorGrd, .5);
 	
-	gl_FragColor = vec4(color*d, vOpacity);
+	gl_FragColor = vec4(color, vOpacity);
 }
