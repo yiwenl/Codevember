@@ -95,6 +95,13 @@ var Model = [
 	{
 		path:"labs/cp/22/dist/index.html",
 		cover:"dist/assets/covers/cp22.jpg"
+	},
+		path:"labs/wen/28_windtunnel/dist/index.html",
+		cover:"dist/assets/covers/wen20.jpg"
+	},
+	{
+		path:"labs/wen/29_campFire/dist/index.html",
+		cover:"dist/assets/covers/wen21.jpg"
 	}
 ];
 
