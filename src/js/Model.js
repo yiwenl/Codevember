@@ -91,6 +91,10 @@ var Model = [
 	{
 		path:"labs/wen/27_sphereLines/dist/index.html",
 		cover:"dist/assets/covers/wen19.jpg"
+	},
+	{
+		path:"labs/cp/22/dist/index.html",
+		cover:"dist/assets/covers/cp22.jpg"
 	}
 ];
 
