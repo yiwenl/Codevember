@@ -130,7 +130,7 @@ p.render = function() {
 	GL.clear(0, 0, 0, 0);
 
 	for(var i=0; i<this._dots.length; i++) {
-		this._dots[i].update();
+		this._vDot.render(this._dots[i].update());
 	}
 
 	var fboLast = this._fbos[this._fbos.length-1];

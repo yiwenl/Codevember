@@ -14,8 +14,8 @@ var p = Dot.prototype;
 
 p._init = function() {
 	this.count    = Math.random() * 0xFF;
-	this.radius   = random(50, 75) * 1.2;
-	var r         = random(50, 100) * 1.;
+	this.radius   = random(50, 75) * 1.5;
+	var r         = random(50, 100) * .5;
 	this.point    = vec3.fromValues(r, 0, 0);
 	this.orgPoint = vec3.clone(this.point);
 	this.axis     = vec3.fromValues(random(-1, 1), random(-1, 1), random(-1, 1));

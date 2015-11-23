@@ -79,6 +79,7 @@ void main(void) {
 	float angle = atan(pos.y, pos.z)-PI*.5;
 	vec3 tmpPos = aVertexPosition;
 	tmpPos.yz = rotate(tmpPos.yz, angle);
+	// tmpPos.x *= 0.0;
 	pos += tmpPos;
 
 	vec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);

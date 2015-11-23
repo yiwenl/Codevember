@@ -3,6 +3,7 @@
 var GL = bongiovi.GL;
 var gl;
 var glslify = require("glslify");
+var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function ViewRibbon() {
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
@@ -19,12 +20,13 @@ p.createRibbon = function() {
 	var numParticle = params.numParticles;
 	var ux = (this.index % numParticle) / numParticle;
 	var uy = Math.floor(this.index/numParticle) / numParticle;
+	var size = Math.random() * 3;
 
 	for(var i=0; i<num; i++) {
-		this.positions.push([i*10, -ribbonSize, 0]);
-		this.positions.push([(i+1)*10, -ribbonSize, 0]);
-		this.positions.push([(i+1)*10,  ribbonSize, 0]);
-		this.positions.push([i*10,  ribbonSize, 0]);
+		this.positions.push([i*size, -ribbonSize, 0]);
+		this.positions.push([(i+1)*size, -ribbonSize, 0]);
+		this.positions.push([(i+1)*size,  ribbonSize, 0]);
+		this.positions.push([i*size,  ribbonSize, 0]);
 	
 		this.coords.push([i/num, 0]);
 		this.coords.push([(i+1)/num, 0]);

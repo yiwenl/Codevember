@@ -4491,8 +4491,8 @@ var p = Dot.prototype;
 
 p._init = function() {
 	this.count    = Math.random() * 0xFF;
-	this.radius   = random(50, 75) * 1.2;
-	var r         = random(50, 100) * 1.;
+	this.radius   = random(50, 75) * 1.5;
+	var r         = random(50, 100) * .5;
 	this.point    = vec3.fromValues(r, 0, 0);
 	this.orgPoint = vec3.clone(this.point);
 	this.axis     = vec3.fromValues(random(-1, 1), random(-1, 1), random(-1, 1));
@@ -4651,7 +4651,7 @@ p.render = function() {
 	GL.clear(0, 0, 0, 0);
 
 	for(var i=0; i<this._dots.length; i++) {
-		this._dots[i].update();
+		this._vDot.render(this._dots[i].update());
 	}
 
 	var fboLast = this._fbos[this._fbos.length-1];
@@ -4777,10 +4777,11 @@ module.exports = ViewRender;
 var GL = bongiovi.GL;
 var gl;
 
+var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function ViewRibbon() {
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// ribbon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aPositionUV;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D texture0;\nuniform sampler2D texture1;\nuniform sampler2D texture2;\nuniform sampler2D texture3;\nuniform sampler2D texture4;\nuniform sampler2D texture5;\nuniform sampler2D texture6;\nuniform sampler2D texture7;\nuniform sampler2D texture8;\nuniform sampler2D texture9;\nuniform float range;\n\nconst float PI = 3.141592657;\nvarying vec2 vTextureCoord;\nvarying float vOpacity;\nvarying float vDepth;\nvarying vec3 vVertex;\nvarying vec3 vNormal;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * v;\n}\n\n//float n = 5.0;\n//float f = 3000.0;\n\t\nfloat getDepth(float z, float n, float f) {\n\treturn (2.0 * n) / (f + n - z*(f-n));\n}\n\nfloat getDepth(float z) {\n\treturn getDepth(z, 5.0, 3000.0);\n}\n\nvoid main(void) {\n\tvec2 uv = aPositionUV.xy/2.0;\n\tfloat i = aPositionUV.z/10.0;\n\n\tvec3 pos = vec3(.0);\n\tvec3 start = texture2D(texture0, uv).rgb;\n\tvec3 end = texture2D(texture9, uv).rgb;\n\tif(i < .1) {\n\t\tpos = start;\n\t} else if(i<.2) {\n\t\tpos = texture2D(texture1, uv).rgb;\n\t} else if(i<.3) {\n\t\tpos = texture2D(texture2, uv).rgb;\n\t} else if(i<.4) {\n\t\tpos = texture2D(texture3, uv).rgb;\n\t} else if(i<.5) {\n\t\tpos = texture2D(texture4, uv).rgb;\n\t} else if(i<.6) {\n\t\tpos = texture2D(texture5, uv).rgb;\n\t} else if(i<.7) {\n\t\tpos = texture2D(texture6, uv).rgb;\n\t} else if(i<.8) {\n\t\tpos = texture2D(texture7, uv).rgb;\n\t} else if(i<.9) {\n\t\tpos = texture2D(texture8, uv).rgb;\n\t} else {\n\t\tpos = end;\n\t}\n\n\tfloat angle = atan(pos.y, pos.z)-PI*.5;\n\tvec3 tmpPos = aVertexPosition;\n\ttmpPos.yz = rotate(tmpPos.yz, angle);\n\tpos += tmpPos;\n\n\tvec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    gl_Position = V;\n    vTextureCoord = aTextureCoord;\n\n    vVertex = pos;\n    vOpacity = 1.0;\n    if(start.x > end.x) {\n    \tvOpacity = 0.0;\n    }\n\n    vec3 N = vec3(0.0, pos.yz);\n    vNormal = normalize(N);\n\n    vDepth = 1.0-getDepth(V.z/V.w);\n}", "#define GLSLIFY 1\n\n// ribbon.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vVertex;\nvarying float vDepth;\nvarying float vOpacity;\nvarying vec3 vNormal;\n\n\nconst float fade = .92;\nconst float ambient = .2;\nconst vec3 light0 = vec3(300.0);\nconst vec3 light1 = vec3(-300.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst vec2 center = vec2(.5);\nconst float PI = 3.141592657;\n\nvec3 diffuse(vec3 light, vec3 vertex, vec3 normal, vec3 lightColor) {\n\tvec3 L = normalize(light-vertex);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn lightColor0 * lambert;\n}\n\nvoid main(void) {\n\tif(vOpacity < .01) discard;\n\tvec3 diff0 = diffuse(light0, vVertex, vNormal, lightColor0) * .75;\n\tvec3 diff1 = diffuse(light1, vVertex, vNormal, lightColor1) * .5;\n\n\tvec3 color = (ambient + diff0 + diff1) * vDepth;\n\n\tfloat d = sin(vTextureCoord.y * PI);\n\t// float dy = sin(vTextureCoord.y * PI);\n\t// float d = min(dx , dy);\n\td = smoothstep(0.0, .46, d);\n\td = mix(d, 1.0, .9);\n\n    gl_FragColor = vec4(color*d, vOpacity);\n    // gl_FragColor = vec4(vec3(vDepth), vOpacity);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// ribbon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aPositionUV;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform sampler2D texture0;\nuniform sampler2D texture1;\nuniform sampler2D texture2;\nuniform sampler2D texture3;\nuniform sampler2D texture4;\nuniform sampler2D texture5;\nuniform sampler2D texture6;\nuniform sampler2D texture7;\nuniform sampler2D texture8;\nuniform sampler2D texture9;\nuniform float range;\n\nconst float PI = 3.141592657;\nvarying vec2 vTextureCoord;\nvarying float vOpacity;\nvarying float vDepth;\nvarying vec3 vVertex;\nvarying vec3 vNormal;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * v;\n}\n\n//float n = 5.0;\n//float f = 3000.0;\n\t\nfloat getDepth(float z, float n, float f) {\n\treturn (2.0 * n) / (f + n - z*(f-n));\n}\n\nfloat getDepth(float z) {\n\treturn getDepth(z, 5.0, 3000.0);\n}\n\nvoid main(void) {\n\tvec2 uv = aPositionUV.xy/2.0;\n\tfloat i = aPositionUV.z/10.0;\n\n\tvec3 pos = vec3(.0);\n\tvec3 start = texture2D(texture0, uv).rgb;\n\tvec3 end = texture2D(texture9, uv).rgb;\n\tif(i < .1) {\n\t\tpos = start;\n\t} else if(i<.2) {\n\t\tpos = texture2D(texture1, uv).rgb;\n\t} else if(i<.3) {\n\t\tpos = texture2D(texture2, uv).rgb;\n\t} else if(i<.4) {\n\t\tpos = texture2D(texture3, uv).rgb;\n\t} else if(i<.5) {\n\t\tpos = texture2D(texture4, uv).rgb;\n\t} else if(i<.6) {\n\t\tpos = texture2D(texture5, uv).rgb;\n\t} else if(i<.7) {\n\t\tpos = texture2D(texture6, uv).rgb;\n\t} else if(i<.8) {\n\t\tpos = texture2D(texture7, uv).rgb;\n\t} else if(i<.9) {\n\t\tpos = texture2D(texture8, uv).rgb;\n\t} else {\n\t\tpos = end;\n\t}\n\n\tfloat angle = atan(pos.y, pos.z)-PI*.5;\n\tvec3 tmpPos = aVertexPosition;\n\ttmpPos.yz = rotate(tmpPos.yz, angle);\n\t// tmpPos.x *= 0.0;\n\tpos += tmpPos;\n\n\tvec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    gl_Position = V;\n    vTextureCoord = aTextureCoord;\n\n    vVertex = pos;\n    vOpacity = 1.0;\n    if(start.x > end.x) {\n    \tvOpacity = 0.0;\n    }\n\n    vec3 N = vec3(0.0, pos.yz);\n    vNormal = normalize(N);\n\n    vDepth = 1.0-getDepth(V.z/V.w);\n}", "#define GLSLIFY 1\n\n// ribbon.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vVertex;\nvarying float vDepth;\nvarying float vOpacity;\nvarying vec3 vNormal;\n\n\nconst float fade = .92;\nconst float ambient = .2;\nconst vec3 light0 = vec3(300.0);\nconst vec3 light1 = vec3(-300.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst vec2 center = vec2(.5);\nconst float PI = 3.141592657;\n\nvec3 diffuse(vec3 light, vec3 vertex, vec3 normal, vec3 lightColor) {\n\tvec3 L = normalize(light-vertex);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn lightColor0 * lambert;\n}\n\nvoid main(void) {\n\tif(vOpacity < .01) discard;\n\tvec3 diff0 = diffuse(light0, vVertex, vNormal, lightColor0) * .75;\n\tvec3 diff1 = diffuse(light1, vVertex, vNormal, lightColor1) * .5;\n\n\tvec3 color = (ambient + diff0 + diff1) * vDepth;\n\n\tfloat d = sin(vTextureCoord.y * PI);\n\t// float dy = sin(vTextureCoord.y * PI);\n\t// float d = min(dx , dy);\n\td = smoothstep(0.0, .46, d);\n\td = mix(d, 1.0, .9);\n\n    gl_FragColor = vec4(color*d, vOpacity);\n    // gl_FragColor = vec4(vec3(vDepth), vOpacity);\n}");
 }
 
 var p = ViewRibbon.prototype = new bongiovi.View();
@@ -4793,12 +4794,13 @@ p.createRibbon = function() {
 	var numParticle = params.numParticles;
 	var ux = (this.index % numParticle) / numParticle;
 	var uy = Math.floor(this.index/numParticle) / numParticle;
+	var size = Math.random() * 3;
 
 	for(var i=0; i<num; i++) {
-		this.positions.push([i*10, -ribbonSize, 0]);
-		this.positions.push([(i+1)*10, -ribbonSize, 0]);
-		this.positions.push([(i+1)*10,  ribbonSize, 0]);
-		this.positions.push([i*10,  ribbonSize, 0]);
+		this.positions.push([i*size, -ribbonSize, 0]);
+		this.positions.push([(i+1)*size, -ribbonSize, 0]);
+		this.positions.push([(i+1)*size,  ribbonSize, 0]);
+		this.positions.push([i*size,  ribbonSize, 0]);
 	
 		this.coords.push([i/num, 0]);
 		this.coords.push([(i+1)/num, 0]);
