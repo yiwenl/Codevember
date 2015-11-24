@@ -19,14 +19,8 @@ window.params = {
 
 		var loader = new bongiovi.SimpleImageLoader();
 		loader.load([
-			"assets/light.jpg", 
-			"assets/grd.jpg",
-			"assets/negx.jpg",
-			"assets/negy.jpg",
-			"assets/negz.jpg",
-			"assets/posx.jpg",
-			"assets/posy.jpg",
-			"assets/posz.jpg"
+			"assets/light.jpg",
+			"assets/lightBlur.jpg"
 			], this, this._onImageLoaded);
 	}
 

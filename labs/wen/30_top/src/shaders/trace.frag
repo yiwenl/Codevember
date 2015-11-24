@@ -8,7 +8,7 @@ const int NUM_ITER  = {{NUM_ITER}};
 // const float maxDist = 5.0;
 
 uniform sampler2D texture;
-uniform sampler2D textureMap;
+uniform sampler2D textureBlur;
 uniform float time;
 uniform float focus;
 uniform float metaK;
@@ -58,8 +58,10 @@ float plane(vec3 pos) {
 }
 
 
-float map(vec3 pos) {
+vec2 map(vec3 pos) {
+	float colorIndex = 0.0;
 	vec3 orgPos = pos;
+	pos.y -=.1;
 	pos.xz = rotate(pos.xz, time*10.0);
 	float r = sin(time*.1) * .5 + .5;
 	r = smoothstep(0.8, 1.0, r) * .015 + .003;
@@ -84,19 +86,23 @@ float map(vec3 pos) {
 	d = smin(d, dUpperCone);
 
 	float dFloor = plane(orgPos+vec3(0.0, 1.0, 0.0));
-	d = min(dFloor, d);
+	// d = min(dFloor, d);
+	if(dFloor < d) {
+		colorIndex = 1.0;
+		d = dFloor;
+	}
 
 
-	return d;
+	return vec2(d, colorIndex);
 }
 
 vec3 computeNormal(vec3 pos) {
 	vec2 eps = vec2(0.001, 0.0);
 
 	vec3 normal = vec3(
-		map(pos + eps.xyy) - map(pos - eps.xyy),
-		map(pos + eps.yxy) - map(pos - eps.yxy),
-		map(pos + eps.yyx) - map(pos - eps.yyx)
+		map(pos + eps.xyy).x - map(pos - eps.xyy).x,
+		map(pos + eps.yxy).x - map(pos - eps.yxy).x,
+		map(pos + eps.yyx).x - map(pos - eps.yyx).x
 	);
 	return normalize(normal);
 }
@@ -118,33 +124,60 @@ float ao( in vec3 pos, in vec3 nor ){
     {
         float hr = 0.01 + 0.12*float(i)/4.0;
         vec3 aopos =  nor * hr + pos;
-        float dd = map( aopos );
+        float dd = map( aopos ).x;
         occ += -(dd-hr)*sca;
         sca *= 0.95;
     }
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
 
-vec3 envLight(vec3 normal, vec3 dir) {
+vec3 envLight(vec3 normal, vec3 dir, sampler2D tex) {
 	vec3 eye    = -dir;
 	vec3 r      = reflect( eye, normal );
 	float m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
 	vec2 vN     = r.xy / m + .5;
 	vN.y        = 1.0 - vN.y;
-	vec3 color  = texture2D( texture, vN ).rgb;
+	vec3 color  = texture2D( tex, vN ).rgb;
 	float power = 10.0;
 	color.r     = pow(color.r, power);
 	color       = color.rrr;
     return color;
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal) {
-	float a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);
-	a = smoothstep(0.5, 0.6, a);
-	vec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;
-	float _ao = ao(pos, normal);
-	vec3 env  = envLight(normal, dir);
-	return vec4(vec3(grd+env*.75)*_ao, 1.0);
+
+float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax ) {
+	float res = 1.0;
+    float t = mint;
+    for( int i=0; i<16; i++ ) {
+		float h = map( ro + rd*t ).x;
+        res = min( res, 8.0*h/t );
+        t += clamp( h, 0.02, 0.10 );
+        if( h<0.001 || t>tmax ) break;
+    }
+    return clamp( res, 0.0, 1.0 );
+
+}
+
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
+	if(colorIndex == 0.0) {
+		float a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);
+		a = smoothstep(0.5, 0.6, a);
+		vec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;
+		float _ao = ao(pos, normal);
+		vec3 env  = envLight(normal, dir, texture);
+		vec3 envBlur  = envLight(normal, dir, textureBlur);
+		float mixture = sin(time*.2) * .5 + .5;
+		env = mix(env, envBlur, mixture);
+		return vec4(vec3(grd+env)*_ao, 1.0);	
+	} else {
+		vec3  lig = normalize( vec3(-0.6, 0.7, -0.5) );
+		float shadow = softshadow(pos, lig, 0.02, 2.5 );
+		shadow = mix(shadow, 1.0, .5);
+		vec4 baseColor = vec4(1.0, 1.0, .96, 1.0);
+		baseColor.rgb *= shadow;
+		return baseColor;
+	}
+	
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
@@ -158,19 +191,22 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 
 void main(void) {
 	float r  = 5.0;
-	float y = 1.0;
+	float y  = 1.0;
 	vec3 pos = vec3(cos(theta) * r, y, sin(theta)*r);
 	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
 	mat3 ca  = setCamera( pos, ta, 0.0 );
 	vec3 dir = ca * normalize( vec3(uv,focus) );
 
-	vec4 color = vec4(.0);
+	vec4 color = vec4(1.0, 1.0, .96, 1.0);
 	float prec = pow(.1, 7.0);
 	float d;
+	float colorIndex = 0.0;
 	bool hit = false;
 	
 	for(int i=0; i<NUM_ITER; i++) {
-		d = map(pos);						//	distance to object
+		vec2 result = map(pos);						//	distance to object
+		d = result.x;
+		colorIndex = result.y;
 
 		if(d < prec) {						// 	if get's really close, set as hit the object
 			hit = true;
@@ -184,7 +220,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal);
+		color = getColor(pos, dir, normal, colorIndex);
 	}
 	
 

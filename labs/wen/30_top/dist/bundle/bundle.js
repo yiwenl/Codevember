@@ -20,14 +20,8 @@ window.params = {
 
 		var loader = new bongiovi.SimpleImageLoader();
 		loader.load([
-			"assets/light.jpg", 
-			"assets/grd.jpg",
-			"assets/negx.jpg",
-			"assets/negy.jpg",
-			"assets/negz.jpg",
-			"assets/posx.jpg",
-			"assets/posy.jpg",
-			"assets/posz.jpg"
+			"assets/light.jpg",
+			"assets/lightBlur.jpg"
 			], this, this._onImageLoaded);
 	}
 
@@ -86,6 +80,8 @@ function SceneApp() {
 	this.camera._rx.value = -.3;
 	this.camera._ry.value = .1;
 
+	this.resize();
+
 	window.addEventListener("resize", this.resize.bind(this));
 }
 
@@ -94,45 +90,33 @@ var p = SceneApp.prototype = new bongiovi.Scene();
 
 p._initTextures = function() {
 	console.log('Init Textures');
-	var faces = [images.posx, images.negx, images.posy, images.negy, images.posz, images.negz];
-	this.cubeTexture = new bongiovi.GLCubeTexture(faces);
 	this._texture = new bongiovi.GLTexture(images.light);
-	this._textureGrd = new bongiovi.GLTexture(images.grd);
+	this._textureBlur = new bongiovi.GLTexture(images.lightBlur);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
 	this._vAxis     = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
-	
-	this._vCube     = new ViewBox();
-	this._vSphere   = new ViewSphere();
-	this._vTop      = new ViewTop();
-	this._vTotem 	= new ViewTotem();
 
 	this._vTrace 	= new ViewTrace();
 };
 
 p.render = function() {
-	// this._vAxis.render();
-	// this._vDotPlane.render();
-
-	// this._vCube.render(this.cubeTexture);
-	// this._vSphere.render([0, 0, 0]);
-	// this._vTop.render();
-
-	// this._vTotem.render(this.cubeTexture);
-
 	GL.clear(0, 0, 0, 0);
 
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._texture, this._textureGrd, -this.camera._ry.value);
+	this._vTrace.render(this._texture, this._textureBlur, -this.camera._ry.value);
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	size = Math.min(size, 800);
+	GL.setSize(size, size);
+	GL.canvas.style.marginLeft = -size/2 + "px";
+	GL.canvas.style.marginTop = -size/2 + "px";
 	this.camera.resize(GL.aspectRatio);
 };
 
@@ -387,7 +371,7 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision highp float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform float theta;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k ) {\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b ) {\treturn smin(a, b, 7.0);\t}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat capsule(vec3 p, float r, float c) {\n\treturn mix(length(p.xz)-r, length(vec3(p.x,abs(p.y)-c,p.z))-r, step(c,abs(p.y)));\n}\n\nfloat cone( in vec3 p, in vec3 c ) {\n    vec2 q = vec2( length(p.xz), p.y );\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\n    vec2 w = v - q;\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\n    vec2 d = max(qv,0.0)*qv/vv;\n    return sqrt( dot(w,w) - max(d.x,d.y) )* sign(max(q.y*v.x-q.x*v.y,w.y));\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\nfloat map(vec3 pos) {\n\tvec3 orgPos = pos;\n\tpos.xz = rotate(pos.xz, time*10.0);\n\tfloat r = sin(time*.1) * .5 + .5;\n\tr = smoothstep(0.8, 1.0, r) * .015 + .003;\n\tpos.yz = rotate(pos.yz, r);\n\n\tfloat dCenter = capsule(pos, .1, 1.0);\n\tfloat t = 0.0;\n\tif(abs(pos.y) < 1.2) t = (pos.y + 1.2) / 2.0;\n\tdCenter += t * .02;\n\n\tvec3 negPos = pos;\n\tnegPos.y *= -1.0;\n\tfloat dLowerCone = cone(negPos+vec3(0.0, -.9, 0.0), vec3(.5, .65, .65));\n\tfloat d = smin(dCenter, dLowerCone);\n\n\tvec3 diskPos = pos+vec3(0.0, .25, 0.0);\n\tdiskPos.y *= 10.0;\n\tfloat dDisk = sphere(diskPos, 1.0);\n\td = smin(d, dDisk);\n\n\tfloat dUpperCone = cone(pos+vec3(0.0, -.25, 0.0), vec3(.5, .5, .5));\n\td = smin(d, dUpperCone);\n\n\tfloat dFloor = plane(orgPos+vec3(0.0, 1.0, 0.0));\n\td = min(dFloor, d);\n\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( texture, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);\n\ta = smoothstep(0.5, 0.6, a);\n\tvec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;\n\tfloat _ao = ao(pos, normal);\n\tvec3 env  = envLight(normal, dir);\n\treturn vec4(vec3(grd+env*.75)*_ao, 1.0);\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr )\n{\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tfloat y = 1.0;\n\tvec3 pos = vec3(cos(theta) * r, y, sin(theta)*r);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 7.0);\n\tfloat d;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
+	var fs = "#define GLSLIFY 1\n\nprecision highp float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureBlur;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform float theta;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k ) {\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b ) {\treturn smin(a, b, 7.0);\t}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat capsule(vec3 p, float r, float c) {\n\treturn mix(length(p.xz)-r, length(vec3(p.x,abs(p.y)-c,p.z))-r, step(c,abs(p.y)));\n}\n\nfloat cone( in vec3 p, in vec3 c ) {\n    vec2 q = vec2( length(p.xz), p.y );\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\n    vec2 w = v - q;\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\n    vec2 d = max(qv,0.0)*qv/vv;\n    return sqrt( dot(w,w) - max(d.x,d.y) )* sign(max(q.y*v.x-q.x*v.y,w.y));\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\nvec2 map(vec3 pos) {\n\tfloat colorIndex = 0.0;\n\tvec3 orgPos = pos;\n\tpos.y -=.1;\n\tpos.xz = rotate(pos.xz, time*10.0);\n\tfloat r = sin(time*.1) * .5 + .5;\n\tr = smoothstep(0.8, 1.0, r) * .015 + .003;\n\tpos.yz = rotate(pos.yz, r);\n\n\tfloat dCenter = capsule(pos, .1, 1.0);\n\tfloat t = 0.0;\n\tif(abs(pos.y) < 1.2) t = (pos.y + 1.2) / 2.0;\n\tdCenter += t * .02;\n\n\tvec3 negPos = pos;\n\tnegPos.y *= -1.0;\n\tfloat dLowerCone = cone(negPos+vec3(0.0, -.9, 0.0), vec3(.5, .65, .65));\n\tfloat d = smin(dCenter, dLowerCone);\n\n\tvec3 diskPos = pos+vec3(0.0, .25, 0.0);\n\tdiskPos.y *= 10.0;\n\tfloat dDisk = sphere(diskPos, 1.0);\n\td = smin(d, dDisk);\n\n\tfloat dUpperCone = cone(pos+vec3(0.0, -.25, 0.0), vec3(.5, .5, .5));\n\td = smin(d, dUpperCone);\n\n\tfloat dFloor = plane(orgPos+vec3(0.0, 1.0, 0.0));\n\t// d = min(dFloor, d);\n\tif(dFloor < d) {\n\t\tcolorIndex = 1.0;\n\t\td = dFloor;\n\t}\n\n\n\treturn vec2(d, colorIndex);\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy).x - map(pos - eps.xyy).x,\n\t\tmap(pos + eps.yxy).x - map(pos - eps.yxy).x,\n\t\tmap(pos + eps.yyx).x - map(pos - eps.yyx).x\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos ).x;\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir, sampler2D tex) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( tex, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\n\nfloat softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax ) {\n\tfloat res = 1.0;\n    float t = mint;\n    for( int i=0; i<16; i++ ) {\n\t\tfloat h = map( ro + rd*t ).x;\n        res = min( res, 8.0*h/t );\n        t += clamp( h, 0.02, 0.10 );\n        if( h<0.001 || t>tmax ) break;\n    }\n    return clamp( res, 0.0, 1.0 );\n\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {\n\tif(colorIndex == 0.0) {\n\t\tfloat a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);\n\t\ta = smoothstep(0.5, 0.6, a);\n\t\tvec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;\n\t\tfloat _ao = ao(pos, normal);\n\t\tvec3 env  = envLight(normal, dir, texture);\n\t\tvec3 envBlur  = envLight(normal, dir, textureBlur);\n\t\tfloat mixture = sin(time*.2) * .5 + .5;\n\t\tenv = mix(env, envBlur, mixture);\n\t\treturn vec4(vec3(grd+env)*_ao, 1.0);\t\n\t} else {\n\t\tvec3  lig = normalize( vec3(-0.6, 0.7, -0.5) );\n\t\tfloat shadow = softshadow(pos, lig, 0.02, 2.5 );\n\t\tshadow = mix(shadow, 1.0, .5);\n\t\tvec4 baseColor = vec4(1.0, 1.0, .96, 1.0);\n\t\tbaseColor.rgb *= shadow;\n\t\treturn baseColor;\n\t}\n\t\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr )\n{\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tfloat y  = 1.0;\n\tvec3 pos = vec3(cos(theta) * r, y, sin(theta)*r);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(1.0, 1.0, .96, 1.0);\n\tfloat prec = pow(.1, 7.0);\n\tfloat d;\n\tfloat colorIndex = 0.0;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tvec2 result = map(pos);\t\t\t\t\t\t//\tdistance to object\n\t\td = result.x;\n\t\tcolorIndex = result.y;\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal, colorIndex);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
 	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
@@ -406,7 +390,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture, textureMap, theta) {
+p.render = function(texture, textureBlur, theta) {
 
 	this.time +=.05;
 	this.shader.bind();
@@ -421,8 +405,8 @@ p.render = function(texture, textureMap, theta) {
 	if(texture) {
 		this.shader.uniform("texture", "uniform1i", 0);
 		texture.bind(0);	
-		this.shader.uniform("textureMap", "uniform1i", 1);
-		textureMap.bind(1);	
+		this.shader.uniform("textureBlur", "uniform1i", 1);
+		textureBlur.bind(1);	
 	}
 	
 	GL.draw(this.mesh);

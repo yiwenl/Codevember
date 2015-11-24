@@ -25,7 +25,7 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture, textureMap, theta) {
+p.render = function(texture, textureBlur, theta) {
 
 	this.time +=.05;
 	this.shader.bind();
@@ -40,8 +40,8 @@ p.render = function(texture, textureMap, theta) {
 	if(texture) {
 		this.shader.uniform("texture", "uniform1i", 0);
 		texture.bind(0);	
-		this.shader.uniform("textureMap", "uniform1i", 1);
-		textureMap.bind(1);	
+		this.shader.uniform("textureBlur", "uniform1i", 1);
+		textureBlur.bind(1);	
 	}
 	
 	GL.draw(this.mesh);
