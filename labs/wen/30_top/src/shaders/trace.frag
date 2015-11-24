@@ -59,6 +59,7 @@ float plane(vec3 pos) {
 
 
 vec2 map(vec3 pos) {
+	
 	float colorIndex       = 0.0;
 	vec3 orgPos            = pos;
 	pos.y                  -=.1;
