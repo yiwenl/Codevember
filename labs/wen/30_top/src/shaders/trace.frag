@@ -14,7 +14,7 @@ uniform float focus;
 uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
-uniform float theta;
+uniform vec2 theta;
 uniform vec3 bubblePos[NUM_ITER];
 uniform float bubbleSize[NUM_ITER];
 
@@ -59,40 +59,40 @@ float plane(vec3 pos) {
 
 
 vec2 map(vec3 pos) {
-	float colorIndex = 0.0;
-	vec3 orgPos = pos;
-	pos.y -=.1;
-	pos.xz = rotate(pos.xz, time*10.0);
-	float r = sin(time*.1) * .5 + .5;
-	r = smoothstep(0.8, 1.0, r) * .015 + .003;
-	pos.yz = rotate(pos.yz, r);
-
-	float dCenter = capsule(pos, .1, 1.0);
-	float t = 0.0;
+	float colorIndex       = 0.0;
+	vec3 orgPos            = pos;
+	pos.y                  -=.1;
+	pos.xz                 = rotate(pos.xz, time*10.0);
+	float r                = sin(time*.1) * .5 + .5;
+	r                      = smoothstep(0.8, 1.0, r) * .015 + .003;
+	pos.yz                 = rotate(pos.yz, r);
+	
+	float dCenter          = capsule(pos, .1, 1.0);
+	float t                = 0.0;
 	if(abs(pos.y) < 1.2) t = (pos.y + 1.2) / 2.0;
-	dCenter += t * .02;
-
-	vec3 negPos = pos;
-	negPos.y *= -1.0;
-	float dLowerCone = cone(negPos+vec3(0.0, -.9, 0.0), vec3(.5, .65, .65));
-	float d = smin(dCenter, dLowerCone);
-
-	vec3 diskPos = pos+vec3(0.0, .25, 0.0);
-	diskPos.y *= 10.0;
-	float dDisk = sphere(diskPos, 1.0);
-	d = smin(d, dDisk);
-
-	float dUpperCone = cone(pos+vec3(0.0, -.25, 0.0), vec3(.5, .5, .5));
-	d = smin(d, dUpperCone);
-
-	float dFloor = plane(orgPos+vec3(0.0, 1.0, 0.0));
-	// d = min(dFloor, d);
+	dCenter                += t * .02;
+	
+	vec3 negPos            = pos;
+	negPos.y               *= -1.0;
+	float dLowerCone       = cone(negPos+vec3(0.0, -.9, 0.0), vec3(.5, .65, .65));
+	float d                = smin(dCenter, dLowerCone);
+	
+	vec3 diskPos           = pos+vec3(0.0, .25, 0.0);
+	diskPos.y              *= 10.0;
+	float dDisk            = sphere(diskPos, 1.0);
+	d                      = smin(d, dDisk);
+	
+	float dUpperCone       = cone(pos+vec3(0.0, -.25, 0.0), vec3(.5, .5, .5));
+	d                      = smin(d, dUpperCone);
+	
+	float dFloor           = plane(orgPos+vec3(0.0, 1.0, 0.0));
+	// d                   = min(dFloor, d);
 	if(dFloor < d) {
-		colorIndex = 1.0;
-		d = dFloor;
+	colorIndex             = 1.0;
+		d                  = dFloor;
 	}
-
-
+	
+	
 	return vec2(d, colorIndex);
 }
 
@@ -109,9 +109,9 @@ vec3 computeNormal(vec3 pos) {
 
 
 //	LIGHTING
-const vec3 lightPos0 = vec3(1.0, 1.0, -1.0);
+const vec3 lightPos0 = vec3(-0.6, 0.7, -0.5);
 const vec3 lightColor0 = vec3(1.0, 1.0, .96);
-const float lightWeight0 = 0.25;
+const float lightWeight0 = 0.85;
 
 const vec3 lightPos1 = vec3(-1.0, -0.75, -.6);
 const vec3 lightColor1 = vec3(.96, .96, 1.0);
@@ -155,33 +155,37 @@ float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax ) {
         if( h<0.001 || t>tmax ) break;
     }
     return clamp( res, 0.0, 1.0 );
+}
 
+
+float diffuse(vec3 normal, vec3 light) {
+	return max(dot(normal, light), 0.0);
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
 	if(colorIndex == 0.0) {
-		float a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);
-		a = smoothstep(0.5, 0.6, a);
-		vec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;
-		float _ao = ao(pos, normal);
-		vec3 env  = envLight(normal, dir, texture);
+		float a       = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);
+		a             = smoothstep(0.5, 0.6, a);
+		vec3 grd      = vec3(1.0, 1.0, .96) * .95 * a;
+		float _ao     = ao(pos, normal);
+		vec3 env      = envLight(normal, dir, texture);
 		vec3 envBlur  = envLight(normal, dir, textureBlur);
 		float mixture = sin(time*.2) * .5 + .5;
-		env = mix(env, envBlur, mixture);
-		return vec4(vec3(grd+env)*_ao, 1.0);	
+		env           = mix(env, envBlur, mixture);
+		vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
+		return vec4(vec3(grd+env+_diffuse)*_ao, 1.0);	
 	} else {
-		vec3  lig = normalize( vec3(-0.6, 0.7, -0.5) );
-		float shadow = softshadow(pos, lig, 0.02, 2.5 );
-		shadow = mix(shadow, 1.0, .5);
+		vec3  lig      = normalize( lightPos0 );
+		float shadow   = softshadow(pos, lig, 0.02, 2.5 );
+		shadow         = mix(shadow, 1.0, .5);
 		vec4 baseColor = vec4(1.0, 1.0, .96, 1.0);
-		baseColor.rgb *= shadow;
+		baseColor.rgb  *= shadow;
 		return baseColor;
 	}
 	
 }
 
-mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
-{
+mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 	vec3 cw = normalize(ta-ro);
 	vec3 cp = vec3(sin(cr), cos(cr),0.0);
 	vec3 cu = normalize( cross(cw,cp) );
@@ -191,8 +195,8 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 
 void main(void) {
 	float r  = 5.0;
-	float y  = 1.0;
-	vec3 pos = vec3(cos(theta) * r, y, sin(theta)*r);
+	float tr = cos(theta.x) * r;
+	vec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);
 	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
 	mat3 ca  = setCamera( pos, ta, 0.0 );
 	vec3 dir = ca * normalize( vec3(uv,focus) );

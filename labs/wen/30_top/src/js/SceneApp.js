@@ -18,6 +18,8 @@ function SceneApp() {
 	this.camera.radius.value = 150;
 	this.camera._rx.value = -.3;
 	this.camera._ry.value = .1;
+	this.camera._rx.limit(-.4, -.2);
+	// this.camera._ry.limit(0, .2);
 
 	this.resize();
 
@@ -47,7 +49,7 @@ p.render = function() {
 	GL.setMatrices(this.cameraOrtho);
 	GL.rotate(this.rotationFront);
 
-	this._vTrace.render(this._texture, this._textureBlur, -this.camera._ry.value);
+	this._vTrace.render(this._texture, this._textureBlur, [-this.camera._rx.value, -this.camera._ry.value]);
 };
 
 p.resize = function() {

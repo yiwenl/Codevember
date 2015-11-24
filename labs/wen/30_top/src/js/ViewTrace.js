@@ -34,7 +34,7 @@ p.render = function(texture, textureBlur, theta) {
 	this.shader.uniform("focus", "uniform1f", params.focus);
 	this.shader.uniform("metaK", "uniform1f", params.metaK);
 	this.shader.uniform("zGap", "uniform1f", params.zGap);
-	this.shader.uniform("theta", "uniform1f", theta || 0);
+	this.shader.uniform("theta", "uniform2fv", theta || [0, 0]);
 	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
 
 	if(texture) {
