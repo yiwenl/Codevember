@@ -5,6 +5,7 @@ var ViewBox = require("./ViewBox");
 var ViewSphere = require("./ViewSphere");
 var ViewTop = require("./ViewTop");
 var ViewTotem = require("./ViewTotem");
+var ViewTrace = require("./ViewTrace");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -28,6 +29,8 @@ p._initTextures = function() {
 	console.log('Init Textures');
 	var faces = [images.posx, images.negx, images.posy, images.negy, images.posz, images.negz];
 	this.cubeTexture = new bongiovi.GLCubeTexture(faces);
+	this._texture = new bongiovi.GLTexture(images.light);
+	this._textureGrd = new bongiovi.GLTexture(images.grd);
 };
 
 p._initViews = function() {
@@ -39,6 +42,8 @@ p._initViews = function() {
 	this._vSphere   = new ViewSphere();
 	this._vTop      = new ViewTop();
 	this._vTotem 	= new ViewTotem();
+
+	this._vTrace 	= new ViewTrace();
 };
 
 p.render = function() {
@@ -48,7 +53,15 @@ p.render = function() {
 	// this._vCube.render(this.cubeTexture);
 	// this._vSphere.render([0, 0, 0]);
 	// this._vTop.render();
-	this._vTotem.render(this.cubeTexture);
+
+	// this._vTotem.render(this.cubeTexture);
+
+	GL.clear(0, 0, 0, 0);
+
+	GL.setMatrices(this.cameraOrtho);
+	GL.rotate(this.rotationFront);
+
+	this._vTrace.render(this._texture, this._textureGrd, -this.camera._ry.value);
 };
 
 p.resize = function() {

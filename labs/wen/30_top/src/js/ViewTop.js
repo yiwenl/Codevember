@@ -66,9 +66,6 @@ p._init = function() {
 		// ss = smoothstep(0.0, .9, ss) * .95 + .05;
 
 		vec2.scale(v, v, ss * size);
-
-
-
 		pos[0] = v[0];
 		pos[2] = v[1];
 

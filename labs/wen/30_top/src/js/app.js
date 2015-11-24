@@ -3,6 +3,14 @@ window.bongiovi = require("./libs/bongiovi.js");
 // window.bongiovi = require("../../../../dist/bongiovi.js");
 // window.bongiovi = require("../../../../dist/bongiovi.js");
 // var dat = require("dat-gui");
+window.params = {
+	focus:1.5,
+	numIter:150,
+	numBubble:5.0,
+	metaK:7.0,
+	zGap:2.0,
+	maxDist:5.0
+};
 
 (function() {
 	var SceneApp = require("./SceneApp");
@@ -11,6 +19,8 @@ window.bongiovi = require("./libs/bongiovi.js");
 
 		var loader = new bongiovi.SimpleImageLoader();
 		loader.load([
+			"assets/light.jpg", 
+			"assets/grd.jpg",
 			"assets/negx.jpg",
 			"assets/negy.jpg",
 			"assets/negz.jpg",

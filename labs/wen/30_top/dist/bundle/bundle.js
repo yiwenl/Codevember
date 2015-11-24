@@ -4,6 +4,14 @@ window.bongiovi = require("./libs/bongiovi.js");
 // window.bongiovi = require("../../../../dist/bongiovi.js");
 // window.bongiovi = require("../../../../dist/bongiovi.js");
 // var dat = require("dat-gui");
+window.params = {
+	focus:1.5,
+	numIter:150,
+	numBubble:5.0,
+	metaK:7.0,
+	zGap:2.0,
+	maxDist:5.0
+};
 
 (function() {
 	var SceneApp = require("./SceneApp");
@@ -12,6 +20,8 @@ window.bongiovi = require("./libs/bongiovi.js");
 
 		var loader = new bongiovi.SimpleImageLoader();
 		loader.load([
+			"assets/light.jpg", 
+			"assets/grd.jpg",
 			"assets/negx.jpg",
 			"assets/negy.jpg",
 			"assets/negz.jpg",
@@ -54,7 +64,7 @@ window.bongiovi = require("./libs/bongiovi.js");
 
 
 new App();
-},{"./SceneApp":2,"./libs/bongiovi.js":7}],2:[function(require,module,exports){
+},{"./SceneApp":2,"./libs/bongiovi.js":8}],2:[function(require,module,exports){
 // SceneApp.js
 
 var GL = bongiovi.GL, gl;
@@ -62,6 +72,7 @@ var ViewBox = require("./ViewBox");
 var ViewSphere = require("./ViewSphere");
 var ViewTop = require("./ViewTop");
 var ViewTotem = require("./ViewTotem");
+var ViewTrace = require("./ViewTrace");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -85,6 +96,8 @@ p._initTextures = function() {
 	console.log('Init Textures');
 	var faces = [images.posx, images.negx, images.posy, images.negy, images.posz, images.negz];
 	this.cubeTexture = new bongiovi.GLCubeTexture(faces);
+	this._texture = new bongiovi.GLTexture(images.light);
+	this._textureGrd = new bongiovi.GLTexture(images.grd);
 };
 
 p._initViews = function() {
@@ -96,6 +109,8 @@ p._initViews = function() {
 	this._vSphere   = new ViewSphere();
 	this._vTop      = new ViewTop();
 	this._vTotem 	= new ViewTotem();
+
+	this._vTrace 	= new ViewTrace();
 };
 
 p.render = function() {
@@ -105,7 +120,15 @@ p.render = function() {
 	// this._vCube.render(this.cubeTexture);
 	// this._vSphere.render([0, 0, 0]);
 	// this._vTop.render();
-	this._vTotem.render(this.cubeTexture);
+
+	// this._vTotem.render(this.cubeTexture);
+
+	GL.clear(0, 0, 0, 0);
+
+	GL.setMatrices(this.cameraOrtho);
+	GL.rotate(this.rotationFront);
+
+	this._vTrace.render(this._texture, this._textureGrd, -this.camera._ry.value);
 };
 
 p.resize = function() {
@@ -114,7 +137,7 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewBox":3,"./ViewSphere":4,"./ViewTop":5,"./ViewTotem":6}],3:[function(require,module,exports){
+},{"./ViewBox":3,"./ViewSphere":4,"./ViewTop":5,"./ViewTotem":6,"./ViewTrace":7}],3:[function(require,module,exports){
 // ViewBox.js
 
 var GL = bongiovi.GL;
@@ -247,9 +270,6 @@ p._init = function() {
 		// ss = smoothstep(0.0, .9, ss) * .95 + .05;
 
 		vec2.scale(v, v, ss * size);
-
-
-
 		pos[0] = v[0];
 		pos[2] = v[1];
 
@@ -359,6 +379,57 @@ p.render = function(texture) {
 module.exports = ViewTotem;
 
 },{}],7:[function(require,module,exports){
+// ViewTrace.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewTrace() {
+	this.time = 0;
+	var fs = "#define GLSLIFY 1\n\nprecision highp float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_BALLS = {{NUM_BALL}};\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform float theta;\nuniform vec3 bubblePos[NUM_ITER];\nuniform float bubbleSize[NUM_ITER];\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k ) {\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b ) {\treturn smin(a, b, 7.0);\t}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat capsule(vec3 p, float r, float c) {\n\treturn mix(length(p.xz)-r, length(vec3(p.x,abs(p.y)-c,p.z))-r, step(c,abs(p.y)));\n}\n\nfloat cone( in vec3 p, in vec3 c ) {\n    vec2 q = vec2( length(p.xz), p.y );\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\n    vec2 w = v - q;\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\n    vec2 d = max(qv,0.0)*qv/vv;\n    return sqrt( dot(w,w) - max(d.x,d.y) )* sign(max(q.y*v.x-q.x*v.y,w.y));\n}\n\nfloat plane(vec3 pos) {\n\treturn pos.y;\n}\n\n\nfloat map(vec3 pos) {\n\tvec3 orgPos = pos;\n\tpos.xz = rotate(pos.xz, time*10.0);\n\tfloat r = sin(time*.1) * .5 + .5;\n\tr = smoothstep(0.8, 1.0, r) * .015 + .003;\n\tpos.yz = rotate(pos.yz, r);\n\n\tfloat dCenter = capsule(pos, .1, 1.0);\n\tfloat t = 0.0;\n\tif(abs(pos.y) < 1.2) t = (pos.y + 1.2) / 2.0;\n\tdCenter += t * .02;\n\n\tvec3 negPos = pos;\n\tnegPos.y *= -1.0;\n\tfloat dLowerCone = cone(negPos+vec3(0.0, -.9, 0.0), vec3(.5, .65, .65));\n\tfloat d = smin(dCenter, dLowerCone);\n\n\tvec3 diskPos = pos+vec3(0.0, .25, 0.0);\n\tdiskPos.y *= 10.0;\n\tfloat dDisk = sphere(diskPos, 1.0);\n\td = smin(d, dDisk);\n\n\tfloat dUpperCone = cone(pos+vec3(0.0, -.25, 0.0), vec3(.5, .5, .5));\n\td = smin(d, dUpperCone);\n\n\tfloat dFloor = plane(orgPos+vec3(0.0, 1.0, 0.0));\n\td = min(dFloor, d);\n\n\n\treturn d;\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy) - map(pos - eps.xyy),\n\t\tmap(pos + eps.yxy) - map(pos - eps.yxy),\n\t\tmap(pos + eps.yyx) - map(pos - eps.yyx)\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(1.0, 1.0, -1.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.25;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos );\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( texture, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal) {\n\tfloat a   = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);\n\ta = smoothstep(0.5, 0.6, a);\n\tvec3 grd  = vec3(1.0, 1.0, .96) * .95 * a;\n\tfloat _ao = ao(pos, normal);\n\tvec3 env  = envLight(normal, dir);\n\treturn vec4(vec3(grd+env*.75)*_ao, 1.0);\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr )\n{\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tfloat y = 1.0;\n\tvec3 pos = vec3(cos(theta) * r, y, sin(theta)*r);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(.0);\n\tfloat prec = pow(.1, 7.0);\n\tfloat d;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\td = map(pos);\t\t\t\t\t\t//\tdistance to object\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
+	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
+	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
+}
+
+var p = ViewTrace.prototype = new bongiovi.View();
+p.constructor = ViewTrace;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var positions = [];
+	var coords = [];
+	var indices = []; 
+
+	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
+};
+
+p.render = function(texture, textureMap, theta) {
+
+	this.time +=.05;
+	this.shader.bind();
+	this.shader.uniform("resolution", "uniform2fv", [GL.width, GL.height]);
+	this.shader.uniform("time", "uniform1f", this.time);
+	this.shader.uniform("focus", "uniform1f", params.focus);
+	this.shader.uniform("metaK", "uniform1f", params.metaK);
+	this.shader.uniform("zGap", "uniform1f", params.zGap);
+	this.shader.uniform("theta", "uniform1f", theta || 0);
+	this.shader.uniform("maxDist", "uniform1f", params.maxDist);
+
+	if(texture) {
+		this.shader.uniform("texture", "uniform1i", 0);
+		texture.bind(0);	
+		this.shader.uniform("textureMap", "uniform1i", 1);
+		textureMap.bind(1);	
+	}
+	
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewTrace;
+},{}],8:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
