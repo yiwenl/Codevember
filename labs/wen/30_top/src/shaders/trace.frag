@@ -59,13 +59,13 @@ float plane(vec3 pos) {
 
 
 vec2 map(vec3 pos) {
-	
+
 	float colorIndex       = 0.0;
 	vec3 orgPos            = pos;
 	pos.y                  -=.1;
 	pos.xz                 = rotate(pos.xz, time*10.0);
-	float r                = sin(time*.1) * .5 + .5;
-	r                      = smoothstep(0.8, 1.0, r) * .015 + .003;
+	float r                = sin(time*.5) * .5 + .5;
+	r                      = smoothstep(0.6, 1.0, r) * .015 + .003;
 	pos.yz                 = rotate(pos.yz, r);
 	
 	float dCenter          = capsule(pos, .1, 1.0);
