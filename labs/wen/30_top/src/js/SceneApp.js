@@ -54,7 +54,7 @@ p.render = function() {
 
 p.resize = function() {
 	var size = Math.min(window.innerWidth, window.innerHeight);
-	size = Math.min(size, 800);
+	size = Math.min(size, 600);
 	GL.setSize(size, size);
 	GL.canvas.style.marginLeft = -size/2 + "px";
 	GL.canvas.style.marginTop = -size/2 + "px";
