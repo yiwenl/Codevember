@@ -3,7 +3,6 @@ precision highp float;
 varying vec2 uv;
 
 const float PI      = 3.141592657;
-const int NUM_BALLS = {{NUM_BALL}};
 const int NUM_ITER  = {{NUM_ITER}};
 // const float maxDist = 5.0;
 
@@ -15,8 +14,6 @@ uniform float metaK;
 uniform float zGap;
 uniform float maxDist;
 uniform vec2 theta;
-uniform vec3 bubblePos[NUM_ITER];
-uniform float bubbleSize[NUM_ITER];
 
 
 //	TOOLS
@@ -164,8 +161,9 @@ float diffuse(vec3 normal, vec3 light) {
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
 	if(colorIndex == 0.0) {
-		float a       = fract(atan(pos.z, pos.x) * 3.0 + time*3.0);
-		a             = smoothstep(0.5, 0.6, a);
+		float speed   = 3.0 + (sin(time) *.5+.5) * .05;
+		float a       = fract(atan(pos.z, pos.x) * 3.0 + time*speed);
+		a             = smoothstep(0.25, 0.3, abs(a-.5));
 		vec3 grd      = vec3(1.0, 1.0, .96) * .95 * a;
 		float _ao     = ao(pos, normal);
 		vec3 env      = envLight(normal, dir, texture);
