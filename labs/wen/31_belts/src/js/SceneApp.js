@@ -16,6 +16,8 @@ function SceneApp() {
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
 	this.camera.radius.value = 150;
+	this.camera._rx.value = -Math.PI/10;
+	this.camera._ry.value = Math.PI/3;
 	// this.camera._rx.limit(-.4, -.2);
 	// this.camera._ry.limit(0, .2);
 

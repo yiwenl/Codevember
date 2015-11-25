@@ -60,23 +60,20 @@ float displacement(vec3 p) {
 
 vec2 map(vec3 pos) {
 	float colorIndex = 0.0;
-	vec3 posBelt = pos;
-	posBelt.yz   = repAng(posBelt.yz, 12.0);
-	posBelt.xz   = repAng(posBelt.xz, 36.0*10.0);
-	posBelt.z    -= 1.0;
-	float l 	 = length(posBelt);
-	float noise = displacement(posBelt);
-	// posBelt      = normalize(posBelt) * (l+(sin(time)*.5+.5)*.02);
+	vec3 posBelt     = pos;
+	posBelt.yz 		 = rotate(posBelt.yz, time*.1);
+	posBelt.yz       = repAng(posBelt.yz, 12.0);
+	posBelt.xz       = repAng(posBelt.xz, 36.0*10.0);
+	posBelt.z        -= 1.0;
+	float d          = sdBox(posBelt, vec3(1.0, .05, .01));
 
-	float d      = sdBox(posBelt, vec3(1.0, .05, .01));
-
-	float r 	 = .90+pow(sin(time), 5.0)*.05;
-	// r 			 = pow(r, 2.0);
-	float dSphere = sphere(pos, r);
+	float r          = .90+pow(sin(time), 5.0)*.05;
+	float dSphere    = sphere(pos, r);
 	dSphere += displacement(pos*.15) * .05;
 	if(dSphere < d) {
 		d = dSphere;
 		colorIndex = 1.0;
+		
 	}
 	
 	return vec2(d, colorIndex);
@@ -149,25 +146,22 @@ float diffuse(vec3 normal, vec3 light) {
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
+	vec3 baseColor = vec3(0.0);
+	vec3 env = vec3(.0);
 	if(colorIndex == 0.0) {
-		vec3  lig      = normalize( lightPos0 );
-		float shadow   = softshadow(pos, lig, 0.02, 2.5 );
-		vec3 grd      = vec3(1.0, 1.0, .96) * .05;
-		float _ao     = ao(pos, normal);
-		vec3 env      = envLight(normal, dir, textureBlur);
-		float mixture = sin(time*.2) * .5 + .5;
-		vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
-		return vec4(vec3(grd+env+_diffuse)*_ao*shadow, 1.0);	
+		baseColor = vec3(1.0, 1.0, .96) * .05;
+		env      = envLight(normal, dir, textureBlur);
 	} else {
-		vec3  lig      = normalize( lightPos0 );
-		float shadow   = softshadow(pos, lig, 0.02, 2.5 );
-		vec3 grd      = vec3(.25, 0.0, .0);
-		float _ao     = ao(pos, normal);
-		vec3 env      = envLight(normal, dir, texture);
-		float mixture = sin(time*.2) * .5 + .5;
-		vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
-		return vec4(vec3(grd+env+_diffuse)*_ao*shadow, 1.0);	
+		baseColor = vec3(.25, 0.0, .0);
+		env      = envLight(normal, dir, texture);
 	}
+
+	vec3  lig     = normalize( lightPos0 );
+	float shadow  = softshadow(pos, lig, 0.02, 2.5 );
+	float _ao     = ao(pos, normal);
+	vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
+	_diffuse      += diffuse(normal, normalize(lightPos1)) * lightColor1 * lightWeight1;
+	return vec4(vec3(baseColor+env+_diffuse)*_ao*shadow, 1.0);	
 	
 }
 
