@@ -109,7 +109,7 @@ var Model = [
 		cover:"dist/assets/covers/wen22.jpg"
 	},
 	{
-		path:"labs/wen/31_belt/dist/index.html",
+		path:"labs/wen/31_belts/dist/index.html",
 		cover:"dist/assets/covers/wen23.jpg"
 	}
 ];
