@@ -364,6 +364,10 @@ var Model = [
 	{
 		path:"labs/wen/31_belts/dist/index.html",
 		cover:"dist/assets/covers/wen23.jpg"
+	},
+	{
+		path:"labs/wen/31_soapBubble/dist/index.html",
+		cover:"dist/assets/covers/wen23.jpg"
 	}
 ];
 
