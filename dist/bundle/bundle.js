@@ -367,7 +367,7 @@ var Model = [
 	},
 	{
 		path:"labs/wen/31_soapBubble/dist/index.html",
-		cover:"dist/assets/covers/wen23.jpg"
+		cover:"dist/assets/covers/wen24.jpg"
 	}
 ];
 
