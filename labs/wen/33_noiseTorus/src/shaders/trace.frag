@@ -110,7 +110,7 @@ vec2 map(vec3 pos) {
 	vec3 p1 = pos;
 	p1.zx = rotate(p1.zx, time*.2);
 	p1.xy = rotate(p1.xy, time*.4);
-	p1.zx = repAng(p1.zx, 480.0);
+	p1.zx = repAng(p1.zx, 960.0);
 	p1.x -= 1.75;
 	p1.x += sin(pos.z-time) * .25;
 	p1.z -= .5;
@@ -207,9 +207,10 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
 
 		g = sin(g* 10.0) * .5 + .5;
 		baseColor = vec3(g);	
-		env 	 = envLight(normal, dir, texture);
+		env 	 = envLight(normal, dir, textureBlur);
 	} else {
 		shadowOffset = 0.0;
+		env 	 = envLight(normal, dir, texture);
 		baseColor = vec3(1.0, 1.0, .96);
 	}
 
