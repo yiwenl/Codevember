@@ -44,6 +44,40 @@ float displacement(vec3 p) {
 float rep(float p, float c) {	return mod(p, c) - 0.5*c;	}
 vec2 rep(vec2 p, float c) {		return mod(p, c) - 0.5*c;	}
 
+float length2( vec2 p )
+{
+	return sqrt( p.x*p.x + p.y*p.y );
+}
+
+float length6( vec2 p )
+{
+	p = p*p*p; p = p*p;
+	return pow( p.x + p.y, 1.0/6.0 );
+}
+
+float length8( vec2 p )
+{
+	p = p*p; p = p*p; p = p*p;
+	return pow( p.x + p.y, 1.0/8.0 );
+}
+
+float sdTorus( vec3 p, vec2 t )
+{
+  return length( vec2(length(p.xz)-t.x,p.y) )-t.y;
+}
+
+float sdTorus82( vec3 p, vec2 t )
+{
+  vec2 q = vec2(length2(p.xz)-t.x,p.y);
+  return length8(q)-t.y;
+}
+
+float sdTorus88( vec3 p, vec2 t )
+{
+  vec2 q = vec2(length8(p.xz)-t.x,p.y);
+  return length8(q)-t.y;
+}
+
 vec2 repAng(vec2 p, float n) {
     float ang = 2.0*PI/n;
     float sector = floor(atan(p.x, p.y)/ang + 0.5);
@@ -66,22 +100,29 @@ float box( vec3 p, vec3 b ) {
 const float size = 2.0;
 
 vec2 map(vec3 pos) {
-	float colorIndex = 1.0;
-	vec3 posSlice = pos;
-	posSlice.z = rep(clamp(posSlice.z, -size, size), size*.1);
-	float dBox = box(posSlice, vec3(size*2.0, size*2.0, .01));
+	float colorIndex = 0.0;
+	vec3 p0 = pos;
+	p0.yz = rotate(p0.yz, time*.2);
+	p0.yz = repAng(p0.yz, 240.0);
+	p0.z -= 1.75;
+	p0.x += sin(pos.y-time) * .25;
 
+	vec3 p1 = pos;
+	p1.zx = rotate(p1.zx, time*.2);
+	p1.xy = rotate(p1.xy, time*.4);
+	p1.zx = repAng(p1.zx, 960.0);
+	p1.x -= 1.75;
+	p1.x += sin(pos.z-time) * .25;
+	p1.z -= .5;
 
-	float dSphere0 = sphere(pos+vec3(.5, sin(time*.234325)*.2, cos(time*.3) * .4), size+cos(time*.5)*.2);
-	float dNoise0 = displacement(pos*.2) * .1;
-	float dSphere1 = sphere(pos+vec3(-.5, sin(time*.5)*.3, cos(time*.234325)*.2), size+sin(time)*.2);
-	float dNoise1 = displacement(pos*.2) * .1;
-	float d = smin(dSphere0 + dNoise0, dSphere1 + dNoise1);
+	float d = sphere(p0+vec3(.5, 0.0, .0), 1.0);
+	float d1 = sphere(p1+vec3(0.0, 0.0, 0.0), 1.0);
 
-	// if(dBox > d ) {
-	// 	d = dBox;
-	// }
-	d = max(d, dBox);
+	
+	if(d1 <= d ) {
+		colorIndex = 1.0;
+	}
+	d = smin(d, d1);
 	
 	return vec2(d, colorIndex);
 }
@@ -153,27 +194,34 @@ float diffuse(vec3 normal, vec3 light) {
 }
 
 vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
+	vec3 p = pos + vec3(sin(time*.25) * .5, cos(time*.05), .0);
 	vec3 baseColor = vec3(0.0);
-	vec3 env = vec3(.0);
-	if(colorIndex == 0.0) {
-		baseColor = vec3(1.0, 1.0, .96) * .05;
-		env      = envLight(normal, dir, texture);
+	vec3 env = vec3(0.0);
+	float shadowOffset = 1.0;
+	if(colorIndex < .5) {
+		float a = atan(p.y, p.x);
+		float r = length(p.xy);
+		float d = displacement(pos * 2.0);
+		float g = sin(a*3.0+r*20.0-time + sin(time * .1) * 5.0) + cos(r*13.0-a*10.0 - time + cos(time*.25) * 2.0);
+		g = r * g;
+
+		g = sin(g* 10.0) * .5 + .5;
+		baseColor = vec3(g);	
+		env 	 = envLight(normal, dir, textureBlur);
 	} else {
-		baseColor = vec3(.5, 0.25, 0.25);
-		env      = envLight(normal, dir, texture);
+		shadowOffset = 0.0;
+		env 	 = envLight(normal, dir, texture);
+		baseColor = vec3(1.0, 1.0, .96);
 	}
 
-	vec2 uv 	 = vec2(fract(pos.z*.5-time*.1), .5);
-	baseColor    = texture2D(textureMap, uv).rgb;
-
-	env *= .5;
+	
 	vec3  lig     = normalize( lightPos0 );
 	float shadow  = softshadow(pos, lig, 0.02, 2.5 );
 	shadow        = mix(shadow, 1.0, .5);
 	float _ao     = ao(pos, normal);
 	vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
 	_diffuse      += diffuse(normal, normalize(lightPos1)) * lightColor1 * lightWeight1;
-	return vec4(vec3(baseColor+env+_diffuse)*_ao*shadow, 1.0);	
+	return vec4(vec3(baseColor+_diffuse + env)*_ao*shadow, 1.0);	
 	
 }
 
@@ -186,7 +234,7 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main(void) {
-	float r  = 5.0;
+	float r  = 6.0;
 	float tr = cos(theta.x) * r;
 	vec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);
 	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
