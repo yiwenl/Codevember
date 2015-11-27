@@ -34,7 +34,7 @@ window.params = {
 			window.addEventListener("load", this._init.bind(this));
 		}
 
-		window.addEventListener('keydown', this._onKey.bind(this));
+		
 	};
 
 

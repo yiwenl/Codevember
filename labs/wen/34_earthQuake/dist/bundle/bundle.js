@@ -35,7 +35,7 @@ window.params = {
 			window.addEventListener("load", this._init.bind(this));
 		}
 
-		window.addEventListener('keydown', this._onKey.bind(this));
+		
 	};
 
 
@@ -89,11 +89,13 @@ function SceneApp() {
 
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
+	console.log(this.camera.radius.value);
 
 	this.camera._rx.value = this.camera._ry.value = -.4;
 	this.resize();
 
 	window.addEventListener("resize", this.resize.bind(this));
+	window.addEventListener('keydown', this._onKey.bind(this));
 }
 
 
@@ -112,6 +114,20 @@ p._initViews = function() {
 	this._vAxis     = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
 	this._vSphere   = new ViewSphere();
+};
+
+p._onKey = function(e) {
+	if(e.keyCode == 32) {	//	spacebar
+		if(params.offset.value < 0.5) {
+			params.offset.value = 1;
+			this.camera.radius.value = 250;
+			this.camera._rx.value = this.camera._ry.value = 0;
+		} else {
+			params.offset.value = 0;
+			this.camera.radius.value = 500;
+			this.camera._rx.value = this.camera._ry.value = -.4;
+		}
+	}
 };
 
 p.render = function() {
