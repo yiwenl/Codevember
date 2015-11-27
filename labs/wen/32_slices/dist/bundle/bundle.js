@@ -1,65 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-// app.js
-window.bongiovi = require("./libs/bongiovi.js");
-// window.bongiovi = require("../../../../dist/bongiovi.js");
-// window.bongiovi = require("../../../../dist/bongiovi.js");
-// var dat = require("dat-gui");
-window.params = {
-	focus:1.5,
-	numIter:150,
-	numBubble:5.0,
-	metaK:7.0,
-	zGap:2.0,
-	maxDist:5.0
-};
-
-(function() {
-	var SceneApp = require("./SceneApp");
-
-	App = function() {
-
-		var loader = new bongiovi.SimpleImageLoader();
-		loader.load([
-			"assets/grd.jpg",
-			"assets/light.jpg",
-			"assets/lightBlur.jpg"
-			], this, this._onImageLoaded);
-	}
-
-	var p = App.prototype;
-
-	p._onImageLoaded = function(img) {
-		window.images = img;
-
-		if(document.body) this._init();
-		else {
-			window.addEventListener("load", this._init.bind(this));
-		}
-	};
-
-	p._init = function() {
-		this.canvas = document.createElement("canvas");
-		this.canvas.width = window.innerWidth;
-		this.canvas.height = window.innerHeight;
-		this.canvas.className = "Main-Canvas";
-		document.body.appendChild(this.canvas);
-		bongiovi.GL.init(this.canvas);
-
-		this._scene = new SceneApp();
-		bongiovi.Scheduler.addEF(this, this._loop);
-
-		// this.gui = new dat.GUI({width:300});
-	};
-
-	p._loop = function() {
-		this._scene.loop();
-	};
-
-})();
-
-
-new App();
-},{"./SceneApp":2,"./libs/bongiovi.js":8}],2:[function(require,module,exports){
 // SceneApp.js
 
 var GL = bongiovi.GL, gl;
@@ -78,7 +17,7 @@ function SceneApp() {
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
 	this.camera.radius.value = 150;
-	var r = .65;
+	var r = 1.0;
 	this.camera._ry.limit(-r, r);
 	this.camera._rx.limit(-r/2, r/2);
 
@@ -124,7 +63,7 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewBox":3,"./ViewSphere":4,"./ViewTop":5,"./ViewTotem":6,"./ViewTrace":7}],3:[function(require,module,exports){
+},{"./ViewBox":2,"./ViewSphere":3,"./ViewTop":4,"./ViewTotem":5,"./ViewTrace":6}],2:[function(require,module,exports){
 // ViewBox.js
 
 var GL = bongiovi.GL;
@@ -133,7 +72,7 @@ var gl;
 
 function ViewBox() {
 	// bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalWithNormalVert'), bongiovi.ShaderLibs.get('simpleColorLighting'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// cubemap.vert\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = normalMatrix * aNormal;\n    vEye = normalize(mvPosition).rgb;\n    vVertex = aVertexPosition;\n}", "#define GLSLIFY 1\n\n// cubemap.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform samplerCube texture;\nuniform vec3 camera;\nvarying vec3 vNormal;\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\nvoid main(void) {\n    gl_FragColor = textureCube(texture, vVertex);\n    // gl_FragColor = textureCube(texture, reflect(vEye, vNormal));\n    // gl_FragColor = textureCube(texture, refract(vEye, vNormal, 1.0));\n    // gl_FragColor = vec4(1.0);\n    // gl_FragColor.rgb = vNormal*.5+.5;\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// cubemap.vert\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\nvoid main(void) {\n\tvec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = normalMatrix * aNormal;\n    vEye = normalize(mvPosition).rgb;\n    vVertex = aVertexPosition;\n}", "#define GLSLIFY 1\n// cubemap.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform samplerCube texture;\nuniform vec3 camera;\nvarying vec3 vNormal;\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\nvoid main(void) {\n    gl_FragColor = textureCube(texture, vVertex);\n    // gl_FragColor = textureCube(texture, reflect(vEye, vNormal));\n    // gl_FragColor = textureCube(texture, refract(vEye, vNormal, 1.0));\n    // gl_FragColor = vec4(1.0);\n    // gl_FragColor.rgb = vNormal*.5+.5;\n}");
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
 }
 
@@ -159,7 +98,7 @@ p.render = function(texture) {
 };
 
 module.exports = ViewBox;
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 // ViewSphere.js
 
 var GL = bongiovi.GL;
@@ -168,7 +107,7 @@ var gl;
 
 function ViewSphere() {
 	// bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalWithNormalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// reflect.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform vec3 camera;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vEye;\nvarying vec3 vNormal;\n\nvoid main(void) {\n\tvec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);\n\tgl_Position     = uPMatrix * mvPosition;\n\tvTextureCoord   = aTextureCoord;\n\t// vNormal         = normalize(normalMatrix*aNormal);\n\tvNormal         = aNormal;\n\tvEye            = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n\n// reflect.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\nuniform samplerCube texture;\nvarying vec3 vEye;\nvarying vec3 vNormal;\nuniform mat3 normalMatrix;\n\nuniform mat3 invertMVMatrix;\n\nvoid main(void) {\n\tvec3 N = normalMatrix*vNormal;\n\tvec3 V = vEye;\n    // gl_FragColor = textureCube(texture, invertMVMatrix * refract(V, N, 0.975));\n    vec4 refractColor = textureCube(texture, invertMVMatrix * refract(V, N, 0.975));\n    refractColor.rgb *= .75;\n    vec4 reflectColor = textureCube(texture, invertMVMatrix * reflect(V, N));\n\n    refractColor.rgb += reflectColor.rgb * .5;\n    gl_FragColor = refractColor;\n    // gl_FragColor = mix(refractColor, reflectColor, .75);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// reflect.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nuniform vec3 camera;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vEye;\nvarying vec3 vNormal;\n\nvoid main(void) {\n\tvec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);\n\tgl_Position     = uPMatrix * mvPosition;\n\tvTextureCoord   = aTextureCoord;\n\t// vNormal         = normalize(normalMatrix*aNormal);\n\tvNormal         = aNormal;\n\tvEye            = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n// reflect.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\nuniform samplerCube texture;\nvarying vec3 vEye;\nvarying vec3 vNormal;\nuniform mat3 normalMatrix;\n\nuniform mat3 invertMVMatrix;\n\nvoid main(void) {\n\tvec3 N = normalMatrix*vNormal;\n\tvec3 V = vEye;\n    // gl_FragColor = textureCube(texture, invertMVMatrix * refract(V, N, 0.975));\n    vec4 refractColor = textureCube(texture, invertMVMatrix * refract(V, N, 0.975));\n    refractColor.rgb *= .75;\n    vec4 reflectColor = textureCube(texture, invertMVMatrix * reflect(V, N));\n\n    refractColor.rgb += reflectColor.rgb * .5;\n    gl_FragColor = refractColor;\n    // gl_FragColor = mix(refractColor, reflectColor, .75);\n}");
 }
 
 var p = ViewSphere.prototype = new bongiovi.View();
@@ -188,7 +127,7 @@ p.render = function() {
 };
 
 module.exports = ViewSphere;
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 // ViewTop.js
 
 var GL = bongiovi.GL;
@@ -302,7 +241,7 @@ p.render = function() {
 };
 
 module.exports = ViewTop;
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // ViewTotem.js
 
 var GL = bongiovi.GL;
@@ -313,7 +252,7 @@ function ViewTotem() {
 	this.ry = 0;
 	this.time = 0;
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get('simpleColorFrag'));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// totem.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform mat3 nMtx;\nuniform float scale;\nuniform float ry;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvarying vec3 vEye;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(c, -s, s, c);\n\treturn r * v;\n}\n\nvoid main(void) {\n\tvec3 pos        = aVertexPosition * scale;\n\tpos.y \t\t\t-= 10.0;\n\tfloat t \t\t= sin(time) * .5 + .5;\n\tt \t\t\t\t= smoothstep(.5, 1.0, t);\n\tpos.xy \t\t\t= rotate(pos.xy, t * 0.02);\n\tpos.xz \t\t\t= rotate(pos.xz, ry);\n\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n\tgl_Position     = uPMatrix * mvPosition;\n\tvTextureCoord   = aTextureCoord;\n\t\n\tvVertex         = pos;\n\n\tvec3 N \t\t\t= aNormal;\n\tN.xz \t\t\t= rotate(N.xz, ry);\n\tvNormal         = normalMatrix * N;\n\tvEye            = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n\n// totem.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform mat3 invertMVMatrix;\nuniform samplerCube texture;\nvarying vec3 vNormal;\n\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\n\nfloat diffuse(vec3 n, vec3 l) {\n\treturn max(dot(n, normalize(l)), 0.0);\n}\n\n\nconst vec3 l0 = vec3(1.0);\nconst vec3 l1 = vec3(-1.0);\nconst float fade = .92;\nconst vec3 lc0 = vec3(1.0, 1.0, fade);\nconst vec3 lc1 = vec3(fade, fade, 1.0);\n\nvoid main(void) {\n\tvec3 N = vNormal.grb;\n\tvec3 d0 = diffuse(N, l0) * lc0;\n\tvec3 d1 = diffuse(N, l1) * lc1;\n\n\tvec3 color = .2 + d0 + d1;\n\n\tgl_FragColor = vec4(color, 1.0);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// totem.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform mat3 nMtx;\nuniform float scale;\nuniform float ry;\nuniform float time;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vVertex;\n\nvarying vec3 vEye;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(c, -s, s, c);\n\treturn r * v;\n}\n\nvoid main(void) {\n\tvec3 pos        = aVertexPosition * scale;\n\tpos.y \t\t\t-= 10.0;\n\tfloat t \t\t= sin(time) * .5 + .5;\n\tt \t\t\t\t= smoothstep(.5, 1.0, t);\n\tpos.xy \t\t\t= rotate(pos.xy, t * 0.02);\n\tpos.xz \t\t\t= rotate(pos.xz, ry);\n\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n\tgl_Position     = uPMatrix * mvPosition;\n\tvTextureCoord   = aTextureCoord;\n\t\n\tvVertex         = pos;\n\n\tvec3 N \t\t\t= aNormal;\n\tN.xz \t\t\t= rotate(N.xz, ry);\n\tvNormal         = normalMatrix * N;\n\tvEye            = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n// totem.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform mat3 invertMVMatrix;\nuniform samplerCube texture;\nvarying vec3 vNormal;\n\nvarying vec3 vEye;\nvarying vec3 vVertex;\n\n\nfloat diffuse(vec3 n, vec3 l) {\n\treturn max(dot(n, normalize(l)), 0.0);\n}\n\n\nconst vec3 l0 = vec3(1.0);\nconst vec3 l1 = vec3(-1.0);\nconst float fade = .92;\nconst vec3 lc0 = vec3(1.0, 1.0, fade);\nconst vec3 lc1 = vec3(fade, fade, 1.0);\n\nvoid main(void) {\n\tvec3 N = vNormal.grb;\n\tvec3 d0 = diffuse(N, l0) * lc0;\n\tvec3 d1 = diffuse(N, l1) * lc1;\n\n\tvec3 color = .2 + d0 + d1;\n\n\tgl_FragColor = vec4(color, 1.0);\n}");
 }
 
 var p = ViewTotem.prototype = new bongiovi.View();
@@ -365,7 +304,7 @@ p.render = function(texture) {
 
 module.exports = ViewTotem;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // ViewTrace.js
 
 var GL = bongiovi.GL;
@@ -374,10 +313,10 @@ var gl;
 
 function ViewTrace() {
 	this.time = 0;
-	var fs = "#define GLSLIFY 1\n\nprecision highp float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureBlur;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec2 theta;\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k ) {\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b ) {\treturn smin(a, b, 7.0);\t}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat displacement(vec3 p) {\n\treturn sin(20.0*p.x+time*.232)*sin(20.0*p.y+time*.25)*sin(20.0*p.z+time*.33);\n}\n\nfloat rep(float p, float c) {\treturn mod(p, c) - 0.5*c;\t}\nvec2 rep(vec2 p, float c) {\t\treturn mod(p, c) - 0.5*c;\t}\n\nvec2 repAng(vec2 p, float n) {\n    float ang = 2.0*PI/n;\n    float sector = floor(atan(p.x, p.y)/ang + 0.5);\n    p = rotate(p, sector*ang);\n    return p;\n}\n\nvec3 repAngS(vec2 p, float n) {\n    float ang = 2.0*PI/n;\n    float sector = floor(atan(p.x, p.y)/ang + 0.5);\n    p = rotate(p, sector*ang);\n    return vec3(p.x, p.y, mod(sector, n));\n}\n\nfloat box( vec3 p, vec3 b ) {\n\tvec3 d = abs(p) - b;\n\treturn min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));\n}\n\nconst float size = 2.0;\n\nvec2 map(vec3 pos) {\n\tfloat colorIndex = 1.0;\n\tvec3 posSlice = pos;\n\tposSlice.z = rep(clamp(posSlice.z, -size, size), size*.1);\n\tfloat dBox = box(posSlice, vec3(size*2.0, size*2.0, .01));\n\n\n\tfloat dSphere0 = sphere(pos+vec3(.5, sin(time*.234325)*.2, cos(time*.3) * .4), size+cos(time*.5)*.2);\n\tfloat dNoise0 = displacement(pos*.2) * .1;\n\tfloat dSphere1 = sphere(pos+vec3(-.5, sin(time*.5)*.3, cos(time*.234325)*.2), size+sin(time)*.2);\n\tfloat dNoise1 = displacement(pos*.2) * .1;\n\tfloat d = smin(dSphere0 + dNoise0, dSphere1 + dNoise1);\n\n\t// if(dBox > d ) {\n\t// \td = dBox;\n\t// }\n\td = max(d, dBox);\n\t\n\treturn vec2(d, colorIndex);\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy).x - map(pos - eps.xyy).x,\n\t\tmap(pos + eps.yxy).x - map(pos - eps.yxy).x,\n\t\tmap(pos + eps.yyx).x - map(pos - eps.yyx).x\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(-0.6, 0.7, -0.5);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.15;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos ).x;\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir, sampler2D tex) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( tex, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\n\nfloat softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax ) {\n\tfloat res = 1.0;\n    float t = mint;\n    for( int i=0; i<16; i++ ) {\n\t\tfloat h = map( ro + rd*t ).x;\n        res = min( res, 8.0*h/t );\n        t += clamp( h, 0.02, 0.10 );\n        if( h<0.001 || t>tmax ) break;\n    }\n    return clamp( res, 0.0, 1.0 );\n}\n\n\nfloat diffuse(vec3 normal, vec3 light) {\n\treturn max(dot(normal, light), 0.0);\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {\n\tvec3 baseColor = vec3(0.0);\n\tvec3 env = vec3(.0);\n\tif(colorIndex == 0.0) {\n\t\tbaseColor = vec3(1.0, 1.0, .96) * .05;\n\t\tenv      = envLight(normal, dir, texture);\n\t} else {\n\t\tbaseColor = vec3(.5, 0.25, 0.25);\n\t\tenv      = envLight(normal, dir, texture);\n\t}\n\n\tvec2 uv \t = vec2(fract(pos.z*.5-time*.1), .5);\n\tbaseColor    = texture2D(textureMap, uv).rgb;\n\n\tenv *= .5;\n\tvec3  lig     = normalize( lightPos0 );\n\tfloat shadow  = softshadow(pos, lig, 0.02, 2.5 );\n\tshadow        = mix(shadow, 1.0, .5);\n\tfloat _ao     = ao(pos, normal);\n\tvec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;\n\t_diffuse      += diffuse(normal, normalize(lightPos1)) * lightColor1 * lightWeight1;\n\treturn vec4(vec3(baseColor+env+_diffuse)*_ao*shadow, 1.0);\t\n\t\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tfloat tr = cos(theta.x) * r;\n\tvec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(0.0);\n\tfloat prec = pow(.1, 7.0);\n\tfloat d;\n\tfloat colorIndex = 0.0;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tvec2 result = map(pos);\t\t\t\t\t\t//\tdistance to object\n\t\td = result.x;\n\t\tcolorIndex = result.y;\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal, colorIndex);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
+	var fs = "#define GLSLIFY 1\nprecision highp float;\n\nvarying vec2 uv;\n\nconst float PI      = 3.141592657;\nconst int NUM_ITER  = {{NUM_ITER}};\n// const float maxDist = 5.0;\n\nuniform sampler2D texture;\nuniform sampler2D textureBlur;\nuniform sampler2D textureMap;\nuniform float time;\nuniform float focus;\nuniform float metaK;\nuniform float zGap;\nuniform float maxDist;\nuniform vec2 theta;\n\n\n//\tTOOLS\nvec2 rotate(vec2 pos, float angle) {\n\tfloat c = cos(angle);\n\tfloat s = sin(angle);\n\n\treturn mat2(c, s, -s, c) * pos;\n}\n\nfloat smin( float a, float b, float k ) {\n    float res = exp( -k*a ) + exp( -k*b );\n    return -log( res )/k;\n}\n\nfloat smin( float a, float b ) {\treturn smin(a, b, 7.0);\t}\n\n//\tGEOMETRY\nfloat sphere(vec3 pos, float radius) {\n\treturn length(pos) - radius;\n}\n\nfloat displacement(vec3 p) {\n\treturn sin(20.0*p.x+time*.232)*sin(20.0*p.y+time*.25)*sin(20.0*p.z+time*.33);\n}\n\nfloat rep(float p, float c) {\treturn mod(p, c) - 0.5*c;\t}\nvec2 rep(vec2 p, float c) {\t\treturn mod(p, c) - 0.5*c;\t}\n\nvec2 repAng(vec2 p, float n) {\n    float ang = 2.0*PI/n;\n    float sector = floor(atan(p.x, p.y)/ang + 0.5);\n    p = rotate(p, sector*ang);\n    return p;\n}\n\nvec3 repAngS(vec2 p, float n) {\n    float ang = 2.0*PI/n;\n    float sector = floor(atan(p.x, p.y)/ang + 0.5);\n    p = rotate(p, sector*ang);\n    return vec3(p.x, p.y, mod(sector, n));\n}\n\nfloat box( vec3 p, vec3 b ) {\n\tvec3 d = abs(p) - b;\n\treturn min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));\n}\n\nconst float size = 2.0;\n\nvec2 map(vec3 pos) {\n\tfloat colorIndex = 1.0;\n\tvec3 posSlice = pos;\n\tposSlice.z = rep(clamp(posSlice.z, -size, size), size*.1);\n\tfloat dBox = box(posSlice, vec3(size*2.0, size*2.0, .01));\n\n\n\tfloat dSphere0 = sphere(pos+vec3(.5, sin(time*.234325)*.2, cos(time*.3) * .4), size+cos(time*.5)*.2);\n\tfloat dNoise0 = displacement(pos*.2) * .1;\n\tfloat dSphere1 = sphere(pos+vec3(-.5, sin(time*.5)*.3, cos(time*.234325)*.2), size+sin(time)*.2);\n\tfloat dNoise1 = displacement(pos*.2) * .1;\n\tfloat d = smin(dSphere0 + dNoise0, dSphere1 + dNoise1);\n\n\t// if(dBox > d ) {\n\t// \td = dBox;\n\t// }\n\td = max(d, dBox);\n\t\n\treturn vec2(d, colorIndex);\n}\n\nvec3 computeNormal(vec3 pos) {\n\tvec2 eps = vec2(0.001, 0.0);\n\n\tvec3 normal = vec3(\n\t\tmap(pos + eps.xyy).x - map(pos - eps.xyy).x,\n\t\tmap(pos + eps.yxy).x - map(pos - eps.yxy).x,\n\t\tmap(pos + eps.yyx).x - map(pos - eps.yyx).x\n\t);\n\treturn normalize(normal);\n}\n\n\n//\tLIGHTING\nconst vec3 lightPos0 = vec3(-0.6, 0.7, -0.5);\nconst vec3 lightColor0 = vec3(1.0, 1.0, .96);\nconst float lightWeight0 = 0.15;\n\nconst vec3 lightPos1 = vec3(-1.0, -0.75, -.6);\nconst vec3 lightColor1 = vec3(.96, .96, 1.0);\nconst float lightWeight1 = 0.15;\n\nfloat ao( in vec3 pos, in vec3 nor ){\n\tfloat occ = 0.0;\n    float sca = 1.0;\n    for( int i=0; i<5; i++ )\n    {\n        float hr = 0.01 + 0.12*float(i)/4.0;\n        vec3 aopos =  nor * hr + pos;\n        float dd = map( aopos ).x;\n        occ += -(dd-hr)*sca;\n        sca *= 0.95;\n    }\n    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    \n}\n\nvec3 envLight(vec3 normal, vec3 dir, sampler2D tex) {\n\tvec3 eye    = -dir;\n\tvec3 r      = reflect( eye, normal );\n\tfloat m     = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n\tvec2 vN     = r.xy / m + .5;\n\tvN.y        = 1.0 - vN.y;\n\tvec3 color  = texture2D( tex, vN ).rgb;\n\tfloat power = 10.0;\n\tcolor.r     = pow(color.r, power);\n\tcolor       = color.rrr;\n    return color;\n}\n\n\nfloat softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax ) {\n\tfloat res = 1.0;\n    float t = mint;\n    for( int i=0; i<16; i++ ) {\n\t\tfloat h = map( ro + rd*t ).x;\n        res = min( res, 8.0*h/t );\n        t += clamp( h, 0.02, 0.10 );\n        if( h<0.001 || t>tmax ) break;\n    }\n    return clamp( res, 0.0, 1.0 );\n}\n\n\nfloat diffuse(vec3 normal, vec3 light) {\n\treturn max(dot(normal, light), 0.0);\n}\n\nvec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {\n\tvec3 baseColor = vec3(0.0);\n\tvec3 env = vec3(.0);\n\tif(colorIndex == 0.0) {\n\t\tbaseColor = vec3(1.0, 1.0, .96) * .05;\n\t\tenv      = envLight(normal, dir, texture);\n\t} else {\n\t\tbaseColor = vec3(.5, 0.25, 0.25);\n\t\tenv      = envLight(normal, dir, texture);\n\t}\n\n\tvec2 uv \t = vec2(fract(pos.z*.5-time*.1), .5);\n\tbaseColor    = texture2D(textureMap, uv).rgb;\n\n\tenv *= .5;\n\tvec3  lig     = normalize( lightPos0 );\n\tfloat shadow  = softshadow(pos, lig, 0.02, 2.5 );\n\tshadow        = mix(shadow, 1.0, .5);\n\tfloat _ao     = ao(pos, normal);\n\tvec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;\n\t_diffuse      += diffuse(normal, normalize(lightPos1)) * lightColor1 * lightWeight1;\n\treturn vec4(vec3(baseColor+env+_diffuse)*_ao*shadow, 1.0);\t\n\t\n}\n\nmat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\nvoid main(void) {\n\tfloat r  = 5.0;\n\tfloat tr = cos(theta.x) * r;\n\tvec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);\n\tvec3 ta  = vec3( 0.0, 0.0, 0.0 );\n\tmat3 ca  = setCamera( pos, ta, 0.0 );\n\tvec3 dir = ca * normalize( vec3(uv,focus) );\n\n\tvec4 color = vec4(0.0);\n\tfloat prec = pow(.1, 4.0);\n\tfloat d;\n\tfloat colorIndex = 0.0;\n\tbool hit = false;\n\t\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tvec2 result = map(pos);\t\t\t\t\t\t//\tdistance to object\n\t\td = result.x;\n\t\tcolorIndex = result.y;\n\n\t\tif(d < prec) {\t\t\t\t\t\t// \tif get's really close, set as hit the object\n\t\t\thit = true;\n\t\t}\n\n\t\tpos += d * dir;\t\t\t\t\t\t//\tmove forward by\n\t\tif(length(pos) > maxDist) break;\n\t}\n\n\n\tif(hit) {\n\t\tcolor = vec4(1.0);\n\t\tvec3 normal = computeNormal(pos);\n\t\tcolor = getColor(pos, dir, normal, colorIndex);\n\t}\n\t\n\n    gl_FragColor = color;\n}";
 	fs = fs.replace('{{NUM_ITER}}', Math.floor(params.numIter));
 	fs = fs.replace('{{NUM_BALL}}', Math.floor(params.numBubble));
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// trace.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform vec2 resolution;\n\nvarying vec2 vTextureCoord;\nvarying vec2 uv;\n\nvoid main(void) {\n    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\n    vTextureCoord = aTextureCoord;\n    uv = aVertexPosition.xy;\n    uv.x *= resolution.x/resolution.y;\n}", fs);
 }
 
 var p = ViewTrace.prototype = new bongiovi.View();
@@ -418,7 +357,68 @@ p.render = function(texture, textureBlur, theta, textureMap) {
 };
 
 module.exports = ViewTrace;
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+// app.js
+window.bongiovi = require("./libs/bongiovi.js");
+// window.bongiovi = require("../../../../dist/bongiovi.js");
+// window.bongiovi = require("../../../../dist/bongiovi.js");
+// var dat = require("dat-gui");
+window.params = {
+	focus:1.5,
+	numIter:150,
+	numBubble:5.0,
+	metaK:7.0,
+	zGap:2.0,
+	maxDist:5.0
+};
+
+(function() {
+	var SceneApp = require("./SceneApp");
+
+	App = function() {
+
+		var loader = new bongiovi.SimpleImageLoader();
+		loader.load([
+			"assets/grd.jpg",
+			"assets/light.jpg",
+			"assets/lightBlur.jpg"
+			], this, this._onImageLoaded);
+	}
+
+	var p = App.prototype;
+
+	p._onImageLoaded = function(img) {
+		window.images = img;
+
+		if(document.body) this._init();
+		else {
+			window.addEventListener("load", this._init.bind(this));
+		}
+	};
+
+	p._init = function() {
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
+		this.canvas.className = "Main-Canvas";
+		document.body.appendChild(this.canvas);
+		bongiovi.GL.init(this.canvas);
+
+		this._scene = new SceneApp();
+		bongiovi.Scheduler.addEF(this, this._loop);
+
+		// this.gui = new dat.GUI({width:300});
+	};
+
+	p._loop = function() {
+		this._scene.loop();
+	};
+
+})();
+
+
+new App();
+},{"./SceneApp":1,"./libs/bongiovi.js":8}],8:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
@@ -15086,4 +15086,4 @@ module.exports = ViewDotPlanes;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[1]);
+},{}]},{},[7]);

@@ -194,7 +194,7 @@ void main(void) {
 	vec3 dir = ca * normalize( vec3(uv,focus) );
 
 	vec4 color = vec4(0.0);
-	float prec = pow(.1, 7.0);
+	float prec = pow(.1, 4.0);
 	float d;
 	float colorIndex = 0.0;
 	bool hit = false;

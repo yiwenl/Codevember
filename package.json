@@ -13,7 +13,7 @@
     "vinyl-buffer": "^1.0.0",
     "watchify": "^3.2.0",
     "dat-gui": "0.5.0",
-    "gulp": "3.8.11"
+    "gulp": "^3.8.11"
   },
   "scripts": {
     "build": "gulp",
