@@ -115,6 +115,10 @@ var Model = [
 	{
 		path:"labs/wen/31_soapBubble/dist/index.html",
 		cover:"dist/assets/covers/wen24.jpg"
+	},
+	{
+		path:"labs/wen/33_noiseTorus/dist/index.html",
+		cover:"dist/assets/covers/wen25.jpg"
 	}
 ];
 

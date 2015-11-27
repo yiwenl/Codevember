@@ -44,6 +44,9 @@ p._initViews = function() {
 };
 
 p.render = function() {
+	this.count+= .01;
+	this.camera._ry.value += .1;
+	this.camera._rx.value = Math.sin(this.count) * .4;
 	GL.clear(0, 0, 0, 0);
 
 	GL.setMatrices(this.cameraOrtho);

@@ -37,9 +37,6 @@ float sphere(vec3 pos, float radius) {
 	return length(pos) - radius;
 }
 
-float displacement(vec3 p) {
-	return sin(20.0*p.x+time*.232)*sin(20.0*p.y+time*.25)*sin(20.0*p.z+time*.33);
-}
 
 float rep(float p, float c) {	return mod(p, c) - 0.5*c;	}
 vec2 rep(vec2 p, float c) {		return mod(p, c) - 0.5*c;	}
@@ -102,21 +99,23 @@ const float size = 2.0;
 vec2 map(vec3 pos) {
 	float colorIndex = 0.0;
 	vec3 p0 = pos;
+	p0.y -= .5;
 	p0.yz = rotate(p0.yz, time*.2);
 	p0.yz = repAng(p0.yz, 240.0);
 	p0.z -= 1.75;
 	p0.x += sin(pos.y-time) * .25;
 
-	vec3 p1 = pos;
+	vec3 p1 = pos + vec3(0.0, 0.0, 0.0);
+	p1.z -= 1.5;
+	p1.y -= .5 + sin(time) * .2;
 	p1.zx = rotate(p1.zx, time*.2);
-	p1.xy = rotate(p1.xy, time*.4);
-	p1.zx = repAng(p1.zx, 960.0);
+	p1.zx = repAng(p1.zx, 500.0);
+	p1.y += sin(pos.x*pos.z*.5-time) * .2;
 	p1.x -= 1.75;
-	p1.x += sin(pos.z-time) * .25;
-	p1.z -= .5;
+	
 
-	float d = sphere(p0+vec3(.5, 0.0, .0), 1.0);
-	float d1 = sphere(p1+vec3(0.0, 0.0, 0.0), 1.0);
+	float d = sphere(p0, 1.0);
+	float d1 = sphere(p1, 1.0);
 
 	
 	if(d1 <= d ) {
@@ -193,15 +192,19 @@ float diffuse(vec3 normal, vec3 light) {
 	return max(dot(normal, light), 0.0);
 }
 
-vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
-	vec3 p = pos + vec3(sin(time*.25) * .5, cos(time*.05), .0);
+float displacement(vec3 p) {
+	return sin(20.0*p.x+time*.232)*sin(20.0*p.y+time*.25)*sin(20.0*p.z+time*.33);
+}
+
+vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex, mat3 ca) {
+	vec3 p = ca*pos + vec3(sin(time*.25) * .5, cos(time*.05), .0);
+	float n = displacement(pos);
 	vec3 baseColor = vec3(0.0);
 	vec3 env = vec3(0.0);
 	float shadowOffset = 1.0;
 	if(colorIndex < .5) {
 		float a = atan(p.y, p.x);
 		float r = length(p.xy);
-		float d = displacement(pos * 2.0);
 		float g = sin(a*3.0+r*20.0-time + sin(time * .1) * 5.0) + cos(r*13.0-a*10.0 - time + cos(time*.25) * 2.0);
 		g = r * g;
 
@@ -209,9 +212,12 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex) {
 		baseColor = vec3(g);	
 		env 	 = envLight(normal, dir, textureBlur);
 	} else {
+		vec3 p = ca*pos;
+		float g = fract(p.y*15.0);
+		g = smoothstep(.1, .2, abs(g-.5));
 		shadowOffset = 0.0;
 		env 	 = envLight(normal, dir, texture);
-		baseColor = vec3(1.0, 1.0, .96);
+		baseColor = vec3(1.0, 1.0, .96) * g;
 	}
 
 	
@@ -234,7 +240,7 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main(void) {
-	float r  = 6.0;
+	float r  = 8.0;
 	float tr = cos(theta.x) * r;
 	vec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);
 	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
@@ -264,7 +270,7 @@ void main(void) {
 	if(hit) {
 		color = vec4(1.0);
 		vec3 normal = computeNormal(pos);
-		color = getColor(pos, dir, normal, colorIndex);
+		color = getColor(pos, dir, normal, colorIndex, ca);
 	}
 	
 
