@@ -119,6 +119,10 @@ var Model = [
 	{
 		path:"labs/wen/33_noiseTorus/dist/index.html",
 		cover:"dist/assets/covers/wen25.jpg"
+	},
+	{
+		path:"labs/wen/35/dist/index.html",
+		cover:"dist/assets/covers/wen26.jpg"
 	}
 ];
 

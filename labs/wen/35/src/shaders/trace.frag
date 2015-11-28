@@ -62,20 +62,25 @@ float box( vec3 p, vec3 b ) {
 const float size = 3.0;
 
 vec2 map(vec3 pos) {
+	pos.xy = rotate(pos.xy, time*.1);
+	pos.xz = rotate(pos.xz, sin(time*.1));
 	float colorIndex = 1.0;
 	float volume = 0.01;
 	float gap = 0.3;
+	float num = 480.0;
 
 	vec3 pBox0 = pos;
+	pBox0.yz = repAng(pBox0.yz, num);
 	pBox0.z = rep(pBox0.z, gap);
 	float d0 = box(pBox0, vec3(size, size, volume));
 
 	vec3 pBox1 = pos;
+	pBox1.xy = repAng(pBox1.xy, num);
 	pBox1.y = rep(pBox1.y, gap);
 	float d1 = box(pBox1, vec3(size, volume, size));
 
-	float dSphere0 = sphere(pos+vec3(sin(time*0.845613)*1.0, 0.0, 0.0), size*.5);
-	float dSphere1 = sphere(pos+vec3(0.0, cos(time*.3238)*1.0, 0.0), size*.5);
+	float dSphere0 = sphere(pos+vec3(sin(time*0.845613)*1.0, 0.0, 0.0), size*(.4+sin(time*.25)*.1));
+	float dSphere1 = sphere(pos+vec3(0.0, cos(time*.3238)*1.0, 0.0), size*.5+cos(time*.32) * .15);
 	float dSphere = smin(dSphere0, dSphere1);
 
 	if(d0 < d1) {
@@ -189,9 +194,7 @@ vec4 getColor(vec3 pos, vec3 dir, vec3 normal, float colorIndex, mat3 ca) {
 	float shadow  = softshadow(pos, lig, 0.02, 2.5 );
 	shadow        = mix(shadow, 1.0, .75);
 	float _ao     = ao(pos, normal);
-	vec3 _diffuse = diffuse(normal, normalize(lightPos0)) * lightColor0 * lightWeight0;
-	_diffuse      += diffuse(normal, normalize(lightPos1)) * lightColor1 * lightWeight1;
-	return vec4(vec3(baseColor+_diffuse + env)*_ao*shadow, 1.0);	
+	return vec4(vec3(baseColor + env)*_ao*shadow, 1.0);	
 	
 }
 
@@ -204,7 +207,7 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main(void) {
-	float r  = 8.0;
+	float r  = 6.0;
 	float tr = cos(theta.x) * r;
 	vec3 pos = vec3(cos(theta.y) * tr, sin(theta.x) * r, sin(theta.y) * tr);
 	vec3 ta  = vec3( 0.0, 0.0, 0.0 );
