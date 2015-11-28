@@ -123,6 +123,10 @@ var Model = [
 	{
 		path:"labs/wen/35/dist/index.html",
 		cover:"dist/assets/covers/wen26.jpg"
+	},
+	{
+		path:"labs/cp/28/dist/index.html",
+		cover:"dist/assets/covers/cp28.jpg"
 	}
 ];
 
