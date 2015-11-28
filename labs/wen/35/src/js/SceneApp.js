@@ -3,6 +3,9 @@
 var GL = bongiovi.GL, gl;
 var ViewBox = require("./ViewBox");
 var ViewSphere = require("./ViewSphere");
+var ViewTop = require("./ViewTop");
+var ViewTotem = require("./ViewTotem");
+var ViewTrace = require("./ViewTrace");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -12,13 +15,15 @@ function SceneApp() {
 
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
-	console.log(this.camera.radius.value);
+	this.camera.radius.value = 150;
+	this.camera._rx.value = -.2;
+	// var r = 1.0;
+	// this.camera._ry.limit(-r, r);
+	// this.camera._rx.limit(-r/2, r/2);
 
-	this.camera._rx.value = this.camera._ry.value = -.4;
 	this.resize();
 
 	window.addEventListener("resize", this.resize.bind(this));
-	window.addEventListener('keydown', this._onKey.bind(this));
 }
 
 
@@ -29,39 +34,34 @@ p._initTextures = function() {
 	this._texture = new bongiovi.GLTexture(images.light);
 	this._textureBlur = new bongiovi.GLTexture(images.lightBlur);
 	this._textureGrd = new bongiovi.GLTexture(images.grd);
-	this._textureEarth = new bongiovi.GLTexture(images.earth);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
 	this._vAxis     = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
-	this._vSphere   = new ViewSphere();
-};
 
-p._onKey = function(e) {
-	if(e.keyCode == 32) {	//	spacebar
-		if(params.offset.value < 0.5) {
-			params.offset.value = 1;
-			this.camera.radius.value = 300;
-			this.camera._rx.value = this.camera._ry.value = 0;
-		} else {
-			params.offset.value = 0;
-			this.camera.radius.value = 500;
-			this.camera._rx.value = this.camera._ry.value = -.4;
-		}
-	}
+	this._vTrace 	= new ViewTrace();
 };
 
 p.render = function() {
-	// this._vAxis.render();
-	this._vDotPlane.render();
+	this.count+= .01;
+	this.camera._ry.value += .1;
+	// this.camera._rx.value = Math.sin(this.count) * .4;
+	GL.clear(0, 0, 0, 0);
 
-	this._vSphere.render(this._textureEarth);
+	GL.setMatrices(this.cameraOrtho);
+	GL.rotate(this.rotationFront);
+
+	this._vTrace.render(this._texture, this._textureBlur, [-this.camera._rx.value, -this.camera._ry.value - Math.PI/2], this._textureGrd);
 };
 
 p.resize = function() {
-	GL.setSize(window.innerWidth, window.innerHeight);
+	var size = Math.min(window.innerWidth, window.innerHeight);
+	// size = Math.min(size, 600);
+	GL.setSize(size, size);
+	GL.canvas.style.marginLeft = -size/2 + "px";
+	GL.canvas.style.marginTop = -size/2 + "px";
 	this.camera.resize(GL.aspectRatio);
 };
 
