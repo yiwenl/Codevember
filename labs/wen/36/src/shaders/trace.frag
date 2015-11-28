@@ -77,8 +77,8 @@ vec2 map(vec3 pos) {
 	p0.xz = rotate(p0.xz, p0.y*.5);
 	float a = atan(p0.x, p0.z);
 	float r = length(p0.xz);
-	a = (sin(a*12.0+r*12.0-time*.725) * .5 + .5 * sin(time*0.5));
-	p0.xz = repAng(p0.xz, 120.0);
+	a = (sin(a*12.0+r*6.0-time*.725) * .5 + .5 * sin(time*0.5));
+	p0.xz = repAng(p0.xz, 100.0);
 	p0.xy = rotate(p0.xy, PI*.5);
 
 	float ringSize = 0.02+sin(a) * 0.02;
