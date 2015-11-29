@@ -380,6 +380,10 @@ var Model = [
 	{
 		path:"labs/cp/28/dist/index.html",
 		cover:"dist/assets/covers/cp28.jpg"
+	},
+	{
+		path:"labs/wen/37/dist/index.html",
+		cover:"dist/assets/covers/wen27.jpg"
 	}
 ];
 
