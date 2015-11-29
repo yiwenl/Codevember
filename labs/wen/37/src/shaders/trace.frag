@@ -77,11 +77,10 @@ float displacement(vec3 p) {
 	return sin(20.0*p.x+time*.232)*sin(20.0*p.y+time*.25)*sin(20.0*p.z+time*.33);
 }
 
-
 vec2 gear(vec3 p, float rotation) {
 	float colorIndex = 1.0;
-	float boxSize = .125;
-	float ringSize = .6;
+	float boxSize = .08;
+	float ringSize = .65;
 	vec3 p0 = p;
 	
 	p0.xz = rotate(p0.xz, time*.2*rotation);
@@ -92,25 +91,28 @@ vec2 gear(vec3 p, float rotation) {
 
 	p0.z -= ringSize+boxSize;
 
-	float d = box(p0, vec3(boxSize));
+	float d = box(p0, vec3(boxSize, boxSize, boxSize+.08));
 	float dTorus = torus(p, ringSize, boxSize-.01);
 
 	if(dTorus < d) {
 		colorIndex = 0.0;
 	}
 
-	d = min(d, dTorus);
+	d = smin(d, dTorus);
 	return vec2(d, colorIndex);
 }
 
 vec2 map(vec3 pos) {
+    pos.xy = rotate(pos.xy, time*.1);
+    pos.xz = rotate(pos.xz, time*.1);
+    
 	vec3 p0 = pos;
 	p0.xy = repAng(p0.xy, 4.0);
 	p0.y -= 2.0;
 	vec2 g0 = gear(p0, 1.0);
 
 	vec3 p1 = pos;
-	p1.xy = rotate(p1.xy, .75);
+	p1.xy = rotate(p1.xy, .785);
 	p1.xy = repAng(p1.xy, 4.0);
 	p1.y -= 2.0;
 	vec2 g1 = gear(p1, -1.0);
