@@ -5,8 +5,8 @@ html, body {
   padding: 0;
   overflow: hidden;
   position: static;
-  background: black;
-  background: radial-gradient(ellipse at center, #424242 0%, black 100%); }
+  background: #a0a096;
+  background: radial-gradient(ellipse at center, white 0%, #a0a096 100%); }
 
 html {
   -webkit-text-size-adjust: none;

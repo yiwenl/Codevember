@@ -9,8 +9,8 @@ html, body {
 	position: static;
 	
 
-	$color0: rgba(66, 66, 66, 1);
-	$color1: rgba(0, 0, 0, 1);
+	$color0: rgba(255, 255, 255, 1);
+	$color1: rgba(160, 160, 150, 1);
 	background: $color1;
 	background: -moz-radial-gradient(center, ellipse cover,  $color0 0%, $color1 100%);
 	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%,$color0), color-stop(100%,$color1));

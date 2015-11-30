@@ -8,6 +8,7 @@ varying float vDepth;
 varying float vOpacity;
 varying vec3 vNormal;
 varying vec3 vExtra;
+varying vec3 vColor;
 
 uniform sampler2D textureMap;
 uniform float time;
@@ -34,19 +35,11 @@ vec3 diffuse(vec3 light, vec3 vertex, vec3 normal, vec3 lightColor) {
 
 void main(void) {
 	if(vOpacity < .01) discard;
-	vec3 diff0   = diffuse(light0, vVertex, vNormal, lightColor0) * .85;
-	vec3 diff1   = diffuse(light1, vVertex, vNormal, lightColor1) * .75;
+	vec3 diff0   = diffuse(light0, vVertex, vNormal, lightColor0) * .35;
+	vec3 diff1   = diffuse(light1, vVertex, vNormal, lightColor1) * .15;
 	
-	vec3 color   = (ambient + diff0 + diff1 + sin(time*2.0*vExtra.z) * .5) * vDepth;
+	vec3 color   = (vColor + diff0 + diff1) * vDepth;
 
-	vec2 uv = vExtra.xy;
-	uv.x = mod(uv.x+time*.1, 1.0);
-	vec3 colorMap = texture2D(textureMap, uv).rgb;
-	color *= colorMap;
-	
-	float l 	 = length(color) / length(vec3(1.0));
-	vec3 colorGrd = mix(color0, color1, l);
-	color 		 = mix(color, colorGrd, .5);
 	
 	gl_FragColor = vec4(color, vOpacity);
 }

@@ -7,7 +7,9 @@ var glslify = require("glslify");
 function ViewBalloon() {
 	this.x = 10;
 	this.y = -30;
-	this.z =  10;
+	this.z = 10;
+	this.count = 0.1;
+	this.opacity = new bongiovi.EaseNumber(1, .4);
 	bongiovi.View.call(this, glslify('../shaders/ballon.vert'), glslify('../shaders/ballon.frag'));
 }
 
@@ -29,8 +31,16 @@ p._onObjLoaded = function(mesh, o) {
 
 p.render = function(texture) {
 	if(!this.mesh) return;
+
+	this.x = 10 + Math.sin(this.count) * 3.0;
+	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 5.0;
+	this.z = 10 + Math.cos(this.count*1.328476) * 3.0;
+
+	this.count +=.01;
+
 	this.shader.bind();
 	this.shader.uniform("scale", "uniform1f", .5);
+	this.shader.uniform("opacity", "uniform1f", this.opacity.value);
 	this.shader.uniform("texture", "uniform1i", 0);
 	this.shader.uniform("position", "uniform3fv", [this.x, this.y, this.z]);
 	texture.bind(0);

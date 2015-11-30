@@ -1,11 +1,12 @@
 // SceneApp.js
 
-var GL = bongiovi.GL, gl;
-var ViewBallon = require("./ViewBallon");
-var ViewSave = require("./ViewSave");
-var ViewRender = require("./ViewRender");
+var GL             = bongiovi.GL, gl;
+var ViewBallon     = require("./ViewBallon");
+var ViewSave       = require("./ViewSave");
+var ViewRender     = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
-var ViewRibbon = require("./ViewRibbon");
+var ViewRibbon     = require("./ViewRibbon");
+var ViewFloor      = require("./ViewFloor");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -14,6 +15,8 @@ function SceneApp() {
 
 	this.camera.lockRotation(false);
 	this.sceneRotation.lock(true);
+	this.camera._ry.value = -1.5;
+	this.camera._rx.limit(-.3, 0.15);
 
 	window.addEventListener("resize", this.resize.bind(this));
 	window.addEventListener('keydown', this._onKeyDown.bind(this));
@@ -28,6 +31,7 @@ p._onKeyDown = function(e) {
 
 	if(e.keyCode == 32) {
 		this._isAnimating = true;
+		this._vBallon.opacity.value = 0;
 	}
 };
 
@@ -59,6 +63,7 @@ p._initViews = function() {
 	this._vRender 	= new ViewRender();
 	this._vSim 		= new ViewSimulation();
 	this._vRibbon 	= new ViewRibbon();
+	this._vFloor	= new ViewFloor();
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
@@ -96,14 +101,12 @@ p.render = function() {
 	this.updateFbo();
 	GL.setViewport(0, 0, GL.width, GL.height);
 
-	this._vAxis.render();
-	this._vDotPlane.render();
-
-	this._vBallon.render(this._textureLight);
-
 	var fboLast = this._fbos[this._fbos.length-1];
 	this._vRibbon.render(this._fbos, this._texture);
 	this._vRender.render(fboLast.getTexture(), this._texture);
+
+	this._vBallon.render(this._textureLight);
+	this._vFloor.render();
 };
 
 p.resize = function() {

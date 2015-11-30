@@ -16,8 +16,20 @@ p._init = function() {
 	var positions    = [];
 	var coords       = [];
 	var indices      = []; 
+	var colors       = []; 
 	var count        = 0;
 	var numParticles = params.numParticles;
+
+
+	function getColor() {
+		if(Math.random() < .33) {
+			return [221/255, 36/255, 37/255];
+		} else if(Math.random() < .67) { 
+			return [245/255, 176/255, 35/255];
+		} else {
+			return [0, 0, 0];
+		}
+	}
 
 	for(var j=0; j<numParticles; j++) {
 		for(var i=0; i<numParticles; i++) {
@@ -27,6 +39,7 @@ p._init = function() {
 			uy = j/numParticles;
 			coords.push([ux, uy]);
 			indices.push(count);
+			colors.push(getColor());
 			count ++;
 
 		}
@@ -36,6 +49,7 @@ p._init = function() {
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
+	this.mesh.bufferData(colors, "aColor", 3);
 };
 
 p.render = function(texture) {

@@ -7,6 +7,7 @@ attribute vec3 aVertexPosition;
 attribute vec4 aPositionUV;
 attribute vec2 aTextureCoord;
 attribute vec3 aExtra;
+attribute vec3 aColor;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
@@ -33,6 +34,7 @@ varying float vDepth;
 varying vec3 vVertex;
 varying vec3 vNormal;
 varying vec3 vExtra;
+varying vec3 vColor;
 
 vec2 rotate(vec2 v, float a) {
 	float c = cos(a);
@@ -124,4 +126,5 @@ void main(void) {
 
     vDepth = 1.0-getDepth(V.z/V.w);
     vExtra = aExtra;
+    vColor = aColor;
 }

@@ -27,6 +27,18 @@ p.createRibbon = function() {
 	var ry = Math.random();
 	var rz = Math.random();
 
+	function getColor() {
+		if(Math.random() < .33) {
+			return [221/255, 36/255, 37/255];
+		} else if(Math.random() < .67) { 
+			return [245/255, 176/255, 35/255];
+		} else {
+			return [0, 0, 0];
+		}
+	}
+
+	var color = getColor();
+
 
 	for(var i=0; i<num; i++) {
 		this.positions.push([i*size, -ribbonSize, 0]);
@@ -58,6 +70,11 @@ p.createRibbon = function() {
 		this.extra.push([rx, ry, rz]);
 		this.extra.push([rx, ry, rz]);
 
+		this.colors.push(color);
+		this.colors.push(color);
+		this.colors.push(color);
+		this.colors.push(color);
+
 		this.count++;
 	}
 	this.index ++;
@@ -70,6 +87,7 @@ p._init = function() {
 	this.coords    = [];
 	this.indices   = []; 
 	this.uv 	   = [];
+	this.colors	   = [];
 	this.extra	   = [];
 	this.count 	   = 0;
 	this.index     = 0;
@@ -87,6 +105,7 @@ p._init = function() {
 	this.mesh.bufferIndices(this.indices);
 	this.mesh.bufferData(this.uv, "aPositionUV", 4);
 	this.mesh.bufferData(this.extra, "aExtra", 3);
+	this.mesh.bufferData(this.colors, "aColor", 3);
 };
 
 p.render = function(fbos, textureMap) {

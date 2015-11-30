@@ -1,12 +1,13 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 // SceneApp.js
 
-var GL = bongiovi.GL, gl;
-var ViewBallon = require("./ViewBallon");
-var ViewSave = require("./ViewSave");
-var ViewRender = require("./ViewRender");
+var GL             = bongiovi.GL, gl;
+var ViewBallon     = require("./ViewBallon");
+var ViewSave       = require("./ViewSave");
+var ViewRender     = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
-var ViewRibbon = require("./ViewRibbon");
+var ViewRibbon     = require("./ViewRibbon");
+var ViewFloor      = require("./ViewFloor");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -15,6 +16,8 @@ function SceneApp() {
 
 	this.camera.lockRotation(false);
 	this.sceneRotation.lock(true);
+	this.camera._ry.value = -1.5;
+	this.camera._rx.limit(-.3, 0.15);
 
 	window.addEventListener("resize", this.resize.bind(this));
 	window.addEventListener('keydown', this._onKeyDown.bind(this));
@@ -29,6 +32,7 @@ p._onKeyDown = function(e) {
 
 	if(e.keyCode == 32) {
 		this._isAnimating = true;
+		this._vBallon.opacity.value = 0;
 	}
 };
 
@@ -60,6 +64,7 @@ p._initViews = function() {
 	this._vRender 	= new ViewRender();
 	this._vSim 		= new ViewSimulation();
 	this._vRibbon 	= new ViewRibbon();
+	this._vFloor	= new ViewFloor();
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
@@ -97,14 +102,12 @@ p.render = function() {
 	this.updateFbo();
 	GL.setViewport(0, 0, GL.width, GL.height);
 
-	this._vAxis.render();
-	this._vDotPlane.render();
-
-	this._vBallon.render(this._textureLight);
-
 	var fboLast = this._fbos[this._fbos.length-1];
 	this._vRibbon.render(this._fbos, this._texture);
 	this._vRender.render(fboLast.getTexture(), this._texture);
+
+	this._vBallon.render(this._textureLight);
+	this._vFloor.render();
 };
 
 p.resize = function() {
@@ -113,7 +116,7 @@ p.resize = function() {
 };
 
 module.exports = SceneApp;
-},{"./ViewBallon":2,"./ViewRender":3,"./ViewRibbon":4,"./ViewSave":5,"./ViewSimulation":6}],2:[function(require,module,exports){
+},{"./ViewBallon":2,"./ViewFloor":3,"./ViewRender":4,"./ViewRibbon":5,"./ViewSave":6,"./ViewSimulation":7}],2:[function(require,module,exports){
 // ViewBallon.js
 
 var GL = bongiovi.GL;
@@ -123,8 +126,10 @@ var gl;
 function ViewBalloon() {
 	this.x = 10;
 	this.y = -30;
-	this.z =  10;
-	bongiovi.View.call(this, "#define GLSLIFY 1\n// ballon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform float scale;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vEye;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition * scale + position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = aNormal;\n    vNormal = normalMatrix*normalize(aVertexPosition-vec3(0.0, 50.0, 0.0));\n    vEye = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n// ballon.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\nuniform sampler2D texture;\nvarying vec3 vNormal;\nvarying vec3 vEye;\n\n\n\nconst float fade = .92;\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(200.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst float lightWeight0 = .65;\n\nconst vec3 lightPos1 = vec3(-200.0, -200.0, 400.0);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst float lightWeight1 = .5;\n\n\nvec3 diffuse(vec3 light, vec3 normal, vec3 color, float weight) {\n\tfloat lambert = max(dot(normalize(light), normal), 0.0);\n\treturn color * lambert * weight;\n}\n\nvec3 env(sampler2D t) {\n\tvec3 r = reflect( vEye, vNormal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n\n    return texture2D( t, vN ).rgb;\n}\n\nvoid main(void) {\n\n\tvec3 envLight = env(texture);\n    vec3 diff0 = diffuse(lightPos0, vNormal, lightColor0, lightWeight0);\n\tvec3 diff1 = diffuse(lightPos1, vNormal, lightColor1, lightWeight1);\n\n\tvec3 color = diff0 + diff1 + envLight;\n    gl_FragColor = vec4(color , 1.0);\n    // gl_FragColor = vec4(vNormal * .5 + .5 , 1.0);\n}");
+	this.z = 10;
+	this.count = 0.1;
+	this.opacity = new bongiovi.EaseNumber(1, .4);
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// ballon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec3 aNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform mat3 normalMatrix;\nuniform float scale;\nuniform vec3 position;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vNormal;\nvarying vec3 vEye;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition * scale + position;\n\tvec4 mvPosition = uMVMatrix * vec4(pos, 1.0);\n    gl_Position = uPMatrix * mvPosition;\n    vTextureCoord = aTextureCoord;\n    vNormal = aNormal;\n    vNormal = normalMatrix*normalize(aVertexPosition-vec3(0.0, 50.0, 0.0));\n    vEye = normalize(mvPosition.xyz);\n}", "#define GLSLIFY 1\n// ballon.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\n// varying vec2 vTextureCoord;\nuniform sampler2D texture;\nuniform float opacity;\nvarying vec3 vNormal;\nvarying vec3 vEye;\n\n\n\nconst float fade = .92;\nconst float ambient = .2;\n\nconst vec3 lightPos0 = vec3(200.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst float lightWeight0 = .65;\n\nconst vec3 lightPos1 = vec3(-200.0, -200.0, 400.0);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst float lightWeight1 = .5;\n\n\nvec3 diffuse(vec3 light, vec3 normal, vec3 color, float weight) {\n\tfloat lambert = max(dot(normalize(light), normal), 0.0);\n\treturn color * lambert * weight;\n}\n\nvec3 env(sampler2D t) {\n\tvec3 r = reflect( vEye, vNormal );\n    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );\n    vec2 vN = r.xy / m + .5;\n\n    return texture2D( t, vN ).rgb;\n}\n\nvoid main(void) {\n\tif(opacity <= .01) discard;\n\n\tvec3 envLight = env(texture);\n    vec3 diff0 = diffuse(lightPos0, vNormal, lightColor0, lightWeight0);\n\tvec3 diff1 = diffuse(lightPos1, vNormal, lightColor1, lightWeight1);\n\n\tvec3 color = diff0 + diff1 + envLight;\n    gl_FragColor = vec4(color , 1.0) * opacity;\n    // gl_FragColor = vec4(vNormal * .5 + .5 , 1.0);\n}");
 }
 
 var p = ViewBalloon.prototype = new bongiovi.View();
@@ -145,8 +150,16 @@ p._onObjLoaded = function(mesh, o) {
 
 p.render = function(texture) {
 	if(!this.mesh) return;
+
+	this.x = 10 + Math.sin(this.count) * 3.0;
+	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 5.0;
+	this.z = 10 + Math.cos(this.count*1.328476) * 3.0;
+
+	this.count +=.01;
+
 	this.shader.bind();
 	this.shader.uniform("scale", "uniform1f", .5);
+	this.shader.uniform("opacity", "uniform1f", this.opacity.value);
 	this.shader.uniform("texture", "uniform1i", 0);
 	this.shader.uniform("position", "uniform3fv", [this.x, this.y, this.z]);
 	texture.bind(0);
@@ -155,13 +168,50 @@ p.render = function(texture) {
 
 module.exports = ViewBalloon;
 },{}],3:[function(require,module,exports){
+// ViewFloor.js
+
+var GL = bongiovi.GL;
+var gl;
+
+
+function ViewFloor() {
+	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+}
+
+var p = ViewFloor.prototype = new bongiovi.View();
+p.constructor = ViewFloor;
+
+
+p._init = function() {
+	gl = GL.gl;
+	var positions = [];
+	var coords = [];
+	var indices = []; 
+	var size = 700;
+	this.mesh = bongiovi.MeshUtils.createPlane(size, size, 1, false, 'xz');
+};
+
+p.render = function() {
+	this.shader.bind();
+	// this.shader.uniform("texture", "uniform1i", 0);
+	// texture.bind(0);
+
+	this.shader.uniform("scale", "uniform3fv", [1, 1, 1]);
+	this.shader.uniform("position", "uniform3fv", [0, params.floorY, 0]);
+	this.shader.uniform("color", "uniform3fv", [1, 1, 1]);
+	this.shader.uniform("opacity", "uniform1f", 1);
+	GL.draw(this.mesh);
+};
+
+module.exports = ViewFloor;
+},{}],4:[function(require,module,exports){
 // ViewRender.js
 var GL = bongiovi.GL;
 var gl;
 
 
 function ViewRender() {
-	bongiovi.View.call(this, "#define GLSLIFY 1\n// line.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform sampler2D texture;\nvarying vec2 vTextureCoord;\nvarying vec3 vColor;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = aTextureCoord * .5;\n\tpos.xyz = texture2D(texture, uv).rgb;\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n\n    gl_PointSize = 1.0;\n    vColor = vec3(1.0);\n}", "#define GLSLIFY 1\nprecision mediump float;\n\nvarying vec3 vColor;\n\nvoid main(void) {\n    gl_FragColor = vec4(vColor, 1.0);\n    // gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// line.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec3 aColor;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform sampler2D texture;\nvarying vec2 vTextureCoord;\nvarying vec3 vColor;\n\nvoid main(void) {\n\tvec3 pos = aVertexPosition;\n\tvec2 uv = aTextureCoord * .5;\n\tvec2 uvExtra = uv + vec2(.5);\n\tpos.xyz = texture2D(texture, uv).rgb;\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    vTextureCoord = aTextureCoord;\n\n    vec3 extra = texture2D(texture, uvExtra).rgb;\n\n    gl_PointSize = 1.0 + extra.x * 5.0;\n    vColor = aColor;\n}", "#define GLSLIFY 1\nprecision mediump float;\n\nvarying vec3 vColor;\nconst vec2 center = vec2(.5);\n\nvoid main(void) {\n\tif(distance(center, gl_PointCoord) > .5) discard;\n    gl_FragColor = vec4(vColor, 1.0);\n    // gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n}");
 }
 
 var p = ViewRender.prototype = new bongiovi.View();
@@ -173,8 +223,20 @@ p._init = function() {
 	var positions    = [];
 	var coords       = [];
 	var indices      = []; 
+	var colors       = []; 
 	var count        = 0;
 	var numParticles = params.numParticles;
+
+
+	function getColor() {
+		if(Math.random() < .33) {
+			return [221/255, 36/255, 37/255];
+		} else if(Math.random() < .67) { 
+			return [245/255, 176/255, 35/255];
+		} else {
+			return [0, 0, 0];
+		}
+	}
 
 	for(var j=0; j<numParticles; j++) {
 		for(var i=0; i<numParticles; i++) {
@@ -184,6 +246,7 @@ p._init = function() {
 			uy = j/numParticles;
 			coords.push([ux, uy]);
 			indices.push(count);
+			colors.push(getColor());
 			count ++;
 
 		}
@@ -193,6 +256,7 @@ p._init = function() {
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
+	this.mesh.bufferData(colors, "aColor", 3);
 };
 
 p.render = function(texture) {
@@ -204,7 +268,7 @@ p.render = function(texture) {
 };
 
 module.exports = ViewRender;
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // ViewRibbon.js
 
 var GL = bongiovi.GL;
@@ -214,9 +278,9 @@ var random = function(min, max) { return min + Math.random() * (max - min);	}
 
 function ViewRibbon() {
 	this.time = Math.random() * 0xFF;
-	var vs = "#define GLSLIFY 1\n// ribbon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec4 aPositionUV;\nattribute vec2 aTextureCoord;\nattribute vec3 aExtra;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nconst int NUM_TEXS = {{numTex}};\n\nuniform sampler2D textures[NUM_TEXS];\nuniform sampler2D texture0;\nuniform sampler2D texture1;\nuniform sampler2D texture2;\nuniform sampler2D texture3;\nuniform sampler2D texture4;\nuniform sampler2D texture5;\nuniform sampler2D texture6;\nuniform sampler2D texture7;\nuniform sampler2D texture8;\nuniform sampler2D texture9;\nuniform float range;\n\nconst float PI = 3.141592657;\nvarying vec2 vTextureCoord;\nvarying float vOpacity;\nvarying float vDepth;\nvarying vec3 vVertex;\nvarying vec3 vNormal;\nvarying vec3 vExtra;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * v;\n}\n\n//float n = 5.0;\n//float f = 3000.0;\n\t\nfloat getDepth(float z, float n, float f) {\n\treturn (2.0 * n) / (f + n - z*(f-n));\n}\n\nfloat getDepth(float z) {\n\treturn getDepth(z, 5.0, 3000.0);\n}\n\nvec3 getPos(vec3 value) {\n\t\n\treturn value;\n}\n\n\nvec3 getPositionFromTexture(vec2 uv, float i) {\n\tvec3 pos = vec3(.0);\n\n\tif(i < 1.0) {\n\t\tpos = getPos(texture2D(texture0, uv).rgb);\n\t} else if(i<2.0) {\n\t\tpos = getPos(texture2D(texture1, uv).rgb);\n\t} else if(i<3.0) {\n\t\tpos = getPos(texture2D(texture2, uv).rgb);\n\t} else if(i<4.0) {\n\t\tpos = getPos(texture2D(texture3, uv).rgb);\n\t} else if(i<5.0) {\n\t\tpos = getPos(texture2D(texture4, uv).rgb);\n\t} else if(i<6.0) {\n\t\tpos = getPos(texture2D(texture5, uv).rgb);\n\t} else if(i<7.0) {\n\t\tpos = getPos(texture2D(texture6, uv).rgb);\n\t} else if(i<8.0) {\n\t\tpos = getPos(texture2D(texture7, uv).rgb);\n\t} else if(i<9.0) {\n\t\tpos = getPos(texture2D(texture8, uv).rgb);\n\t} else {\n\t\tpos = getPos(texture2D(texture9, uv).rgb);\n\t}\n\n\treturn pos;\n}\n\nmat3 lookat( in vec3 ro, in vec3 ta, float cr ) {\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\n\nvoid main(void) {\n\tvec2 uv     = aPositionUV.xy/2.0;\n\tvec3 pos    = getPositionFromTexture(uv, aPositionUV.z);\n\tvec3 prePos = getPositionFromTexture(uv, aPositionUV.w);\n\tvec3 start  = getPos(texture2D(texture0, uv).rgb);\n\tvec3 end    = getPos(texture2D(texture9, uv).rgb);\n\n\tfloat angle = atan(pos.y, pos.z)-PI*.5;\n\tmat3 dir = lookat(prePos, pos, 0.0);\n\tvec3 tmpPos = dir*aVertexPosition;\n\n\ttmpPos.yz = rotate(tmpPos.yz, angle);\n\tpos += tmpPos;\n\n\tvec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    gl_Position = V;\n    vTextureCoord = aTextureCoord;\n\n    vVertex = pos;\n    vOpacity = 1.0;\n    if(start.y > end.y) {\n    \tvOpacity = 0.0;\n    }\n\n    vec3 N = vec3(pos.x, 0.0, pos.z);\n    vNormal = normalize(N);\n\n    vDepth = 1.0-getDepth(V.z/V.w);\n    vExtra = aExtra;\n}";
+	var vs = "#define GLSLIFY 1\n// ribbon.vert\n\n#define SHADER_NAME BASIC_VERTEX\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec4 aPositionUV;\nattribute vec2 aTextureCoord;\nattribute vec3 aExtra;\nattribute vec3 aColor;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nconst int NUM_TEXS = {{numTex}};\n\nuniform sampler2D textures[NUM_TEXS];\nuniform sampler2D texture0;\nuniform sampler2D texture1;\nuniform sampler2D texture2;\nuniform sampler2D texture3;\nuniform sampler2D texture4;\nuniform sampler2D texture5;\nuniform sampler2D texture6;\nuniform sampler2D texture7;\nuniform sampler2D texture8;\nuniform sampler2D texture9;\nuniform float range;\n\nconst float PI = 3.141592657;\nvarying vec2 vTextureCoord;\nvarying float vOpacity;\nvarying float vDepth;\nvarying vec3 vVertex;\nvarying vec3 vNormal;\nvarying vec3 vExtra;\nvarying vec3 vColor;\n\nvec2 rotate(vec2 v, float a) {\n\tfloat c = cos(a);\n\tfloat s = sin(a);\n\tmat2 r = mat2(s, c, -c, s);\n\treturn r * v;\n}\n\n//float n = 5.0;\n//float f = 3000.0;\n\t\nfloat getDepth(float z, float n, float f) {\n\treturn (2.0 * n) / (f + n - z*(f-n));\n}\n\nfloat getDepth(float z) {\n\treturn getDepth(z, 5.0, 3000.0);\n}\n\nvec3 getPos(vec3 value) {\n\t\n\treturn value;\n}\n\n\nvec3 getPositionFromTexture(vec2 uv, float i) {\n\tvec3 pos = vec3(.0);\n\n\tif(i < 1.0) {\n\t\tpos = getPos(texture2D(texture0, uv).rgb);\n\t} else if(i<2.0) {\n\t\tpos = getPos(texture2D(texture1, uv).rgb);\n\t} else if(i<3.0) {\n\t\tpos = getPos(texture2D(texture2, uv).rgb);\n\t} else if(i<4.0) {\n\t\tpos = getPos(texture2D(texture3, uv).rgb);\n\t} else if(i<5.0) {\n\t\tpos = getPos(texture2D(texture4, uv).rgb);\n\t} else if(i<6.0) {\n\t\tpos = getPos(texture2D(texture5, uv).rgb);\n\t} else if(i<7.0) {\n\t\tpos = getPos(texture2D(texture6, uv).rgb);\n\t} else if(i<8.0) {\n\t\tpos = getPos(texture2D(texture7, uv).rgb);\n\t} else if(i<9.0) {\n\t\tpos = getPos(texture2D(texture8, uv).rgb);\n\t} else {\n\t\tpos = getPos(texture2D(texture9, uv).rgb);\n\t}\n\n\treturn pos;\n}\n\nmat3 lookat( in vec3 ro, in vec3 ta, float cr ) {\n\tvec3 cw = normalize(ta-ro);\n\tvec3 cp = vec3(sin(cr), cos(cr),0.0);\n\tvec3 cu = normalize( cross(cw,cp) );\n\tvec3 cv = normalize( cross(cu,cw) );\n    return mat3( cu, cv, cw );\n}\n\n\nvoid main(void) {\n\tvec2 uv     = aPositionUV.xy/2.0;\n\tvec3 pos    = getPositionFromTexture(uv, aPositionUV.z);\n\tvec3 prePos = getPositionFromTexture(uv, aPositionUV.w);\n\tvec3 start  = getPos(texture2D(texture0, uv).rgb);\n\tvec3 end    = getPos(texture2D(texture9, uv).rgb);\n\n\tfloat angle = atan(pos.y, pos.z)-PI*.5;\n\tmat3 dir = lookat(prePos, pos, 0.0);\n\tvec3 tmpPos = dir*aVertexPosition;\n\n\ttmpPos.yz = rotate(tmpPos.yz, angle);\n\tpos += tmpPos;\n\n\tvec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    gl_Position = V;\n    vTextureCoord = aTextureCoord;\n\n    vVertex = pos;\n    vOpacity = 1.0;\n    if(start.y > end.y) {\n    \tvOpacity = 0.0;\n    }\n\n    vec3 N = vec3(pos.x, 0.0, pos.z);\n    vNormal = normalize(N);\n\n    vDepth = 1.0-getDepth(V.z/V.w);\n    vExtra = aExtra;\n    vColor = aColor;\n}";
 	vs = vs.replace('{{numTex}}', Math.floor(params.ribbonLength));
-	bongiovi.View.call(this, vs, "#define GLSLIFY 1\n// ribbon.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vVertex;\nvarying float vDepth;\nvarying float vOpacity;\nvarying vec3 vNormal;\nvarying vec3 vExtra;\n\nuniform sampler2D textureMap;\nuniform float time;\n\n\nconst float fade = .92;\nconst float ambient = 1.0;\nconst vec3 light0 = vec3(300.0);\nconst vec3 light1 = vec3(-300.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst vec2 center = vec2(.5);\nconst float PI = 3.141592657;\n\n\nconst vec3 color0 = vec3(126.0, 127.0, 158.0)/255.0;\nconst vec3 color1 = vec3(198.0, 181.0, 153.0)/255.0;\n\nvec3 diffuse(vec3 light, vec3 vertex, vec3 normal, vec3 lightColor) {\n\tvec3 L = normalize(light-vertex);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn lightColor0 * lambert;\n}\n\nvoid main(void) {\n\tif(vOpacity < .01) discard;\n\tvec3 diff0   = diffuse(light0, vVertex, vNormal, lightColor0) * .85;\n\tvec3 diff1   = diffuse(light1, vVertex, vNormal, lightColor1) * .75;\n\t\n\tvec3 color   = (ambient + diff0 + diff1 + sin(time*2.0*vExtra.z) * .5) * vDepth;\n\n\tvec2 uv = vExtra.xy;\n\tuv.x = mod(uv.x+time*.1, 1.0);\n\tvec3 colorMap = texture2D(textureMap, uv).rgb;\n\tcolor *= colorMap;\n\t\n\tfloat l \t = length(color) / length(vec3(1.0));\n\tvec3 colorGrd = mix(color0, color1, l);\n\tcolor \t\t = mix(color, colorGrd, .5);\n\t\n\tgl_FragColor = vec4(color, vOpacity);\n}");
+	bongiovi.View.call(this, vs, "#define GLSLIFY 1\n// ribbon.frag\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\nvarying vec3 vVertex;\nvarying float vDepth;\nvarying float vOpacity;\nvarying vec3 vNormal;\nvarying vec3 vExtra;\nvarying vec3 vColor;\n\nuniform sampler2D textureMap;\nuniform float time;\n\n\nconst float fade = .92;\nconst float ambient = 1.0;\nconst vec3 light0 = vec3(300.0);\nconst vec3 light1 = vec3(-300.0);\nconst vec3 lightColor0 = vec3(1.0, 1.0, fade);\nconst vec3 lightColor1 = vec3(fade, fade, 1.0);\nconst vec2 center = vec2(.5);\nconst float PI = 3.141592657;\n\n\nconst vec3 color0 = vec3(126.0, 127.0, 158.0)/255.0;\nconst vec3 color1 = vec3(198.0, 181.0, 153.0)/255.0;\n\nvec3 diffuse(vec3 light, vec3 vertex, vec3 normal, vec3 lightColor) {\n\tvec3 L = normalize(light-vertex);\n\tfloat lambert = max(dot(normal, L), 0.0);\n\treturn lightColor0 * lambert;\n}\n\nvoid main(void) {\n\tif(vOpacity < .01) discard;\n\tvec3 diff0   = diffuse(light0, vVertex, vNormal, lightColor0) * .35;\n\tvec3 diff1   = diffuse(light1, vVertex, vNormal, lightColor1) * .15;\n\t\n\tvec3 color   = (vColor + diff0 + diff1) * vDepth;\n\n\t\n\tgl_FragColor = vec4(color, vOpacity);\n}");
 }
 
 var p = ViewRibbon.prototype = new bongiovi.View();
@@ -233,6 +297,18 @@ p.createRibbon = function() {
 	var rx = Math.random();
 	var ry = Math.random();
 	var rz = Math.random();
+
+	function getColor() {
+		if(Math.random() < .33) {
+			return [221/255, 36/255, 37/255];
+		} else if(Math.random() < .67) { 
+			return [245/255, 176/255, 35/255];
+		} else {
+			return [0, 0, 0];
+		}
+	}
+
+	var color = getColor();
 
 
 	for(var i=0; i<num; i++) {
@@ -265,6 +341,11 @@ p.createRibbon = function() {
 		this.extra.push([rx, ry, rz]);
 		this.extra.push([rx, ry, rz]);
 
+		this.colors.push(color);
+		this.colors.push(color);
+		this.colors.push(color);
+		this.colors.push(color);
+
 		this.count++;
 	}
 	this.index ++;
@@ -277,6 +358,7 @@ p._init = function() {
 	this.coords    = [];
 	this.indices   = []; 
 	this.uv 	   = [];
+	this.colors	   = [];
 	this.extra	   = [];
 	this.count 	   = 0;
 	this.index     = 0;
@@ -294,6 +376,7 @@ p._init = function() {
 	this.mesh.bufferIndices(this.indices);
 	this.mesh.bufferData(this.uv, "aPositionUV", 4);
 	this.mesh.bufferData(this.extra, "aExtra", 3);
+	this.mesh.bufferData(this.colors, "aColor", 3);
 };
 
 p.render = function(fbos, textureMap) {
@@ -313,7 +396,7 @@ p.render = function(fbos, textureMap) {
 };
 
 module.exports = ViewRibbon;
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // ViewSave.js
 
 var GL = bongiovi.GL;
@@ -381,7 +464,7 @@ p.render = function() {
 };
 
 module.exports = ViewSave;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // ViewSimulation.js
 
 var GL = bongiovi.GL;
@@ -415,7 +498,7 @@ p.render = function(texture, isAnimating) {
 };
 
 module.exports = ViewSimulation;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
 // var dat = require("dat-gui");
@@ -473,7 +556,7 @@ window.params = {
 
 
 new App();
-},{"./SceneApp":1,"./libs/bongiovi.js":8}],8:[function(require,module,exports){
+},{"./SceneApp":1,"./libs/bongiovi.js":9}],9:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bongiovi = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
@@ -15119,4 +15202,4 @@ module.exports = ViewDotPlanes;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[7]);
+},{}]},{},[8]);
