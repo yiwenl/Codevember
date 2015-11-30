@@ -75,6 +75,11 @@ function SceneApp() {
 
 	window.addEventListener("resize", this.resize.bind(this));
 	window.addEventListener('keydown', this._onKeyDown.bind(this));
+
+	var that = this;
+	window.addEventListener('mousedown', function() {
+		that._isAnimating = true;
+	});
 }
 
 

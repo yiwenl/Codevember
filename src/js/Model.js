@@ -131,6 +131,10 @@ var Model = [
 	{
 		path:"labs/wen/37/dist/index.html",
 		cover:"dist/assets/covers/wen27.jpg"
+	},
+	{
+		path:"labs/wen/grand_finale/dist/index.html",
+		cover:"dist/assets/covers/wenFinal.jpg"
 	}
 ];
 
