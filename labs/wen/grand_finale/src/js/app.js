@@ -1,18 +1,37 @@
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
-var dat = require("dat-gui");
+// var dat = require("dat-gui");
+window.params = {
+	numParticles:64,
+	ribbonLength:10,
+	floorY:-120.0,
+	ribbonSize:4
+};
 
 (function() {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+
+		var l = new bongiovi.SimpleImageLoader();
+		var a = [
+			"assets/light.jpg",
+			"assets/lightBlur.jpg"
+		]
+
+		l.load(a, this, this._onImageLoaded);
+		
+	}
+
+	var p = App.prototype;
+
+	p._onImageLoaded = function(img) {
+		window.images = img;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");

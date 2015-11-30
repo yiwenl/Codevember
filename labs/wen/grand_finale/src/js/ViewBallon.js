@@ -5,6 +5,9 @@ var gl;
 var glslify = require("glslify");
 
 function ViewBalloon() {
+	this.x = 10;
+	this.y = -30;
+	this.z =  10;
 	bongiovi.View.call(this, glslify('../shaders/ballon.vert'), glslify('../shaders/ballon.frag'));
 }
 
@@ -21,15 +24,16 @@ p._init = function() {
 
 
 p._onObjLoaded = function(mesh, o) {
-	console.log('Mesh :', o.positions.length);
 	this.mesh = mesh;
 };
 
 p.render = function(texture) {
 	if(!this.mesh) return;
 	this.shader.bind();
-	// this.shader.uniform("texture", "uniform1i", 0);
-	// texture.bind(0);
+	this.shader.uniform("scale", "uniform1f", .5);
+	this.shader.uniform("texture", "uniform1i", 0);
+	this.shader.uniform("position", "uniform3fv", [this.x, this.y, this.z]);
+	texture.bind(0);
 	GL.draw(this.mesh);
 };
 

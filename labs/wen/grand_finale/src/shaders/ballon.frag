@@ -4,8 +4,9 @@
 
 precision highp float;
 // varying vec2 vTextureCoord;
-// uniform sampler2D texture;
+uniform sampler2D texture;
 varying vec3 vNormal;
+varying vec3 vEye;
 
 
 
@@ -26,12 +27,21 @@ vec3 diffuse(vec3 light, vec3 normal, vec3 color, float weight) {
 	return color * lambert * weight;
 }
 
+vec3 env(sampler2D t) {
+	vec3 r = reflect( vEye, vNormal );
+    float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+    vec2 vN = r.xy / m + .5;
+
+    return texture2D( t, vN ).rgb;
+}
 
 void main(void) {
+
+	vec3 envLight = env(texture);
     vec3 diff0 = diffuse(lightPos0, vNormal, lightColor0, lightWeight0);
 	vec3 diff1 = diffuse(lightPos1, vNormal, lightColor1, lightWeight1);
 
-	vec3 color = ambient + diff0 + diff1;
+	vec3 color = diff0 + diff1 + envLight;
     gl_FragColor = vec4(color , 1.0);
     // gl_FragColor = vec4(vNormal * .5 + .5 , 1.0);
 }
