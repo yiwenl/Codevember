@@ -17,7 +17,7 @@ p._init = function() {
 	var positions = [];
 	var coords = [];
 	var indices = []; 
-	var size = 700;
+	var size = 1000;
 	this.mesh = bongiovi.MeshUtils.createPlane(size, size, 1, false, 'xz');
 };
 

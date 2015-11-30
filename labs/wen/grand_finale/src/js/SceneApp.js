@@ -7,16 +7,25 @@ var ViewRender     = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
 var ViewRibbon     = require("./ViewRibbon");
 var ViewFloor      = require("./ViewFloor");
+var Ballon         = require("./Ballon");
 
 function SceneApp() {
 	gl = GL.gl;
 	bongiovi.Scene.call(this);
 	this._isAnimating = false;
 
+	this.camera.setPerspective(65*Math.PI/180, GL.aspectRatio, 5, 3000);
 	this.camera.lockRotation(false);
 	this.sceneRotation.lock(true);
 	this.camera._ry.value = -1.5;
 	this.camera._rx.limit(-.3, 0.15);
+
+	var numBallons = 20;
+	this._ballons = [];
+	for(var i=0; i<numBallons; i++) {
+		var b = new Ballon();
+		this._ballons.push(b);
+	}
 
 	window.addEventListener("resize", this.resize.bind(this));
 	window.addEventListener('keydown', this._onKeyDown.bind(this));
@@ -31,7 +40,6 @@ p._onKeyDown = function(e) {
 
 	if(e.keyCode == 32) {
 		this._isAnimating = true;
-		this._vBallon.opacity.value = 0;
 	}
 };
 
@@ -105,7 +113,17 @@ p.render = function() {
 	this._vRibbon.render(this._fbos, this._texture);
 	this._vRender.render(fboLast.getTexture(), this._texture);
 
-	this._vBallon.render(this._textureLight);
+
+	if(!this._isAnimating) {
+		this._vBallon.render(this._textureLight);
+	} else {
+		for(var i=0;i<this._ballons.length; i++) {
+			var b = this._ballons[i];
+			b.update();
+			// this._vBallon.render(this._textureLight, b.position, b.color);
+		}	
+	}
+	
 	this._vFloor.render();
 };
 

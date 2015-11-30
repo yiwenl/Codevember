@@ -29,7 +29,7 @@ p._onObjLoaded = function(mesh, o) {
 	this.mesh = mesh;
 };
 
-p.render = function(texture) {
+p.render = function(texture, pos, color) {
 	if(!this.mesh) return;
 
 	this.x = 10 + Math.sin(this.count) * 3.0;
@@ -42,7 +42,9 @@ p.render = function(texture) {
 	this.shader.uniform("scale", "uniform1f", .5);
 	this.shader.uniform("opacity", "uniform1f", this.opacity.value);
 	this.shader.uniform("texture", "uniform1i", 0);
-	this.shader.uniform("position", "uniform3fv", [this.x, this.y, this.z]);
+	this.shader.uniform("position", "uniform3fv", pos || [this.x, this.y, this.z]);
+	var g = .7;
+	this.shader.uniform("color", "uniform3fv", color || [g, g, g]);
 	texture.bind(0);
 	GL.draw(this.mesh);
 };
