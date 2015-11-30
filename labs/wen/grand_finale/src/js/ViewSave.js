@@ -25,7 +25,7 @@ p._init = function() {
 	var totalParticles = numParticles * numParticles;
 	console.log('Total Particles : ', totalParticles);
 	var ux, uy;
-	var range = 10.0;
+	var range = 5.0;
 	var xzSpeed = 2.5;
 
 	for(var j=0; j<numParticles; j++) {

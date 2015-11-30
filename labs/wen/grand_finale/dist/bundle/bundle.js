@@ -16,7 +16,7 @@ var p = Ballon.prototype;
 p._init = function() {
 	var r = 20;
 	var xz = 2.5;
-	this.speed = random(0.02, 0.05);
+	this.speed = random(0.03, 0.08);
 	this.position = vec3.create(random(-r, r), random(-r, r), random(-r, r));
 	this.velocity = vec3.fromValues(random(-xz, xz), 0, random(-xz, xz));
 
@@ -166,7 +166,7 @@ p.render = function() {
 		for(var i=0;i<this._ballons.length; i++) {
 			var b = this._ballons[i];
 			b.update();
-			// this._vBallon.render(this._textureLight, b.position, b.color);
+			this._vBallon.render(this._textureLight, b.position, b.color);
 		}	
 	}
 	
@@ -214,9 +214,9 @@ p._onObjLoaded = function(mesh, o) {
 p.render = function(texture, pos, color) {
 	if(!this.mesh) return;
 
-	this.x = 10 + Math.sin(this.count) * 3.0;
-	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 5.0;
-	this.z = 10 + Math.cos(this.count*1.328476) * 3.0;
+	this.x = 10 + Math.sin(this.count) * 5.0;
+	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 10.0;
+	this.z = 10 + Math.cos(this.count*1.328476) * 5.0;
 
 	this.count +=.01;
 
@@ -240,7 +240,8 @@ var gl;
 
 
 function ViewFloor() {
-	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+	// bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), "#define GLSLIFY 1\n// floor.frag\n\n#define SHADER_NAME SIMPLE_TEXTURE\n\nprecision highp float;\nvarying vec2 vTextureCoord;\n// uniform sampler2D texture;\n\nvoid main(void) {\n\tvec4 color = vec4(1.0);\n\tfloat d = distance(vTextureCoord, vec2(.5));\n\tfloat a = 1.0 - smoothstep(0.0, 0.5, d);\n    gl_FragColor = color * a;\n}\n");
 }
 
 var p = ViewFloor.prototype = new bongiovi.View();
@@ -489,7 +490,7 @@ p._init = function() {
 	var totalParticles = numParticles * numParticles;
 	console.log('Total Particles : ', totalParticles);
 	var ux, uy;
-	var range = 10.0;
+	var range = 5.0;
 	var xzSpeed = 2.5;
 
 	for(var j=0; j<numParticles; j++) {

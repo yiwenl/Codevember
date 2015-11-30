@@ -120,7 +120,7 @@ p.render = function() {
 		for(var i=0;i<this._ballons.length; i++) {
 			var b = this._ballons[i];
 			b.update();
-			// this._vBallon.render(this._textureLight, b.position, b.color);
+			this._vBallon.render(this._textureLight, b.position, b.color);
 		}	
 	}
 	

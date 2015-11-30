@@ -15,7 +15,7 @@ var p = Ballon.prototype;
 p._init = function() {
 	var r = 20;
 	var xz = 2.5;
-	this.speed = random(0.02, 0.05);
+	this.speed = random(0.03, 0.08);
 	this.position = vec3.create(random(-r, r), random(-r, r), random(-r, r));
 	this.velocity = vec3.fromValues(random(-xz, xz), 0, random(-xz, xz));
 

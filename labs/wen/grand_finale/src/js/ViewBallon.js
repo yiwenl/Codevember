@@ -32,9 +32,9 @@ p._onObjLoaded = function(mesh, o) {
 p.render = function(texture, pos, color) {
 	if(!this.mesh) return;
 
-	this.x = 10 + Math.sin(this.count) * 3.0;
-	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 5.0;
-	this.z = 10 + Math.cos(this.count*1.328476) * 3.0;
+	this.x = 10 + Math.sin(this.count) * 5.0;
+	this.y = -30 + Math.sin(this.count*1.23847) * Math.cos(this.count*.8748563) * 10.0;
+	this.z = 10 + Math.cos(this.count*1.328476) * 5.0;
 
 	this.count +=.01;
 

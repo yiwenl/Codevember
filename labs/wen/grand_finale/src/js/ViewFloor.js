@@ -5,7 +5,8 @@ var gl;
 var glslify = require("glslify");
 
 function ViewFloor() {
-	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+	// bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), bongiovi.ShaderLibs.get('simpleColorFrag'));
+	bongiovi.View.call(this, bongiovi.ShaderLibs.get('generalVert'), glslify("../shaders/floor.frag"));
 }
 
 var p = ViewFloor.prototype = new bongiovi.View();
