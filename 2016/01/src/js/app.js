@@ -128,6 +128,7 @@ function _init3D() {
 	orbControl = new alfrid.OrbitalControl(null, window, 8);
 	orbControl.radius.limit(7, 20);
 	orbControl.radius.value = 15.0;
+	orbControl.rx.value = Math.PI/2 - 0.01;
 
 	//	STATS
 	stats = new Stats();

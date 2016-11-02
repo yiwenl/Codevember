@@ -84,15 +84,21 @@ float displacement(vec3 p) {
 }
 
 
-const float sphereSize = 0.25;
-const float boxSize = 0.1;
-const float gap = 1.0;
+const float sphereSize = 0.15;
+const float boxSize = 0.05;
+const float gap = 0.7;
 
 
 float bone(vec3 pos, float dir) {
-	pos.xz = rotate(pos.xz, (floor(pos.y/gap + 0.5) - 0.5) * 0.3 + uGlobalTime);
-	// pos.xz = rotate(pos.xz, pos.y * 0.3 + uGlobalTime);
-	pos.y = repeat(pos.y, 1.0);
+
+	float y = repeat(pos.y, gap);
+
+	float t = gap;
+	pos.xz = rotate(pos.xz, (floor(pos.y/t + t/2.0) - t/2.0) * 0.3 + uGlobalTime);
+	// pos.xz = rotate(pos.xz, (floor(y/2.0 - 1.0) + 1.0) * 0.4 + uGlobalTime);
+	pos.y = y;
+	
+
 	float d0 = sphere(pos - vec3(1.0, 0.0, 0.0) * dir, sphereSize);
 	float d1 = sphere(pos - vec3(4.0, 0.0, 0.0) * dir, sphereSize);
 	float box = box(pos - vec3(2.5, 0.0, 0.0) * dir, vec3(1.5, boxSize, boxSize));
