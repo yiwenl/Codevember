@@ -88,23 +88,30 @@ const float sphereSize = 0.25;
 const float boxSize = 0.1;
 const float gap = 1.0;
 
-//	MAPPING FUNCTION
-vec2 map(vec3 pos) {
-	float colorIndex = 0.0;
-	vec3 orgPos = pos;
-	
+
+float bone(vec3 pos, float dir) {
 	pos.xz = rotate(pos.xz, (floor(pos.y/gap + 0.5) - 0.5) * 0.3 + uGlobalTime);
-	pos.x = abs(pos.x) + 0.5;
+	// pos.xz = rotate(pos.xz, pos.y * 0.3 + uGlobalTime);
 	pos.y = repeat(pos.y, 1.0);
-
-
-	float d0 = sphere(pos - vec3(1.0, 0.0, 0.0), sphereSize);
-	float d1 = sphere(pos - vec3(4.0, 0.0, 0.0), sphereSize);
-	float box = box(pos - vec3(2.5, 0.0, 0.0), vec3(1.5, boxSize, boxSize));
+	float d0 = sphere(pos - vec3(1.0, 0.0, 0.0) * dir, sphereSize);
+	float d1 = sphere(pos - vec3(4.0, 0.0, 0.0) * dir, sphereSize);
+	float box = box(pos - vec3(2.5, 0.0, 0.0) * dir, vec3(1.5, boxSize, boxSize));
 	float d = min(d0, d1);
 	d = min(box, d);
 
-	colorIndex = orgPos.x < 0.0 ? 0.0 : 1.0;
+	return d;
+}
+
+//	MAPPING FUNCTION
+vec2 map(vec3 pos) {
+	float colorIndex = 0.0;
+
+	float d0 = bone(pos, 1.0);
+	float d1 = bone(pos, -1.0);
+
+	float d = min(d0, d1);
+
+	colorIndex = d == d0 ? 0.0 : 1.0;
 	return vec2(d, colorIndex);
 }
 
@@ -265,7 +272,7 @@ void main(void) {
 		float d = result.x;
 		colorIndex = result.y;
 
-		if(d < 0.001) {	hit = true; break;	}
+		if(d < 0.01) {	hit = true; break;	}
 
 		pos += d * dir;
 	}
