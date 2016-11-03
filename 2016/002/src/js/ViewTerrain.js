@@ -13,7 +13,7 @@ class ViewTerrain extends alfrid.View {
 
 
 	_init() {
-		const size = 50;
+		const size = params.terrainSize;
 
 		this.mesh = alfrid.Geom.plane(size, size, 120, 'xz');
 		this._textureHeight = new alfrid.GLTexture(getAsset('height'));
@@ -29,6 +29,9 @@ class ViewTerrain extends alfrid.View {
 		this.shader.uniform("textureHeight", "uniform1i", 0);
 		this._textureHeight.bind(0);
 		this.shader.uniform("uMaxHeight", "float", this.maxHeight);
+		this.shader.uniform("uClipY", "float", params.clipY);
+		this.shader.uniform("uDir", "float", params.clipDir);
+
 		GL.draw(this.mesh);
 	}
 

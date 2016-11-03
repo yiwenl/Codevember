@@ -15,6 +15,7 @@ uniform float uMaxHeight;
 varying vec2 vTextureCoord;
 varying vec3 vNormal;
 varying float vHeight;
+varying vec3 vPosition;
 
 void main(void) {
 	vHeight       = texture2D(textureHeight, aTextureCoord).r;
@@ -24,4 +25,5 @@ void main(void) {
 	gl_Position   = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(position, 1.0);
 	vTextureCoord = aTextureCoord;
 	vNormal       = aNormal;
+	vPosition     = position;
 }

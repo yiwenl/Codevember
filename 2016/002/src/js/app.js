@@ -8,11 +8,16 @@ import Stats from 'stats.js';
 const GL = alfrid.GL;
 const assets = [
 	{ id:'height', url:'assets/img/height.jpg' },
+	{ id:'normal', url:'assets/img/normal.jpg' }
 ];
 window.params = {
 	numParticles:32,
 	skipCount:10,
-	maxRadius: 5.5
+	maxRadius: 5.5,
+	terrainSize: 50,
+	seaLevel:1,
+	clipY:1,
+	clipDir:1
 };
 
 if(document.body) {
@@ -82,5 +87,6 @@ function _init3D() {
 	alfrid.Scheduler.addEF(()=>stats.update());
 	
 	gui.add(params, 'maxRadius', 0.0, 10.0);
+	gui.add(params, 'seaLevel', 0, 10);
 
 }

@@ -138,7 +138,7 @@ void main(void) {
 	const float maxY = 5.0;
 	if(pos.y > maxY) {
 		float f = maxY - pos.y;
-		vel.y += f * 0.1;
+		vel.y += f * 0.01;
 	}
 
 	const float decrease = .93;

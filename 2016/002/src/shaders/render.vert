@@ -16,6 +16,7 @@ uniform vec2 uViewport;
 
 varying vec4 vColor;
 varying vec3 vNormal;
+varying vec3 vPosition;
 
 const float radius = 0.01;
 
@@ -39,4 +40,5 @@ void main(void) {
     gl_PointSize = distOffset * (1.0 + extra.x * 1.0);
 
 	vNormal 	 = aNormal;
+	vPosition 	 = pos;
 }
