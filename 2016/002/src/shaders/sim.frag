@@ -129,13 +129,13 @@ void main(void) {
 	}
 
 
-	const float minY = 2.0;
+	const float minY = 1.5;
 	if(pos.y < minY) {
-		float f = minY - pos.y;
-		vel.y += f * 0.2;
+		float f = (minY - pos.y) / minY;
+		vel.y += pow(f, 4.0) * 10.95;
 	}
 
-	const float maxY = 5.0;
+	const float maxY = 4.0;
 	if(pos.y > maxY) {
 		float f = maxY - pos.y;
 		vel.y += f * 0.01;

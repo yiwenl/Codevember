@@ -13,7 +13,7 @@ const assets = [
 window.params = {
 	numParticles:32,
 	skipCount:10,
-	maxRadius: 5.5,
+	maxRadius: 15.5,
 	terrainSize: 50,
 	seaLevel:1,
 	clipY:1,

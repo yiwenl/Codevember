@@ -19,7 +19,7 @@ void main(void) {
 	vec4 colorRefraction = texture2D(textureRefraction, uvRefract);
 	// colorReflection.rg *= 0.5;
     gl_FragColor = mix(colorReflection, colorRefraction, .5);
-    // gl_FragColor = colorRefraction;
+    // gl_FragColor = colorReflection;
     gl_FragColor.rg *= 0.5;
     // gl_FragColor = vec4(ndc, 0.0, 1.0);
 }
