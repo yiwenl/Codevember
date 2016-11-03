@@ -11,10 +11,10 @@ const assets = [
 	{ id:'normal', url:'assets/img/normal.jpg' }
 ];
 window.params = {
-	numParticles:32,
+	numParticles:64 * 2,
 	skipCount:10,
-	maxRadius: 15.5,
-	terrainSize: 50,
+	maxRadius: 25.5,
+	terrainSize: 30,
 	seaLevel:1,
 	clipY:1,
 	clipDir:1

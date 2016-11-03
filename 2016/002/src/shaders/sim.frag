@@ -117,7 +117,7 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = (0.5 + extra.r * 0.5) * .2;
+	float posOffset = mix(extra.r, 1.0, 0.5) * (.1 + sin(cos(time)) * 0.05);
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
 	
 	vel += acc * .005;
@@ -132,13 +132,13 @@ void main(void) {
 	const float minY = 1.5;
 	if(pos.y < minY) {
 		float f = (minY - pos.y) / minY;
-		vel.y += pow(f, 4.0) * 10.95;
+		vel.y += pow(f, 4.0) * 10.0;
 	}
 
 	const float maxY = 4.0;
 	if(pos.y > maxY) {
 		float f = maxY - pos.y;
-		vel.y += f * 0.01;
+		vel.y += f * (0.01 + extra.g * 0.005);
 	}
 
 	const float decrease = .93;

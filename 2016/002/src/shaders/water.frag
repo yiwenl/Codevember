@@ -20,6 +20,6 @@ void main(void) {
 	// colorReflection.rg *= 0.5;
     gl_FragColor = mix(colorReflection, colorRefraction, .5);
     // gl_FragColor = colorReflection;
-    gl_FragColor.rg *= 0.5;
+    gl_FragColor.rgb *= 0.5;
     // gl_FragColor = vec4(ndc, 0.0, 1.0);
 }
