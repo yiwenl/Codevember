@@ -4,9 +4,9 @@ import alfrid, { Scene, GL } from 'alfrid';
 import ViewSave from './ViewSave';
 import ViewRender from './ViewRender';
 import ViewSim from './ViewSim';
+import ViewNoise from './ViewNoise';
+
 import ViewTerrain from './ViewTerrain';
-import ViewWater from './ViewWater';
-import ViewStars from './ViewStars';
 
 window.getAsset = function(id) {
 	return assets.find( (a) => a.id === id).file;
@@ -18,16 +18,9 @@ class SceneApp extends alfrid.Scene {
 		GL.enableAlphaBlending();
 
 		this._count = 0;
-		const RAD = Math.PI/180;
-		const FOV = 60 * RAD;
-
-		this.camera.setPerspective(FOV, GL.aspectRatio, .1, 100);
-		this.cameraReflection = new alfrid.CameraPerspective();
-		this.cameraReflection.setPerspective(FOV, GL.aspectRatio, .1, 100);
-
+		this.camera.setPerspective(Math.PI/2, GL.aspectRatio, .1, 100);
 		this.orbitalControl.radius.value = 10;
 		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
-		this.orbitalControl.center[1] = 2;
 	}
 
 	_initTextures() {
@@ -43,8 +36,9 @@ class SceneApp extends alfrid.Scene {
 		this._fboCurrent  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
 		this._fboTarget  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
 
-		this._fboReflection = new alfrid.FrameBuffer(GL.width, GL.height);
-		this._fboRefraction = new alfrid.FrameBuffer(GL.width, GL.height);
+
+		const noiseSize = 256;
+		this._fboNoise = new alfrid.FrameBuffer(noiseSize, noiseSize);
 	}
 
 
@@ -62,8 +56,7 @@ class SceneApp extends alfrid.Scene {
 		this._vRender = new ViewRender();
 		this._vSim 	  = new ViewSim();
 		this._vTerrain = new ViewTerrain();
-		this._vWater = new ViewWater();
-		this._vStars = new ViewStars();
+		this._vNoise = new ViewNoise();
 
 		this._vSave = new ViewSave();
 		GL.setMatrices(this.cameraOrtho);
@@ -98,66 +91,49 @@ class SceneApp extends alfrid.Scene {
 
 
 	render() {
-		const { eye, center } = this.camera;
-		let distToWater = eye[1] - params.seaLevel;
-		const eyeRef = [eye[0], eye[1] - distToWater * 2.0, eye[2]];
-		distToWater = center[1] - params.seaLevel;
-		const centerRef = [center[0], center[1] - distToWater * 2.0, center[2]];
-		this.cameraReflection.lookAt(eyeRef, centerRef);
+
+		this._fboNoise.bind();
+		GL.clear(0, 0, 0, 0);
+
+		this._vNoise.render();
+
+		this._fboNoise.unbind();
 
 		this._count ++;
 		if(this._count % params.skipCount == 0) {
 			this._count = 0;
 			this.updateFbo();
 		}
-		let p = this._count / params.skipCount;
-		
-		params.clipY = params.seaLevel;
 
-		this._fboReflection.bind();
-		GL.clear(0, 0, 0, 0);
-		params.clipDir = -1;
-		GL.setMatrices(this.cameraReflection);
-		this.renderScene();
-		this._fboReflection.unbind();
-
-		this._fboRefraction.bind();
-		GL.clear(0, 0, 0, 0);
-		GL.setMatrices(this.camera);
-		params.clipDir = 1;
-		this.renderScene();
-		this._fboRefraction.unbind();
-
-		
-		params.clipY = 999;
-		params.clipDir = 1;
-
-		GL.clear(0, 0, 0, 0);
-		GL.setMatrices(this.camera);
-		this.renderScene(true);
-	}
-
-
-	renderScene(withWater=false) {
 		let p = this._count / params.skipCount;
 
-		this._vStars.render();
-		this._vTerrain.render();	
-		if(withWater) {
-			this._vWater.render(this._fboReflection.getTexture(), this._fboRefraction.getTexture());
-		} else {
+		GL.clear(0, 0, 0, 0);
+		this._bAxis.draw();
+		this._bDots.draw();
 
-		}
+
+		this._vTerrain.render(this._fboNoise.getTexture());
 		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), p, this._fboCurrent.getTexture(2));
+
+		// const size = Math.min(99999, GL.height/4);
+
+		// for(let i=0; i<4; i++) {
+		// 	GL.viewport(0, size * i, size, size);
+		// 	this._bCopy.draw(this._fboCurrent.getTexture(i));
+		// }
+
+
+		GL.disable(GL.DEPTH_TEST);
+
+		GL.viewport(300, 300);
+		this._bCopy.draw(this._fboNoise.getTexture());
+		GL.enable(GL.DEPTH_TEST);
 	}
 
 
 	resize() {
 		GL.setSize(window.innerWidth, window.innerHeight);
 		this.camera.setAspectRatio(GL.aspectRatio);
-
-		this._fboReflection = new alfrid.FrameBuffer(GL.width, GL.height);
-		this._fboRefraction = new alfrid.FrameBuffer(GL.width, GL.height);
 	}
 }
 

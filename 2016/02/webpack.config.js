@@ -18,7 +18,7 @@ function getOutput() {
 }
 
 module.exports = {
-  hotPort: 8081,
+  hotPort: 8080,
   cache: isDevelopment,
   debug: isDevelopment,
   entry: {
@@ -40,7 +40,7 @@ module.exports = {
   output: {
     path: getOutput(),
     filename:'js/bundle.js',
-    publicPath: isDevelopment ? `http://${serverIp}:8081/assets/` : ''
+    publicPath: isDevelopment ? `http://${serverIp}:8080/assets/` : ''
   },
   module: {
     loaders: [
@@ -66,11 +66,6 @@ module.exports = {
       { test: /\.(glsl|frag|vert)$/, loader: 'raw', exclude: /node_modules/ },
       { test: /\.(glsl|frag|vert)$/, loader: 'glslify', exclude: /node_modules/ }
     ]
-  },
-  resolve: {
-    alias: {
-      'alfrid': __dirname + '/src/js/libs/alfrid.js'
-    }
   },
   plugins: prod ? [
     new webpack.optimize.DedupePlugin(),

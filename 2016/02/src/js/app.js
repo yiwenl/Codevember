@@ -3,22 +3,15 @@ import alfrid, { Camera } from 'alfrid';
 import SceneApp from './SceneApp';
 import AssetsLoader from 'assets-loader';
 import dat from 'dat-gui';
-import Stats from 'stats.js';
 
 const GL = alfrid.GL;
 const assets = [
-	{ id:'height', url:'assets/img/height.jpg' },
-	{ id:'normal', url:'assets/img/normal.jpg' },
-	{ id:'starsmap', url:'assets/img/starsmap.jpg' }
+	{ id:'heightMap', url:'assets/img/height.jpg' },
 ];
 window.params = {
-	numParticles:64,
+	numParticles:16,
 	skipCount:10,
-	maxRadius: 10,
-	terrainSize: 30,
-	seaLevel:1,
-	clipY:1,
-	clipDir:1
+	maxRadius: 2.5
 };
 
 if(document.body) {
@@ -76,18 +69,11 @@ function _init3D() {
 	//	INIT 3D TOOL
 	GL.init(canvas);
 
-	//	INIT DAT-GUI
-	window.gui = new dat.GUI({ width:300 });
-
 	//	CREATE SCENE
 	let scene = new SceneApp();
 
-	//	STATS
-	const stats = new Stats();
-	document.body.appendChild(stats.domElement);
-	alfrid.Scheduler.addEF(()=>stats.update());
-	
-	gui.add(params, 'maxRadius', 0.0, 20.0);
-	gui.add(params, 'seaLevel', 0, 10);
+	//	INIT DAT-GUI
+	window.gui = new dat.GUI({ width:300 });
+	gui.add(params, 'maxRadius', 0.0, 10.0);
 
 }
