@@ -7,7 +7,7 @@
     "lint": "eslint -c .eslintrc src/**",
     "lint:fix": "eslint -c .eslintrc --fix src/**",
     "start": "webpack-dev-server",
-    "dev": "NODE_ENV=development webpack-dev-server --hot --inline --host 0.0.0.0 --colors --error-details --content-base dist --port 8090",
+    "dev": "NODE_ENV=development webpack-dev-server --hot --inline --host 0.0.0.0 --colors --error-details --content-base dist --port 8081",
     "build": "NODE_ENV=production webpack --progress --colors --error-details"
   },
   "repository": {},
@@ -15,7 +15,7 @@
   "author": "Yi-Wen Lin",
   "license": "ISC",
   "devDependencies": {
-    "alfrid": "^0.1.15",
+    "alfrid": "^0.1.14",
     "assets-loader": "^0.4.0",
     "autoprefixer-loader": "^3.2.0",
     "babel": "^6.5.2",
@@ -39,7 +39,6 @@
     "path": "^0.12.7",
     "raw-loader": "^0.5.1",
     "sass-loader": "^3.2.0",
-    "stats.js": "^0.16.0",
     "style-loader": "^0.13.0",
     "webpack": "1.12.14",
     "webpack-dev-server": "1.14.1"

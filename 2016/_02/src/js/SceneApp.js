@@ -2,6 +2,7 @@
 
 import alfrid, { Scene, GL } from 'alfrid';
 import ViewObjModel from './ViewObjModel';
+import ViewSphere from './ViewSpheres';
 
 window.getAsset = function(id) {
 	return assets.find( (a) => a.id === id).file;
@@ -36,16 +37,20 @@ class SceneApp extends alfrid.Scene {
 		this._bBall = new alfrid.BatchBall();
 		this._bSkybox = new alfrid.BatchSkybox();
 		this._vModel = new ViewObjModel();
+
+		this._vSphere = new ViewSphere(0);
 	}
 
 
 	render() {
 		GL.clear(0, 0, 0, 0);
 		// this._bSkybox.draw(this._textureRad);
-		this._bAxis.draw();
-		this._bDots.draw();
+		// this._bAxis.draw();
+		// this._bDots.draw();
 
-		this._vModel.render(this._textureRad, this._textureIrr, this._textureAO);
+		// this._vModel.render(this._textureRad, this._textureIrr, this._textureAO);
+
+		this._vSphere.render();
 	}
 
 

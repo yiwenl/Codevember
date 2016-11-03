@@ -18,7 +18,7 @@ function getOutput() {
 }
 
 module.exports = {
-  hotPort: 8090,
+  hotPort: 8081,
   cache: isDevelopment,
   debug: isDevelopment,
   entry: {
@@ -40,7 +40,7 @@ module.exports = {
   output: {
     path: getOutput(),
     filename:'js/bundle.js',
-    publicPath: isDevelopment ? `http://${serverIp}:8090/assets/` : ''
+    publicPath: isDevelopment ? `http://${serverIp}:8081/assets/` : ''
   },
   module: {
     loaders: [
