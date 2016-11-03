@@ -10,6 +10,9 @@ uniform sampler2D textureExtra;
 uniform float time;
 uniform float maxRadius;
 
+
+#define PI 3.141592657
+
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0;  }
 
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0;  }
@@ -113,6 +116,13 @@ vec3 curlNoise( vec3 p ){
 
 }
 
+vec2 rotate(vec2 v, float a) {
+	float s = sin(a);
+	float c = cos(a);
+	mat2 m = mat2(c, -s, s, c);
+	return m * v;
+}
+
 void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
@@ -135,11 +145,15 @@ void main(void) {
 		vel.y += pow(f, 4.0) * 10.0;
 	}
 
-	const float maxY = 4.0;
+	const float maxY = 2.0;
 	if(pos.y > maxY) {
 		float f = maxY - pos.y;
-		vel.y += f * (0.01 + extra.g * 0.005);
+		vel.y += f * (0.01 + extra.g * 0.005) * 0.01;
 	}
+
+	vec2 xz = normalize(pos.xz);
+	xz = rotate(xz, -PI * 0.6);
+	vel.xz += xz * 0.005 * mix(extra.b, 1.0, .5);
 
 	const float decrease = .93;
 	vel *= decrease;

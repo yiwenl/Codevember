@@ -18,7 +18,7 @@ class SceneApp extends alfrid.Scene {
 
 		this._count = 0;
 		const RAD = Math.PI/180;
-		const FOV = 45 * RAD;
+		const FOV = 60 * RAD;
 
 		this.camera.setPerspective(FOV, GL.aspectRatio, .1, 100);
 		this.cameraReflection = new alfrid.CameraPerspective();
