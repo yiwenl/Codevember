@@ -38,7 +38,7 @@ class ViewRender extends alfrid.View {
 	}
 
 
-	render(textureCurr, textureNext, p, textureExtra) {
+	render(textureCurr, textureNext, p, textureExtra, textureHeight, textureNormal) {
 		this.time += 0.1;
 		this.shader.bind();
 
@@ -50,6 +50,12 @@ class ViewRender extends alfrid.View {
 
 		this.shader.uniform('textureExtra', 'uniform1i', 2);
 		textureExtra.bind(2);
+
+		this.shader.uniform("textureHeight", "uniform1i", 3);
+		textureHeight.bind(3);
+
+		this.shader.uniform("textureNormal", "uniform1i", 4);
+		textureNormal.bind(4);
 
 		this.shader.uniform('uViewport', 'vec2', [GL.width, GL.height]);
 		this.shader.uniform('percent', 'float', p);

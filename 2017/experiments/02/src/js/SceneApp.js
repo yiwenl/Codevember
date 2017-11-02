@@ -6,6 +6,8 @@ import ViewRender from './ViewRender';
 import ViewSim from './ViewSim';
 import ViewNoise from './ViewNoise';
 
+import ViewDebug from './ViewDebug';
+
 window.getAsset = function(id) {
 	return assets.find( (a) => a.id === id).file;
 }
@@ -16,9 +18,10 @@ class SceneApp extends alfrid.Scene {
 		GL.enableAlphaBlending();
 
 		this._count = 0;
-		this.camera.setPerspective(Math.PI/2, GL.aspectRatio, .1, 100);
-		this.orbitalControl.radius.value = 10;
-		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
+		this.camera.setPerspective(Math.PI/3, GL.aspectRatio, .1, 100);
+		this.orbitalControl.radius.value = 8;
+		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.4;
+		this.orbitalControl.radius.limit(5, 12);
 	}
 
 	_initTextures() {
@@ -51,6 +54,7 @@ class SceneApp extends alfrid.Scene {
 		this._bAxis = new alfrid.BatchAxis();
 		this._bDots = new alfrid.BatchDotsPlane();
 		this._bBall = new alfrid.BatchBall();
+		this._vDebug = new ViewDebug();
 
 
 		//	views
@@ -107,25 +111,10 @@ class SceneApp extends alfrid.Scene {
 		let p = this._count / params.skipCount;
 
 		GL.clear(0, 0, 0, 0);
-		this._bAxis.draw();
-		this._bDots.draw();
 
-		// this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), p, this._fboCurrent.getTexture(2));
+		// this._vDebug.render(this._fboNoise.getTexture(0), this._fboNoise.getTexture(1));
+		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), p, this._fboCurrent.getTexture(2), this._fboNoise.getTexture(0), this._fboNoise.getTexture(1));
 
-		// const size = Math.min(params.numParticles, GL.height/4);
-
-		// for(let i=0; i<4; i++) {
-		// 	GL.viewport(0, size * i, size, size);
-		// 	this._bCopy.draw(this._fboCurrent.getTexture(i));
-		// }
-
-
-		const size = 300;
-		GL.viewport(0, 0, size, size);
-		this._bCopy.draw(this._fboNoise.getTexture(0));
-
-		GL.viewport(size, 0, size, size);
-		this._bCopy.draw(this._fboNoise.getTexture(1));
 	}
 
 

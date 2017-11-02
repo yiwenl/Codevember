@@ -8,7 +8,7 @@ import assets from './asset-list';
 import Assets from './Assets';
 
 window.params = {
-	numParticles:256*2,
+	numParticles:256,
 	skipCount:10,
 	maxRadius: 2.5
 };

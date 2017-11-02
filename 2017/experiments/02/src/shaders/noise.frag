@@ -40,7 +40,7 @@ float fbm(vec2 x) {
 
 
 void main(void) {
-	const vec2 size = vec2(2.0,0.0) * 0.05;
+	const vec2 size = vec2(2.0,0.0) * 0.02;
 	const float s = 0.01;
 	vec3 offset = vec3(s, 0.0, -s);
 	float scale = 3.;
@@ -52,7 +52,7 @@ void main(void) {
 
 	vec3 va = normalize(vec3(size.xy,s21-s01));
     vec3 vb = normalize(vec3(size.yx,s12-s10));
-    vec3 n = cross(va,vb);
+    vec3 n = cross(va,vb) * .5 + .5;
 
 
     // gl_FragColor = vec4(vec3(s11), 1.0);

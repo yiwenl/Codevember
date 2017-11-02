@@ -113,25 +113,38 @@ vec3 curlNoise( vec3 p ){
 
 }
 
+const float RANGE = 5.0;
+
 void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = (0.5 + extra.r * 0.2) * .25;
+	float posOffset = mix(extra.r, 1.0, 0.2) * .35;
+	float temp = mix(1.0, extra.g, .25);
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
-	
+	acc.x = acc.x * .5 + .75;
+	acc.z *= 0.5;
 	vel += acc * .02;
 
-	float dist = length(pos);
-	if(dist > maxRadius) {
-		float f = (dist - maxRadius) * .005;
-		vel -= normalize(pos) * f;
-	}
-
-	const float decrease = .93;
+	const float decrease = .91;
 	vel *= decrease;
 
-	gl_FragData[0] = vec4(pos + vel, 1.0);
+	float d = abs(pos.z);
+	float maxD = RANGE * 0.35;
+	if(d > maxD) {
+		float dir = -normalize(pos.z);
+		float f = d - maxD;
+		vel.z += f * dir * 0.02 * mix(1.0, extra.b, .5);
+	}
+
+	pos += vel;
+	pos.y *= 0.0;
+
+	if(pos.x > RANGE) {
+		pos.x -= RANGE * 2.0;
+	}
+
+	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
 	gl_FragData[2] = vec4(extra, 1.0);
 	gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
