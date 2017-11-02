@@ -24,7 +24,7 @@ function replace(str, pattern, strToReplace) {	return str.replace(new RegExp(pat
 
 
 function readTemplate(sketch, i, folderPath) {
-	const url = `http://yiwenl.github.io/Sketches/exps/${i}/`;
+	const url = `http://yiwenl.github.io/Codevember/2017/exps/${i}/`;
 	const cover = sketch.cover;
 	const title = sketch.title;
 
