@@ -20,7 +20,7 @@ import Experiment from './pages/Experiment';
 ExpModel.reverse();
 
 // console.log('Folder Static pages testing ', Math.floor(Math.random() * 100));
-// console.log('Sketches : ', ExpModel);
+console.table('Sketches : ', ExpModel);
 //	CONSTRUCT MODELS
 
 const experimentsReducer = (state=ExpModel, action) => {
@@ -33,7 +33,7 @@ const middleware = routerMiddleware(browserHistory)
 /*/
 window.baseUrl = '/';
 /*/
-window.baseUrl = "/Sketches/";
+window.baseUrl = "/Codevember/2017/";
 //*/
 
 // console.log('Location : ', window.location.href);
@@ -41,11 +41,11 @@ const protocol = window.location.href.split('://')[0];
 if(window.location.href.indexOf('localhost') > -1) {
 	window.baseUrl = '/';
 	ExpModel.map((exp) => {
-		exp.cover = `${protocol}://yiwenl.github.io/Sketches/${exp.cover}`;
+		exp.cover = `${protocol}://yiwenl.github.io/Codevember/2017/${exp.cover}`;
 	});
 } else {
 	ExpModel.map((exp) => {
-		exp.cover = `${protocol}://yiwenl.github.io/Sketches/${exp.cover}`;
+		exp.cover = `${protocol}://yiwenl.github.io/Codevember/2017/${exp.cover}`;
 	});
 }
 

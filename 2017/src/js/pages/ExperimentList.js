@@ -17,6 +17,8 @@ const ExperimentList = ({
 						backgroundImage: 'url(' + exp.cover + ')',
 						backgroundSize:'cover'
 					};
+
+					console.log('base url:', baseUrl);
 					return (
 						<Link 
 							to={dest} 
