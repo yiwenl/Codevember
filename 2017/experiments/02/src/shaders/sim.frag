@@ -121,12 +121,12 @@ void main(void) {
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
 	float posOffset = mix(extra.r, 1.0, 0.2) * .35;
 	float temp = mix(1.0, extra.g, .25);
-	vec3 acc        = curlNoise(pos * posOffset + time * .3);
+	vec3 acc        = curlNoise(pos * posOffset + time * 0.75);
 	acc.x = acc.x * .5 + .75;
 	acc.z *= 0.5;
-	vel += acc * .02;
+	vel += acc * .01;
 
-	const float decrease = .91;
+	const float decrease = .95;
 	vel *= decrease;
 
 	float d = abs(pos.z);
