@@ -32,7 +32,7 @@ void main(void) {
 
 
 	float d = diffuse(vNormal, LIGHT);
-	d = mix(d, 1.0, .5);
+	d = mix(d, 1.0, .75);
 	color *= d;
 
     gl_FragColor = vec4(color, 1.0);
