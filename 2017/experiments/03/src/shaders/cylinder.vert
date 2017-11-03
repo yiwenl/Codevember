@@ -26,7 +26,8 @@ void main(void) {
 	vec3 targetPos = position + aPosOffset;
 	
 	vShadowCoord   = uShadowMatrix * vec4(targetPos, 1.0);
-	vec2 uv        = (vShadowCoord/vShadowCoord.w).xy;
+	vec4 vShadowCoord1 = uShadowMatrix * vec4(aPosOffset + vec3(0.0, position.y, 0.0), 1.0);
+	vec2 uv        = (vShadowCoord1/vShadowCoord1.w).xy;
 	
 	float t        = (uRatio - 1.0) * 0.5;
 	uv.x           /= (1.0 + t);

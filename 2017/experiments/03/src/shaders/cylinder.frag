@@ -11,22 +11,17 @@ uniform sampler2D texturePortrait;
 uniform float uRatio;
 uniform float uRatioPortrail;
 
-float contrast(float mValue, float mScale, float mMidPoint) {
-	return clamp( (mValue - mMidPoint) * mScale + mMidPoint, 0.0, 1.0);
+float diffuse(vec3 N, vec3 L) {
+	return max(dot(N, normalize(L)), 0.0);
 }
 
-float contrast(float mValue, float mScale) {
-	return contrast(mValue,  mScale, .5);
+
+vec3 diffuse(vec3 N, vec3 L, vec3 C) {
+	return diffuse(N, L) * C;
 }
 
-vec2 contrast(vec2 mValue, float mScale, float mMidPoint) {
-	return vec2( contrast(mValue.r, mScale, mMidPoint), contrast(mValue.g, mScale, mMidPoint));
-}
 
-vec2 contrast(vec2 mValue, float mScale) {
-	return contrast(mValue, mScale, .5);
-}
-
+const vec3 LIGHT = vec3(1.0, .2, -.6);
 
 void main(void) {
 	vec4 shadowCoord = vShadowCoord / vShadowCoord.w;
@@ -34,5 +29,11 @@ void main(void) {
 
 	// vec3 color = texture2D(texturePortrait, uv).rgb;
 	vec3 color = texture2DProj(texturePortrait, shadowCoord).rgb;
+
+
+	float d = diffuse(vNormal, LIGHT);
+	d = mix(d, 1.0, .5);
+	color *= d;
+
     gl_FragColor = vec4(color, 1.0);
 }

@@ -23,8 +23,12 @@ class SceneApp extends Scene {
 
 		this.cameraPortrait = new alfrid.CameraPerspective();
 		this.cameraPortrait.setPerspective(FOV * RAD, ratio, .1, 50);
+		// const s = 5;
+		// this.cameraPortrait = new alfrid.CameraOrtho();
+		// this.cameraPortrait.ortho(-s, s, -s, s, .1, 50);
+
 		this.pointSource = vec3.fromValues(0, 0, -radius);
-		this.cameraPortrait.lookAt(this.pointSource, [0, 0, 0], [0, 1, 0]);
+		this.cameraPortrait.lookAt(this.pointSource, [0, -1, 0], [0, 1, 0]);
 
 		this.biasMatrix = mat4.fromValues(
 			0.5, 0.0, 0.0, 0.0,
