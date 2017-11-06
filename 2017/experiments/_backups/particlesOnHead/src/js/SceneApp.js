@@ -28,12 +28,21 @@ class SceneApp extends Scene {
 		this.pointSource0 = vec3.fromValues(0, 0, 5);
 		this.pointSource1 = vec3.fromValues(0, 0, -5);
 		const fov = 45 * RAD;
-		this._cameraLight0 = new alfrid.CameraPerspective();
-		this._cameraLight0.setPerspective(fov, 1, 1, 50);
+		const s = 5;
+		// this._cameraLight0 = new alfrid.CameraPerspective();
+		// this._cameraLight0.setPerspective(fov, 1, 1, 50);
+		// this._cameraLight0.lookAt(this.pointSource0, [0, 0, 0]);
+
+		this._cameraLight0 = new alfrid.CameraOrtho();
+		this._cameraLight0.ortho(-s, s, -s, s, 1, 50);
 		this._cameraLight0.lookAt(this.pointSource0, [0, 0, 0]);
 
-		this._cameraLight1 = new alfrid.CameraPerspective();
-		this._cameraLight1.setPerspective(fov, 1, 1, 50);
+		// this._cameraLight1 = new alfrid.CameraPerspective();
+		// this._cameraLight1.setPerspective(fov, 1, 1, 50);
+		// this._cameraLight1.lookAt(this.pointSource1, [0, 0, 0]);
+
+		this._cameraLight1 = new alfrid.CameraOrtho();
+		this._cameraLight1.ortho(-s, s, -s, s, 1, 50);
 		this._cameraLight1.lookAt(this.pointSource1, [0, 0, 0]);
 
 		this.projInvert0 = mat4.create();

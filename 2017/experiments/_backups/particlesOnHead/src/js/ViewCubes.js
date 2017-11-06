@@ -18,10 +18,11 @@ class ViewCubes extends alfrid.View {
 		this.mesh = alfrid.Geom.cube(s, s, s);
 
 		const positions = [];
-		const num = 100;
-		const r = .5;
+		const num = 5000;
+		const r = 1.5;
 		for(let i=0; i<num; i++) {
 			positions.push([random(-r, r), random(-r*2, r*2), random(-r, r)]);
+			// positions.push([-.3, random(-r*2, r*2), random(-r, r)]);
 		}
 
 		this.mesh.bufferInstance(positions, 'aPosOffset');
