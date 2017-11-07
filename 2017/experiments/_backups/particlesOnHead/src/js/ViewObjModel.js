@@ -5,11 +5,14 @@ import Assets from './Assets';
 
 import vs from '../shaders/pbr.vert';
 import fs from '../shaders/pbr.frag';
+import fsNormal from 'shaders/normal.frag';
 
 class ViewObjModel extends alfrid.View {
 	
 	constructor() {
 		super(vs, fs);
+
+		this.shaderNormal = new alfrid.GLShader(vs, fsNormal);
 	}
 
 
@@ -17,17 +20,19 @@ class ViewObjModel extends alfrid.View {
 		this.mesh = Assets.get('model');
 
 		this.roughness = 1;
-		this.specular = 0;
+		this.specular = 0.5;
 		this.metallic = 0;
 		this.baseColor = [1, 1, 1];
-
-		gui.add(this, 'roughness', 0, 1);
-		gui.add(this, 'specular', 0, 1);
-		gui.add(this, 'metallic', 0, 1);
 	}
 
 
 	render(textureRad, textureIrr, textureAO) {
+		if(!textureRad) {
+
+			this.shaderNormal.bind();
+			GL.draw(this.mesh);
+			return;
+		}
 		this.shader.bind();
 
 		this.shader.uniform('uAoMap', 'uniform1i', 0);

@@ -24,35 +24,31 @@ varying vec2 vTextureCoord;
 varying vec3 vNormal;
 
 
-float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position) {
+float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position, mat4 invertProj, mat4 invertView) {
 	vec4 vShadowCoord = shadowMatrix * vec4(position, 1.0);
 	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
-	vec2 uv           = shadowCoord.xy;
-
-	return texture2D(texture, uv).r;
-}
-
-void main(void) {
-	// vec3 position = aVertexPosition + aPosOffset;
-	// float d0 = getDistToCamera(uShadowMatrix0, texture0, aPosOffset);
-	// float d1 = getDistToCamera(uShadowMatrix1, texture1, aPosOffset);
-
-	// vec3 posOffset = aPosOffset;
-	// posOffset.z = d0;
-	// vec3 position = aVertexPosition + posOffset;
-	vec4 vShadowCoord = uShadowMatrix0 * vec4(aPosOffset, 1.0);
-	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
 	vec2 uv = shadowCoord.xy;
-	float depth = texture2D(texture0, uv).r;
+	float depth = texture2D(texture, uv).r;
 	float z = depth * 2.0 - 1.0;
 
 	vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, z, 1.0);
-    vec4 viewSpacePosition = uProjInvert0 * clipSpacePosition;
+    vec4 viewSpacePosition = invertProj * clipSpacePosition;
     viewSpacePosition /= viewSpacePosition.w;
 
-    vec4 worldSpacePosition = uViewInvert0 * viewSpacePosition;
+    vec4 worldSpacePosition = invertView * viewSpacePosition;
+
+    return worldSpacePosition.z;
+}
+
+void main(void) {
+	float d0 = getDistToCamera(uShadowMatrix0, texture0, aPosOffset, uProjInvert0, uViewInvert0);
+	float d1 = getDistToCamera(uShadowMatrix1, texture1, aPosOffset, uProjInvert1, uViewInvert1);
+
     vec3 posOffset = aPosOffset;
-    posOffset.z = worldSpacePosition.z;
+
+    float dd0 = abs(aPosOffset.z - d0);
+    float dd1 = abs(aPosOffset.z - d1);
+    posOffset.z = dd0 < dd1 ? d0 : d1;
     vec3 position = aVertexPosition + posOffset;
 
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(position, 1.0);

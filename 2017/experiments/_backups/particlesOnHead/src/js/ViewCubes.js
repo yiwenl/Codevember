@@ -18,6 +18,7 @@ class ViewCubes extends alfrid.View {
 		this.mesh = alfrid.Geom.cube(s, s, s);
 
 		const positions = [];
+		const extras = [];
 		const num = 5000;
 		const r = 1.5;
 		for(let i=0; i<num; i++) {
@@ -29,13 +30,19 @@ class ViewCubes extends alfrid.View {
 	}
 
 
-	render(texture0, mShadowMatrix0, texture1, mShadowMatrix1, mProjInver0, mProjInver1, mViewInvert0, mViewInvert1) {
+	render(fbo0, fbo1, mShadowMatrix0, mShadowMatrix1, mProjInver0, mProjInver1, mViewInvert0, mViewInvert1) {
 		this.shader.bind();
 
+
 		this.shader.uniform("texture0", "uniform1i", 0);
-		texture0.bind(0);
+		fbo0.getDepthTexture().bind(0);
 		this.shader.uniform("texture1", "uniform1i", 1);
-		texture1.bind(1);
+		fbo1.getDepthTexture().bind(1);
+
+		this.shader.uniform("textureNormal0", "uniform1i", 2);
+		fbo0.getTexture().bind(2);
+		this.shader.uniform("textureNormal1", "uniform1i", 3);
+		fbo1.getTexture().bind(3);
 
 		this.shader.uniform("uShadowMatrix0", "mat4", mShadowMatrix0);
 		this.shader.uniform("uShadowMatrix1", "mat4", mShadowMatrix1);

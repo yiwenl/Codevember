@@ -15,6 +15,9 @@ if(document.body) {
 
 
 window.params = {
+	numParticles:64 * 2,
+	skipCount:1,
+	maxRadius: 0.85,
 	gamma:2.2,
 	exposure:5
 };
