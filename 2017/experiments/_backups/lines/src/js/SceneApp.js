@@ -24,12 +24,11 @@ class SceneApp extends Scene {
 			type:GL.FLOAT
 		};
 
-		this._fboCurrent  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
-		this._fboTarget  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
 
 		this._fbos = [];
-		for(let i=0; i<params.numParticles; i++) {
+		for(let i=0; i<params.numSlices; i++) {
 			const fbo = new alfrid.FrameBuffer(numParticles, numParticles, o, true);
+			fbo.id = `FBO${i}`;
 			this._fbos.push(fbo);
 		}
 	}
@@ -49,37 +48,24 @@ class SceneApp extends Scene {
 		this._vSave = new ViewSave();
 		GL.setMatrices(this.cameraOrtho);
 
+		this._fbos.forEach(fbo => {
+			fbo.bind();
+			GL.clear(0, 0, 0, 0);
+			this._vSave.render();
+			fbo.unbind();
+		});
 
-		this._fboCurrent.bind();
-		GL.clear(0, 0, 0, 0);
-		this._vSave.render();
-		this._fboCurrent.unbind();
-
-		this._fboTarget.bind();
-		GL.clear(0, 0, 0, 0);
-		this._vSave.render();
-		this._fboTarget.unbind();
 
 		GL.setMatrices(this.camera);
 	}
 
 
 	updateFbo() {
-		this._fboTarget.bind();
-		GL.clear(0, 0, 0, 1);
-		this._vSim.render(this._fboCurrent.getTexture(1), this._fboCurrent.getTexture(0), this._fboCurrent.getTexture(2));
-		this._fboTarget.unbind();
-
-		let tmp          = this._fboCurrent;
-		this._fboCurrent = this._fboTarget;
-		this._fboTarget  = tmp;
-
-
-		const fboCurrent = this._fbos[this._fbos.length - 1];
+		const fboCurr = this._fbos[this._fbos.length - 1];
 
 
 		// 	shift to get fbo
-		const fboCurr = this._fbos.shift();
+		const fbo = this._fbos.shift();
 
 		//	bind fbo
 		fbo.bind();
@@ -97,20 +83,25 @@ class SceneApp extends Scene {
 
 
 	render() {
-		this._count ++;
-		if(this._count % params.skipCount == 0) {
-			this._count = 0;
-			this.updateFbo();
-		}
+		this.updateFbo();
 
-		let p = this._count / params.skipCount;
-		
 		GL.clear(0, 0, 0, 0);
 
 		this._bAxis.draw();
 		this._bDots.draw();
 
-		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), p, this._fboCurrent.getTexture(2));
+		const fbo = this._fbos[this._fbos.length-1];
+		this._vRender.render(fbo.getTexture(0), fbo.getTexture(2));
+
+
+		const s = window.innerWidth/this._fbos.length;
+		
+		this._fbos.forEach( (fbo, i) => {
+			GL.viewport(s * i, 0, s, s);
+			this._bCopy.draw(fbo.getTexture());
+		});
+
+		
 	}
 
 

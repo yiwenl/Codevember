@@ -7,9 +7,9 @@ attribute vec3 aNormal;
 uniform mat4 uModelMatrix;
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
-uniform sampler2D textureCurr;
-uniform sampler2D textureNext;
+uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
+
 uniform float percent;
 uniform float time;
 uniform vec2 uViewport;
@@ -21,9 +21,7 @@ const float radius = 0.01;
 
 void main(void) {
 	vec2 uv      = aVertexPosition.xy;
-	vec3 posCurr = texture2D(textureCurr, uv).rgb;
-	vec3 posNext = texture2D(textureNext, uv).rgb;
-	vec3 pos     = mix(posCurr, posNext, percent);
+	vec3 pos 	 = texture2D(texturePos, uv).rgb;
 	vec3 extra   = texture2D(textureExtra, uv).rgb;
 	gl_Position  = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(pos, 1.0);
 	
