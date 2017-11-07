@@ -30,7 +30,7 @@ class ViewSave extends alfrid.View {
 
 		for(let j = 0; j < numParticles; j++) {
 			for(let i = 0; i < numParticles; i++) {
-				positions.push([random(-r, r), random(-r, r), random(-range, -range*2)]);
+				positions.push([random(-r, r), random(-r, r), random(-range/2, -range)]);
 
 				ux = i / numParticles * 2.0 - 1.0 + .5 / numParticles;
 				uy = j / numParticles * 2.0 - 1.0 + .5 / numParticles;

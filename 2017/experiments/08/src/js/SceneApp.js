@@ -5,6 +5,7 @@ import Assets from './Assets';
 import ViewSave from './ViewSave';
 import ViewRender from './ViewRender';
 import ViewSim from './ViewSim';
+import ViewLines from './ViewLines';
 
 class SceneApp extends Scene {
 	constructor() {
@@ -12,8 +13,9 @@ class SceneApp extends Scene {
 		this._count = 0;
 
 		GL.enableAlphaBlending();
-		this.orbitalControl.rx.value = this.orbitalControl.ry.value;
-		this.orbitalControl.radius.value = 5;
+		this.orbitalControl.rx.value = .3;
+		this.orbitalControl.ry.value = Math.PI/2-.3;
+		this.orbitalControl.radius.value = 15;
 	}
 
 	_initTextures() {
@@ -40,6 +42,7 @@ class SceneApp extends Scene {
 		this._bCopy = new alfrid.BatchCopy();
 		this._bAxis = new alfrid.BatchAxis();
 		this._bDots = new alfrid.BatchDotsPlane();
+		this._vLines = new ViewLines();
 
 		//	views
 		this._vRender = new ViewRender();
@@ -87,21 +90,9 @@ class SceneApp extends Scene {
 
 		GL.clear(0, 0, 0, 0);
 
-		this._bAxis.draw();
-		this._bDots.draw();
 
-		const fbo = this._fbos[this._fbos.length-1];
-		this._vRender.render(fbo.getTexture(0), fbo.getTexture(2));
-
-
-		const s = window.innerWidth/this._fbos.length;
-		
-		this._fbos.forEach( (fbo, i) => {
-			GL.viewport(s * i, 0, s, s);
-			this._bCopy.draw(fbo.getTexture());
-		});
-
-		
+		const textures = this._fbos.map(fbo=>fbo.getTexture());
+		this._vLines.render(textures);
 	}
 
 

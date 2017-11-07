@@ -9,6 +9,7 @@ uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
 uniform float time;
 uniform float maxRadius;
+uniform float uRange;
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0;  }
 
@@ -117,27 +118,33 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = mix(extra.r, 1.0, 0.5) * .25;
-	vec3 acc        = curlNoise(pos * posOffset + time * 0.2);
-	acc.z += 1.5;
-
+	float posOffset = mix(extra.r, 1.0, 0.5) * .125;
+	vec3 acc        = curlNoise(pos * posOffset + time * 0.1);
+	float speedOffset = 1.0 + extra.g;
+	acc.z = (acc.z + 1.2) * speedOffset;
+	acc.xy *= 2.0;
 	
-	vel += acc * .0004;
+	vel += acc * .002;
 
 	float dist = length(pos.xy);
-	float maxDist = 1.5;
+	float maxDist = 2.0;
 	if(dist > maxDist) {
 		vec2 dir = normalize(pos.xy);
-		float f = (dist - maxDist) * 0.001;
+		float f = (dist - maxDist) * 0.001 * speedOffset;
 		vel.xy -= dir * f;
 	}
 
 
 
-	const float decrease = .93;
+	const float decrease = .963;
 	vel *= decrease;
 
-	gl_FragData[0] = vec4(pos + vel, 1.0);
+	pos += vel;
+	if(pos.z > uRange) {
+		pos.z -= uRange * 2.0;
+	}
+
+	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
 	gl_FragData[2] = vec4(extra, 1.0);
 	gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);

@@ -15,10 +15,10 @@ if(document.body) {
 
 
 window.params = {
-	numParticles:64,
+	numParticles:32,
 	skipCount:1,
 	maxRadius: 2.5,
-	range:5,
+	range:20,
 	numSlices:16
 };
 
@@ -53,6 +53,10 @@ function _onImageLoaded(o) {
 	console.log('Image Loaded : ', o);
 	window.assets = o;
 	const loader = document.body.querySelector('.Loading-Bar');
+	if(!loader) {
+		alfrid.Scheduler.next(()=>_onImageLoaded(o));
+		return;
+	}
 	loader.style.width = '100%';
 
 	_init3D();
