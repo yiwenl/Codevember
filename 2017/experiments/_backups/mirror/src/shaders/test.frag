@@ -1,14 +1,12 @@
 // copy.frag
-
-#define SHADER_NAME SIMPLE_TEXTURE
-
 precision highp float;
+
 varying vec2 vTextureCoord;
-uniform sampler2D texture;
-uniform vec3 		color;
-uniform float 		uTime;
-uniform vec2 		uv;
+uniform sampler2D textureNormal;
 
 void main(void) {
-    gl_FragColor = texture2D(texture, vTextureCoord);
+    vec3 N = texture2D(textureNormal, vTextureCoord).rgb;
+    N = N * 2.0 - 1.0;
+
+    gl_FragColor = vec4(N, 1.0);
 }

@@ -5,6 +5,7 @@
 precision highp float;
 
 uniform sampler2D 	uAoMap;
+uniform sampler2D 	uNormalMap;
 uniform samplerCube uRadianceMap;
 uniform samplerCube uIrradianceMap;
 
@@ -97,7 +98,9 @@ vec3 getPbr(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic, flo
 }
 
 void main() {
-	vec3 N 				= normalize( vWsNormal );
+	vec3 N 				= texture2D( uNormalMap, vTextureCoord ).rbg * 2.0 - 1.0;
+	N.y 				*= -1.0;
+	// N 					= vWsNormal;
 	vec3 V 				= normalize( vEyePosition );
 	
 	vec3 color 			= getPbr(N, V, uBaseColor, uRoughness, uMetallic, uSpecular);
@@ -115,5 +118,6 @@ void main() {
 
 	// output the fragment color
     gl_FragColor		= vec4( color, 1.0 );
+    // gl_FragColor		= vec4( N, 1.0 );
 
 }

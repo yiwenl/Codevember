@@ -6,6 +6,8 @@ import Assets from './Assets';
 import vs from '../shaders/pbr.vert';
 import fs from '../shaders/pbr.frag';
 
+import fsTest from 'shaders/test.frag';
+
 class ViewObjModel extends alfrid.View {
 	
 	constructor() {
@@ -14,28 +16,49 @@ class ViewObjModel extends alfrid.View {
 
 
 	_init() {
-		this.mesh = Assets.get('marne');
+		this.mesh = Assets.get('venus');
 
 		this.roughness = 1;
-		this.specular = 0;
+		this.specular = 0.5;
 		this.metallic = 0;
-		this.baseColor = [1, 1, 1];
+		const grey = .25;
+		this.baseColor = [grey, grey, grey];
 
 		gui.add(this, 'roughness', 0, 1);
 		gui.add(this, 'specular', 0, 1);
 		gui.add(this, 'metallic', 0, 1);
+
+		this.textureNormal = Assets.get('normal');
+		this.textureAo = Assets.get('ao');
 	}
 
 
-	render(textureRad, textureIrr, textureAO) {
+	render1() {
+		
+
+
 		this.shader.bind();
 
-		this.shader.uniform('uAoMap', 'uniform1i', 0);
-		this.shader.uniform('uRadianceMap', 'uniform1i', 1);
-		this.shader.uniform('uIrradianceMap', 'uniform1i', 2);
-		textureAO.bind(0);
-		textureRad.bind(1);
-		textureIrr.bind(2);
+		this.shader.uniform("textureNormal", "uniform1i", 0);
+		textureNormal.bind(0);
+
+		this.shader.uniform("textureAo", "uniform1i", 1);
+		textureAo.bind(1);
+
+		GL.draw(this.mesh);
+	}
+
+	render(textureRad, textureIrr) {
+		this.shader.bind();
+
+		this.shader.uniform('uNormalMap', 'uniform1i', 0);
+		this.shader.uniform('uAoMap', 'uniform1i', 1);
+		this.shader.uniform('uRadianceMap', 'uniform1i', 2);
+		this.shader.uniform('uIrradianceMap', 'uniform1i', 3);
+		this.textureNormal.bind(0);
+		this.textureAo.bind(1);
+		textureRad.bind(2);
+		textureIrr.bind(3);
 
 		this.shader.uniform('uBaseColor', 'uniform3fv', this.baseColor);
 		this.shader.uniform('uRoughness', 'uniform1f', this.roughness);
