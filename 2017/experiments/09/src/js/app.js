@@ -50,7 +50,10 @@ function _onImageLoaded(o) {
 	console.log('Image Loaded : ', o);
 	window.assets = o;
 	const loader = document.body.querySelector('.Loading-Bar');
-	loader.style.width = '100%';
+	if(loader) {
+		loader.style.width = '100%';	
+	}
+	
 
 	_init3D();
 

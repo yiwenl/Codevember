@@ -21,15 +21,12 @@ class ViewObjModel extends alfrid.View {
 		this.roughness = 1;
 		this.specular = 0.5;
 		this.metallic = 0;
-		const grey = .25;
-		this.baseColor = [grey, grey, grey];
-
-		gui.add(this, 'roughness', 0, 1);
-		gui.add(this, 'specular', 0, 1);
-		gui.add(this, 'metallic', 0, 1);
+		const grey = .75;
+		this.baseColor = [grey, grey, grey*.9];
 
 		this.textureNormal = Assets.get('normal');
 		this.textureAo = Assets.get('ao');
+
 	}
 
 
