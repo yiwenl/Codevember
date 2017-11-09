@@ -26,8 +26,8 @@ class ViewMirror extends alfrid.View {
 		this.texture.bind(0);
 		this.shader.uniform("uCameraPos", "vec3", GL.camera.position);
 
-		this.shader.uniform('uExposure', 'uniform1f', params.exposure);
-		this.shader.uniform('uGamma', 'uniform1f', params.gamma);
+		this.shader.uniform('uExposure', 'uniform1f', params.exposure * 1.25);
+		this.shader.uniform('uGamma', 'uniform1f', params.gamma * 0.5);
 		
 		GL.draw(this.mesh);
 	}
