@@ -4,6 +4,7 @@ import alfrid, { Scene, GL } from 'alfrid';
 import ViewObjModel from './ViewObjModel';
 import Assets from './Assets';
 import ViewNoise from './ViewNoise';
+import ViewTerrain from './ViewTerrain';
 
 class SceneApp extends Scene {
 	constructor() {
@@ -18,7 +19,7 @@ class SceneApp extends Scene {
 		console.log('init textures');
 
 		const size = 2048;
-		this._fboNoise = new alfrid.FrameBuffer(size, size, {minFilter:GL.LINEAR, magFilter:GL.LINEAR}, true);
+		this._fboNoise = new alfrid.FrameBuffer(size, size, {minFilter:GL.LINEAR, magFilter:GL.LINEAR, type:GL.FLOAT}, true);
 	}
 
 
@@ -31,6 +32,7 @@ class SceneApp extends Scene {
 		this._bSky = new alfrid.BatchSkybox();
 
 		this._vNoise = new ViewNoise();
+		this._vTerrain = new ViewTerrain();
 
 		this._fboNoise.bind();
 		GL.clear(0, 0, 0, 0);
@@ -46,7 +48,9 @@ class SceneApp extends Scene {
 		this._bAxis.draw();
 		this._bDots.draw();
 
-		let s = 500;
+		this._vTerrain.render(this._fboNoise.getTexture(0), this._fboNoise.getTexture(1));
+
+		let s = 200;
 		GL.viewport(0, 0, s, s);
 		this._bCopy.draw(this._fboNoise.getTexture(0));
 		GL.viewport(s, 0, s, s);
@@ -56,7 +60,11 @@ class SceneApp extends Scene {
 
 	resize() {
 		const { innerWidth, innerHeight, devicePixelRatio } = window;
-		GL.setSize(innerWidth * devicePixelRatio, innerHeight * devicePixelRatio);
+		let scale = devicePixelRatio;
+		if(!GL.isMobile) {
+			scale = 1;
+		}
+		GL.setSize(innerWidth * scale, innerHeight * scale);
 		this.camera.setAspectRatio(GL.aspectRatio);
 	}
 }
