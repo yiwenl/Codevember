@@ -9,6 +9,9 @@ import ViewFloor from './ViewFloor';
 import ViewSave from './ViewSave';
 import ViewRender from './ViewRender';
 import ViewSim from './ViewSim';
+// import ViewGiant from './ViewGiant';
+
+const RAD = Math.PI / 180;
 
 class SceneApp extends Scene {
 	constructor() {
@@ -16,9 +19,12 @@ class SceneApp extends Scene {
 
 		this._count = 0;
 		GL.enableAlphaBlending();
-		// this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
-		// this.orbitalControl.rx.value = this.orbitalControl.ry.value = Math.PI;
-		this.orbitalControl.radius.value = 5;
+		this.orbitalControl.ry.value = .3;
+		this.orbitalControl.center[1] = 0.25;
+		this.orbitalControl.radius.value = 2;
+		this.orbitalControl.radius.limit(2, 4);
+		this.camera.setPerspective(75 * RAD, GL.aspectRatio, .1, 100);
+
 		this.resize();
 
 
@@ -88,6 +94,7 @@ class SceneApp extends Scene {
 		this._bBall = new alfrid.BatchBall();
 
 		this._vLight = new ViewLight();
+		// this._vGiant = new ViewGiant();
 		// this._vFloor = new ViewFloor();
 
 		//	views
@@ -115,22 +122,6 @@ class SceneApp extends Scene {
 	updateFbo() {
 		this.updateDepthTexture();
 
-		const obj0 = {
-			texture:this.texture0,
-			depth:this.depthTexture0,
-			view:this.viewInvert0,
-			proj:this.projInvert0,
-			shadow:this._shadowMatrix0
-		}
-
-		const obj1 = {
-			texture:this.texture1,
-			depth:this.depthTexture1,
-			view:this.viewInvert1,
-			proj:this.projInvert1,
-			shadow:this._shadowMatrix1
-		}
-
 		this._fboTarget.bind();
 		GL.clear(0, 0, 0, 0);
 		this._vSim.render(
@@ -138,8 +129,14 @@ class SceneApp extends Scene {
 			this._fboCurrent.getTexture(0), 
 			this._fboCurrent.getTexture(2),
 			this._fboCurrent.getTexture(3),
-			obj0,
-			obj1
+			this.fboModel0,
+			this.fboModel1,
+			this._shadowMatrix0, 
+			this._shadowMatrix1, 
+			this.projInvert0, 
+			this.projInvert1, 
+			this.viewInvert0, 
+			this.viewInvert1
 		);
 		this._fboTarget.unbind();
 
@@ -171,15 +168,6 @@ class SceneApp extends Scene {
 	render() {
 		GL.clear(0, 0, 0, 0);
 
-
-		this._bAxis.draw();
-		this._bDots.draw();
-
-		// this._vFloor.render();
-		// GL.disable(GL.DEPTH_TEST);
-		
-
-
 		this._count ++;
 		if(this._count % params.skipCount == 0) {
 			this._count = 0;
@@ -187,6 +175,8 @@ class SceneApp extends Scene {
 		}
 
 		let p = this._count / params.skipCount;
+
+		
 
 		this._vRender.render(
 			this._fboTarget.getTexture(0), 
@@ -196,24 +186,18 @@ class SceneApp extends Scene {
 			this._fboCurrent.getTexture(3)
 		);
 
-		this._bBall.draw(this.pointSource0, [.1, .1, .1], [1, 0, 0]);
-		this._bBall.draw(this.pointSource1, [.1, .1, .1], [0, 1, 0]);
+		// this._vGiant.render(
+		// 	this.fboModel0,
+		// 	this.fboModel1,
+		// 	this._shadowMatrix0, 
+		// 	this._shadowMatrix1, 
+		// 	this.projInvert0, 
+		// 	this.projInvert1, 
+		// 	this.viewInvert0, 
+		// 	this.viewInvert1
+		// );
 
-		// GL.enable(GL.DEPTH_TEST);
 		this._vLight.render();
-
-
-		const s = 200;
-
-		GL.viewport(0, 0, s, s);
-		this._bCopy.draw(this.fboModel0.getTexture());
-		GL.viewport(s, 0, s, s);
-		this._bCopy.draw(this.fboModel1.getTexture());
-
-		GL.viewport(s*2, 0, s, s);
-		this._bCopy.draw(this.fboModel0.getDepthTexture());
-		GL.viewport(s*3, 0, s, s);
-		this._bCopy.draw(this.fboModel1.getDepthTexture());
 	}
 
 

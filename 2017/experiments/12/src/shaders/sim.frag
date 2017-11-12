@@ -170,24 +170,43 @@ void main(void) {
 	acc.xz *= 0.2;
 	
 	float speedOffset = mix(extra.b, 1.0, .75);
-	vel += acc * .0025 * speedOffset;
+	vel += acc * .0005 * speedOffset;
+
+
+	float d = length(pos.xz);
+
+	float t = smoothstep(0.25, 1.0, d);
 
 	vec2 dir = normalize(pos.xz);
 	vec2 dirRotate = rotate(dir, PI * 0.65 * ( 1.0 + extra.g * 0.25));
-	vel.xz += dirRotate * 0.002 * speedOffset;
+	vel.xz += dirRotate * 0.00035 * t;
 
-	float d = length(pos.xz);
+	
 	if(d > maxRadius) {
 		float f = pow(2.0, (d - maxRadius)) * 0.01;
 		vel.xz -= f * dir * speedOffset;
 	}
 
-	const float decrease = .953;
+	const float decrease = .97;
 	vel *= decrease;
 
 	float outside = 1.0;
-	float outside0 = 1.0;
-	float outside1 = 1.0;
+	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside);
+	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside);
+	const float lifeDecrease = 0.9;
+
+	if(outside > 0.5) {
+		if(pos.z < z0 || pos.z > z1) {
+			life.x *= lifeDecrease;
+		} else {
+			life.x += 0.1;	
+			life.x = min(life.x, 1.0);
+			vel.xz += dirRotate * 0.0002;
+			vel *= 1.014;
+		}
+	} else {
+		life.x *= lifeDecrease;
+	}
 
 	pos += vel;
 
@@ -195,28 +214,6 @@ void main(void) {
 		pos.y -= 3.0;
 		vel *= 0.0;
 	}
-
-	// float z1 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside);
-	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside);
-
-	// if(outside > 0.5) {
-	// 	life.x = 1.0;
-	// 	// if(pos.z < z0) {
-	// 	// 	life.x = 0.0;
-	// 	// }
-
-	// 	if(pos.z > z1) {
-	// 		life.x = 0.0;
-	// 	}
-	// } else {
-	// 	life.x = outside;
-	// }
-
-
-	pos.z = z1;
-	
-	
-	
 
 
 	gl_FragData[0] = vec4(pos, 1.0);

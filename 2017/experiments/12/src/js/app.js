@@ -18,8 +18,8 @@ window.params = {
 	gamma:2.2,
 	exposure:5,
 	numParticles:128,
-	skipCount:5,
-	maxRadius: 1.5
+	skipCount:2,
+	maxRadius: 2
 };
 
 function _init() {
