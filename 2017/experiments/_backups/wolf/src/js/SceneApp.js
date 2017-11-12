@@ -91,6 +91,9 @@ class SceneApp extends Scene {
 
 
 	_updateDepthTexture() {
+		this._vCubes.update();
+
+
 		this.fboModel0.bind();
 		GL.clear(0, 0, 0, 0);
 		GL.setMatrices(this._cameraLight0);

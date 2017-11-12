@@ -38,9 +38,13 @@ class ViewCubes extends alfrid.View {
 		this.mesh.bufferInstance(extras, 'aExtra');
 	}
 
+	update() {
+		this.time += 0.025;
+	}
+
 
 	render(fbo0, fbo1, mShadowMatrix0, mShadowMatrix1, mProjInver0, mProjInver1, mViewInvert0, mViewInvert1) {
-		this.time += 0.025;
+		
 		this.shader.bind();
 
 
