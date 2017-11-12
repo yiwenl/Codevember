@@ -16,7 +16,7 @@ class ViewCubes extends alfrid.View {
 
 	_init() {
 		const numCubes = 10000;
-		const s = .1;
+		const s = .075;
 		this.mesh = alfrid.Geom.cube(s, s, s);
 		const range = 1.75;
 		const d = 1;
@@ -39,7 +39,7 @@ class ViewCubes extends alfrid.View {
 	}
 
 	update() {
-		this.time += 0.025;
+		this.time += 0.02;
 	}
 
 
