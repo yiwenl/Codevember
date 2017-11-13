@@ -15,7 +15,7 @@ class ViewSphere extends alfrid.View {
 
 	_init() {
 		const s = 20;
-		this.mesh = alfrid.Geom.sphere(s, 24, true);
+		this.mesh = alfrid.Geom.sphere(s, 24 * 2, true);
 	}
 
 

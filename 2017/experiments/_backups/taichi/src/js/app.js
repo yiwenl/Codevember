@@ -7,6 +7,13 @@ import AssetsLoader from 'assets-loader';
 import assets from './asset-list';
 import Assets from './Assets';
 
+
+window.params = {
+	numParticles:256*2,
+	skipCount:2,
+	maxRadius: 2.5
+};
+
 if(document.body) {
 	_init();
 } else {
@@ -14,11 +21,7 @@ if(document.body) {
 }
 
 
-window.params = {
-	numParticles:256*2,
-	skipCount:2,
-	maxRadius: 3.5
-};
+
 
 function _init() {
 

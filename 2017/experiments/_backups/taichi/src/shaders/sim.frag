@@ -131,7 +131,7 @@ void main(void) {
 	float envOffset = (1.0 - colorMap.r);
 
 
-	float posOffset = mix(extra.r, 1.0, 0.75) * (.1 + envOffset * .1);
+	float posOffset = mix(extra.r, 1.0, 0.75) * (.2 + envOffset * .05);
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
 
 	float speed = 1.0 + envOffset * 3.0;
@@ -140,13 +140,13 @@ void main(void) {
 
 	float dist = length(pos);
 
-	float radius = maxRadius + envOffset * 2.0;
+	float radius = maxRadius + envOffset * 1.0;
 	if(dist > radius) {
-		float f = pow(2.0, (dist - radius) * 1.5) * (0.005 - envOffset * 0.002);
+		float f = pow(2.0, (dist - radius) * 1.5) * (0.005 - envOffset * 0.002) * 0.1;
 		vel -= normalize(pos) * f;
 	}
 
-	float decrease = .963 - colorMap.r * 0.01;
+	float decrease = .96 - envOffset * 0.03;
 	vel *= decrease;
 
 	pos += vel;
