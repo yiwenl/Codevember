@@ -13,6 +13,10 @@ class SceneApp extends Scene {
 		GL.enableAlphaBlending();
 		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
 		this.orbitalControl.radius.value = 5;
+		this.orbitalControl.rx.limit(0.1, Math.PI - 0.1);
+		this.orbitalControl.radius.limit(2, 10);
+		this.orbitalControl.center[1] = .6;
+		this.orbitalControl.center[2] = -.35;
 
 		//	shadow mtx		
 
@@ -110,7 +114,6 @@ class SceneApp extends Scene {
 		this.fboShadow.bind();
 		GL.clear(0, 0, 0, 0);
 		GL.setMatrices(this._cameraLight);
-		// this._vWolf.render();
 		this._vCubes.render(
 			this.fboModel0,
 			this.fboModel1,
@@ -141,7 +144,9 @@ class SceneApp extends Scene {
 			this.projInvert0, 
 			this.projInvert1, 
 			this.viewInvert0, 
-			this.viewInvert1
+			this.viewInvert1,
+			this._shadowMatrix, 
+			this.fboShadow.getDepthTexture()
 		);
 
 

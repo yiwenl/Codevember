@@ -22,16 +22,6 @@ float offset_lookup(sampler2D map, vec4 loc, vec2 offset, vec2 texmapscale) {
 
 void main(void) {
 	vec4 shadowCoord = vShadowCoord / vShadowCoord.w;
-	float bias = 0.005;
-
-	float d = texture2D(textureDepth, shadowCoord.xy).r;
-	float visibility = 1.0;
-
-	if(d < shadowCoord.z - bias) {
-		visibility = 0.0;
-	}
-
-
 	float xOffset = 1.0/uMapSize.x;
 	float yOffset = 1.0/uMapSize.y;
 
@@ -57,7 +47,7 @@ void main(void) {
 	factor = mix(factor, 1.0, .5);
 
 	float noiseFloor = rand(vec4(gl_FragCoord.xyyx * 5.0));
-	float a = distance(vTextureCoord, vec2(.5)) + noiseFloor * 0.02;
+	float a = distance(vTextureCoord, vec2(.5)) + noiseFloor * 0.01;
 	a = smoothstep(.5, .1, a);
 
 	gl_FragColor = vec4(vec3(factor), a);
