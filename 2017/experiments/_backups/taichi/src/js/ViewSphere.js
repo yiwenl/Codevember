@@ -8,8 +8,7 @@ class ViewSphere extends alfrid.View {
 	constructor() {
 		super(null, fs);
 
-		this.range = 0.002;
-		gui.add(this, 'range', 0, 0.1);
+		this.range = 0.001;
 	}
 
 
