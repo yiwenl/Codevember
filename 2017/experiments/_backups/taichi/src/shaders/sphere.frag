@@ -5,10 +5,11 @@
 precision highp float;
 varying vec2 vTextureCoord;
 uniform sampler2D texture;
+uniform float uRange;
 
 void main(void) {
-	const float r = .02;
-	float d = smoothstep(0.5 - r, 0.5 + r, vTextureCoord.y);
+	// const float r = .02;
+	float d = smoothstep(0.5 - uRange, 0.5 + uRange, vTextureCoord.y);
 	gl_FragColor = vec4(vec3(d), 1.0);
 }
 

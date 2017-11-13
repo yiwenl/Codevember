@@ -122,14 +122,18 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = mix(extra.r, 1.0, 0.75) * .25;
-	vec3 acc        = curlNoise(pos * posOffset + time * .3);
+	
 
 	vec4 screenpos = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(pos, 1.0); 
 	screenpos /= screenpos.w;
 	vec2 uv = screenpos.xy * .5 + .5;
 	vec3 colorMap   = texture2D(textureMap, uv).rgb;
 	float envOffset = (1.0 - colorMap.r);
+
+
+	float posOffset = mix(extra.r, 1.0, 0.75) * (.1 + envOffset * .1);
+	vec3 acc        = curlNoise(pos * posOffset + time * .3);
+
 	float speed = 1.0 + envOffset * 3.0;
 	
 	vel += acc * .002 * speed;
@@ -138,7 +142,7 @@ void main(void) {
 
 	float radius = maxRadius + envOffset * 2.0;
 	if(dist > radius) {
-		float f = pow(2.0, (dist - radius) * 2.0) * (0.005 - envOffset * 0.002);
+		float f = pow(2.0, (dist - radius) * 1.5) * (0.005 - envOffset * 0.002);
 		vel -= normalize(pos) * f;
 	}
 

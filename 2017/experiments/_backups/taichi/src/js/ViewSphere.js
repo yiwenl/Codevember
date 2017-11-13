@@ -7,6 +7,9 @@ class ViewSphere extends alfrid.View {
 	
 	constructor() {
 		super(null, fs);
+
+		this.range = 0.002;
+		gui.add(this, 'range', 0, 0.1);
 	}
 
 
@@ -18,6 +21,7 @@ class ViewSphere extends alfrid.View {
 
 	render() {
 		this.shader.bind();
+		this.shader.uniform("uRange", "float", this.range);
 		GL.draw(this.mesh);
 	}
 
