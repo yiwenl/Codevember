@@ -45,7 +45,6 @@ class SceneApp extends alfrid.Scene {
 		this._bDots = new alfrid.BatchDotsPlane();
 		this._bBall = new alfrid.BatchBall();
 
-
 		//	views
 		this._vRender = new ViewRender();
 		this._vSim 	  = new ViewSim();
@@ -65,6 +64,12 @@ class SceneApp extends alfrid.Scene {
 		this._fboTarget.unbind();
 
 		GL.setMatrices(this.camera);
+
+		const s = params.maxRadius;
+		this.mesh = alfrid.Geom.sphere(s, 12);
+		this.mesh.generateFaces();
+		console.log('Faces');
+		console.log(this.mesh.faces);
 	}
 
 
@@ -98,11 +103,14 @@ class SceneApp extends alfrid.Scene {
 
 		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), p, this._fboCurrent.getTexture(2));
 
+		const s = params.maxRadius;
+		// this._bBall.draw([0, 0, 0], [s, s, s], [.7, 0, 0], .15);
+
 		const size = Math.min(params.numParticles, GL.height/4);
 
 		for(let i=0; i<4; i++) {
 			GL.viewport(0, size * i, size, size);
-			this._bCopy.draw(this._fboCurrent.getTexture(i));
+			// this._bCopy.draw(this._fboCurrent.getTexture(i));
 		}
 
 	}

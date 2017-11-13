@@ -117,18 +117,22 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = (0.5 + extra.r * 0.2) * .25;
+	float posOffset = mix(extra.r, 1.0, .5) * .25;
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
 	
-	vel += acc * .02;
+	vel += acc * .001;
+
+	vec3 forceOut = normalize(pos);
+	vel += forceOut * 0.001;
 
 	float dist = length(pos);
 	if(dist > maxRadius) {
-		float f = (dist - maxRadius) * .005;
+		// float f = (dist - maxRadius) * .005;;
+		float f = pow(2.0, (dist - maxRadius)) * 0.01;
 		vel -= normalize(pos) * f;
 	}
 
-	const float decrease = .93;
+	const float decrease = .963;
 	vel *= decrease;
 
 	gl_FragData[0] = vec4(pos + vel, 1.0);

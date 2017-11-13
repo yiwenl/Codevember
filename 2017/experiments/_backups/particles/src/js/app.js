@@ -16,7 +16,7 @@ if(document.body) {
 
 window.params = {
 	numParticles:256*2,
-	skipCount:10,
+	skipCount:1,
 	maxRadius: 2.5
 };
 
