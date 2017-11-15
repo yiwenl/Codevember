@@ -16,7 +16,8 @@ if(document.body) {
 
 window.params = {
 	gamma:2.2,
-	exposure:5
+	exposure:5,
+	lightPosition:[.2, 3, 3]
 };
 
 function _init() {

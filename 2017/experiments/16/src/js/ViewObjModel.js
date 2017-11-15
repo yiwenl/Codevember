@@ -20,10 +20,6 @@ class ViewObjModel extends alfrid.View {
 		this.specular = 0;
 		this.metallic = 0;
 		this.baseColor = [1, 1, 1];
-
-		gui.add(this, 'roughness', 0, 1);
-		gui.add(this, 'specular', 0, 1);
-		gui.add(this, 'metallic', 0, 1);
 	}
 
 
