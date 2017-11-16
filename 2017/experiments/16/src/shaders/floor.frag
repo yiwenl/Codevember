@@ -33,6 +33,7 @@ void main(void) {
 			vec2 offset = vec2( float(x) + 0.5, float(y) + 0.5);
 			float i = float(x) + float(y);
 			float noise = rand(vec4(gl_FragCoord.xyy, i));
+			noise = mix(noise, 1.0, .5);
 
 			// vec2 offsets = vec2( float(x) * xOffset, float(y) * yOffset);
 			// factor += texture2D(textureDepth, shadowCoord.xy + offsets).r;
@@ -48,7 +49,7 @@ void main(void) {
 
 	float noiseFloor = rand(vec4(gl_FragCoord.xyyx * 5.0));
 	float a = distance(vTextureCoord, vec2(.5)) + noiseFloor * 0.01;
-	a = smoothstep(.5, .1, a);
+	a = smoothstep(.5, .0, a);
 
-	gl_FragColor = vec4(vec3(factor), a);
+	gl_FragColor = vec4(vec3(factor), a * .5);
 }

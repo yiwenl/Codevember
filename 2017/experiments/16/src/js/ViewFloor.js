@@ -15,7 +15,7 @@ class ViewFloor extends alfrid.View {
 
 
 	_init() {
-		const s = 15;
+		const s = 7;
 		this.mesh = alfrid.Geom.plane(s, s, 1, 'xz');
 	}
 
