@@ -7,8 +7,26 @@ varying vec2 vTextureCoord;
 uniform sampler2D textureVel;
 uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
+uniform sampler2D textureLife;
 uniform float time;
 uniform float maxRadius;
+uniform mat4 uModelMatrix;
+uniform mat4 uViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+uniform mat4 uShadowMatrix0;
+uniform mat4 uShadowMatrix1;
+uniform mat4 uProjInvert0;
+uniform mat4 uProjInvert1;
+uniform mat4 uViewInvert0;
+uniform mat4 uViewInvert1;
+
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D depth0;
+uniform sampler2D depth1;
+
+const vec3 dimension = vec3(0.35, 0.72, 0.17);
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0;  }
 
@@ -113,26 +131,89 @@ vec3 curlNoise( vec3 p ){
 
 }
 
+vec2 getScreenUV(vec3 pos) {
+	vec4 v = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(pos, 1.0);
+	v = v/v.w;
+	return v.xy * .5 + .5;
+}
+
+float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position, mat4 invertProj, mat4 invertView, sampler2D textureDepth, inout float outside) {
+	vec4 vShadowCoord = shadowMatrix * vec4(position, 1.0);
+	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
+	vec2 uv = shadowCoord.xy;
+	vec4 color = texture2D(texture, uv);
+	if(color.a <=0.0) {
+		outside = 0.0;
+	}
+	float depth = texture2D(textureDepth, uv).r;
+	float z = depth * 2.0 - 1.0;
+
+	vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = invertProj * clipSpacePosition;
+    viewSpacePosition /= viewSpacePosition.w;
+
+    vec4 worldSpacePosition = invertView * viewSpacePosition;
+
+    return worldSpacePosition.z;
+}
+
 void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
+	vec4 _orgPos     = texture2D(textureLife, vTextureCoord);
+	vec3 orgPos = _orgPos.xyz;
+	float hasFoundHome = _orgPos.w;
 	float posOffset = (0.5 + extra.r * 0.2) * .25;
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
-	
-	vel += acc * .002;
+	float life 		= extra.b;
+	// vel += acc * .002;
 
-	float dist = length(pos);
-	if(dist > maxRadius) {
-		float f = (dist - maxRadius) * .005;
-		vel -= normalize(pos) * f;
+	// float dist = length(pos);
+	// if(dist > maxRadius) {
+	// 	float f = (dist - maxRadius) * .005;
+	// 	vel -= normalize(pos) * f;
+	// }
+
+	// const float decrease = .963;
+	// vel *= decrease;
+
+	float outside = 1.0;
+	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside);
+	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside);
+
+
+	const float lifeDecrease = 0.9;
+
+	if(outside > 0.5) {
+		if(pos.z < z0 || pos.z > z1) {
+			// life *= lifeDecrease;
+			// pos.z = 999.0;
+
+			_orgPos.w = 0.5;
+		} else {
+			life += 0.1;	
+			life = min(life, 1.0);
+		}
+	} else {
+		life *= lifeDecrease;
+		pos.z = 999.0;
 	}
 
-	const float decrease = .963;
-	vel *= decrease;
+	if(life < 0.01) {
+		if(hasFoundHome > 0.5) {
+			pos = curlNoise(pos + time);
+			pos *= dimension;
+			pos.y += dimension.y;
+			orgPos = pos;
+		} else {
+			pos = orgPos;
+		}
+	}
 
-	gl_FragData[0] = vec4(pos + vel, 1.0);
+
+	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
 	gl_FragData[2] = vec4(extra, 1.0);
-	gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+	gl_FragData[3] = vec4(orgPos, _orgPos.w);
 }

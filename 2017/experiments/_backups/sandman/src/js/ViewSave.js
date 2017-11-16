@@ -25,16 +25,20 @@ class ViewSave extends alfrid.View {
 		let totalParticles = numParticles * numParticles;
 		console.debug('Total Particles : ', totalParticles);
 		let ux, uy;
-		let range = 3;
+		let range = 1;
+		let rx = 0.35;
+		let ry = 0.72;
+		let rz = 0.17;
 
 		for(let j = 0; j < numParticles; j++) {
 			for(let i = 0; i < numParticles; i++) {
-				positions.push([random(-range, range), random(-range, range), random(-range, range)]);
+				// positions.push([random(-range, range), random(-range, range), random(-range, range)]);
+				positions.push([random(-rx, rx), random(-ry, ry) + ry, random(-rz, rz)]);
 
 				ux = i / numParticles * 2.0 - 1.0 + .5 / numParticles;
 				uy = j / numParticles * 2.0 - 1.0 + .5 / numParticles;
 
-				extras.push([Math.random(), Math.random(), Math.random()]);
+				extras.push([Math.random(), 0.0, 0.0]);
 				coords.push([ux, uy]);
 				indices.push(count);
 				count ++;

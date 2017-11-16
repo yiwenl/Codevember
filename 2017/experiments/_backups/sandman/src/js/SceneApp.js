@@ -13,10 +13,10 @@ class SceneApp extends Scene {
 	constructor() {
 		super();
 		GL.enableAlphaBlending();
-		this.orbitalControl.rx.value = .25;
-		this.orbitalControl.ry.value = .25;
+		this.orbitalControl.rx.value = .5;
+		this.orbitalControl.ry.value = .5;
 		this.orbitalControl.radius.value = 5;
-		this.orbitalControl.lock(true);
+		// this.orbitalControl.lock(true);
 
 		//	model matrix
 		this.mtxModel = mat4.create();
@@ -36,7 +36,6 @@ class SceneApp extends Scene {
 		// mat4.rotateZ(this.rotationMatrix, this.rotationMatrix, Math.PI/2);
 
 		//	shadow mtx		
-
 		this._shadowMatrix = mat4.create();
 		this._shadowMatrix0 = mat4.create();
 		this._shadowMatrix1 = mat4.create();
@@ -84,7 +83,6 @@ class SceneApp extends Scene {
 
 		mat4.multiply(this._shadowMatrix, this._cameraLight.projection, this._cameraLight.viewMatrix);
 		mat4.multiply(this._shadowMatrix, this._biasMatrix, this._shadowMatrix);
-
 	}
 
 	_initTextures() {
@@ -183,7 +181,21 @@ class SceneApp extends Scene {
 	_updateFbo() {
 		this._fboTarget.bind();
 		GL.clear(0, 0, 0, 1);
-		this._vSim.render(this._fboCurrent.getTexture(1), this._fboCurrent.getTexture(0), this._fboCurrent.getTexture(2));
+		this._vSim.render(
+			this._fboCurrent.getTexture(1), 
+			this._fboCurrent.getTexture(0), 
+			this._fboCurrent.getTexture(2), 
+			this._fboCurrent.getTexture(3), 
+			this.textureMap,
+			this.fboModel0,
+			this.fboModel1,
+			this._shadowMatrix0, 
+			this._shadowMatrix1, 
+			this.projInvert0, 
+			this.projInvert1, 
+			this.viewInvert0, 
+			this.viewInvert1
+		);
 		this._fboTarget.unbind();
 
 		let tmp          = this._fboCurrent;
@@ -223,6 +235,10 @@ class SceneApp extends Scene {
 	resize() {
 		GL.setSize(window.innerWidth, window.innerHeight);
 		this.camera.setAspectRatio(GL.aspectRatio);
+	}
+
+	get textureMap() {
+		return this._fboMap.getTexture();
 	}
 }
 

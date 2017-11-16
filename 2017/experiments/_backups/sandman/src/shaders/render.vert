@@ -18,7 +18,7 @@ uniform vec2 uViewport;
 varying vec4 vColor;
 varying vec3 vNormal;
 
-const float radius = 0.01;
+const float radius = 0.005;
 
 void main(void) {
 	vec2 uv      = aVertexPosition.xy;
@@ -29,7 +29,7 @@ void main(void) {
 	gl_Position  = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(pos, 1.0);
 	
 
-	float g 	 = sin(extra.r + time * mix(extra.g, 1.0, .5));
+	float g 	 = sin(extra.r + time * mix(extra.r, 1.0, .5));
 	g 			 = smoothstep(0.0, 1.0, g);
 	g 			 = mix(g, 1.0, .5);
 	vColor       = vec4(vec3(g), 1.0);

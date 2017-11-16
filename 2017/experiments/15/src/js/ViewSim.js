@@ -37,7 +37,6 @@ class ViewSim extends alfrid.View {
 		textureLife.bind(3);
 		textureMap.bind(4);
 
-
 		GL.draw(this.mesh);
 	}
 

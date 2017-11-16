@@ -10,6 +10,7 @@ class ViewGiant extends alfrid.View {
 		super(null, fs);
 		this.mtxGiant = mat4.create();
 		const s = 0.15;
+		mat4.translate(this.mtxGiant, this.mtxGiant, vec3.fromValues(0, 0, .1));
 		mat4.scale(this.mtxGiant, this.mtxGiant, vec3.fromValues(s, s, s));
 
 		this.mtxModel = mat4.create();
