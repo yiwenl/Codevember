@@ -88,6 +88,7 @@ class SceneApp extends Scene {
 
 
 	render() {
+		this._vPieces.update();
 		this.updateShadowMap();
 
 		GL.clear(0, 0, 0, 0);

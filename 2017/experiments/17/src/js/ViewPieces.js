@@ -11,6 +11,7 @@ class ViewPieces extends alfrid.View {
 	
 	constructor() {
 		super(vs, fs);
+		this.time = Math.random() * 0xFF;
 	}
 
 
@@ -40,6 +41,10 @@ class ViewPieces extends alfrid.View {
 		// gui.add(this, 'threshold', 0, 1);
 	}
 
+	update() {
+		this.time += 0.01;
+	}
+
 
 	render(mShadowMatrix, mHit) {
 		this.shader.bind();
@@ -49,6 +54,7 @@ class ViewPieces extends alfrid.View {
 		this.shader.uniform("uThreshold", "float", this.threshold);
 		this.shader.uniform("uHit", "vec3", mHit);
 		this.shader.uniform("uLightPos", "vec3", params.lightPosition);
+		this.shader.uniform("uTime", "float", this.time);
 		GL.draw(this.mesh);
 	}
 

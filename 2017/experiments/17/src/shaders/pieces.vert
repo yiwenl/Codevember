@@ -13,14 +13,16 @@ uniform mat4 uProjectionMatrix;
 uniform mat4 uShadowMatrix;
 
 uniform vec3 uHit;
+uniform float uTime;
 
 varying vec2 vTextureCoord;
 varying vec3 vNormal;
 varying vec4 vShadowCoord;
 varying vec3 vExtra;
 
-const float minDist = 1.0;
+const float minDist = 3.0;
 const float PI = 3.141592653;
+const float PI2 = PI * 2.0;
 
 vec2 rotate(vec2 v, float a) {
 	float s = sin(a);
@@ -32,8 +34,13 @@ vec2 rotate(vec2 v, float a) {
 void main(void) {
 
 	float distToHit = distance(aPosOffset.xy, uHit.xy);
-	float a = smoothstep(minDist, 0.0, distToHit) * 2.0;
-	a += a * aExtra.z * 5.0;
+	float d = smoothstep(minDist - 1.0, minDist, distToHit);
+	// a += a * aExtra.z * 5.0;
+
+	float a = aExtra.y + mix(aExtra.z, 1.0, .5) * uTime;
+	a = mod(a, PI2) - PI;
+	a *= d;
+
 
 	vec3 position = aVertexPosition;
 	position.xy *= mix(aExtra.xy, vec2(1.0), .5);
