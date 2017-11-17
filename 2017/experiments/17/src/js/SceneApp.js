@@ -13,7 +13,13 @@ class SceneApp extends Scene {
 		super();
 		this.resize();
 		GL.enableAlphaBlending();
-		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.5;
+		this.orbitalControl.rx.easing = this.orbitalControl.ry.easing = 0.05;
+		this.orbitalControl.rx.value = 0.;
+		setTimeout(()=>{
+			this.orbitalControl.rx.value = 0.15;
+			this.orbitalControl.ry.value = 0.75;	
+		}, 700);
+		
 		this.orbitalControl.radius.value = 10;
 		this.orbitalControl.radius.limit(6, 20);
 		let a = .15;
