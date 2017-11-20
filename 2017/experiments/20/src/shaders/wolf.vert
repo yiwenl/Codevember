@@ -17,5 +17,5 @@ void main(void) {
     gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aVertexPosition, 1.0);
     vTextureCoord = aTextureCoord;
     vNormal = aNormal;
-    vPosition = aVertexPosition;
+    vPosition = (uModelMatrix * vec4(aVertexPosition, 1.0)).xyz;
 }

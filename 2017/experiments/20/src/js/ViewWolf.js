@@ -2,12 +2,13 @@
 
 import alfrid, { GL } from 'alfrid';
 import Assets from './Assets';
+import vs from 'shaders/wolf.vert';
 import fs from 'shaders/wolf.frag';
 
 class ViewWolf extends alfrid.View {
 	
 	constructor() {
-		super(null, fs);
+		super(vs, fs);
 		this.fps = 32;
 		this.frame = 0;
 

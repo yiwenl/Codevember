@@ -4,6 +4,7 @@
 
 precision highp float;
 varying vec3 vNormal;
+varying vec3 vPosition;
 uniform vec3 uLightPos;
 
 float diffuse(vec3 N, vec3 L) {
@@ -18,5 +19,10 @@ vec3 diffuse(vec3 N, vec3 L, vec3 C) {
 void main(void) {
 	float d = diffuse(vNormal, uLightPos);
 	d = mix(d, 1.0, .5);
-    gl_FragColor = vec4(vec3(d), 1.0);
+
+	float tmp = 1.1;
+	float ss = (vPosition.x + tmp + .17) / (tmp * 2.0); 
+
+
+    gl_FragColor = vec4(vec3(d), ss);
 }

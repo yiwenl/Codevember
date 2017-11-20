@@ -26,7 +26,7 @@ const writeTemplate = (str) => new Promise((resolve, reject) => {
 });
 
 watcherViews.on('all', (event, file) => {
-	if(file.indexOf('.html') === -1) return;
+	if(file.indexOf('.DS_Store') > -1) return;
 
 	fs.readFile(file, 'utf8')
 	.then( processTemplate )

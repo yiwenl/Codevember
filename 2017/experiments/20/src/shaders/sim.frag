@@ -8,10 +8,12 @@ uniform sampler2D textureVel;
 uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
 uniform sampler2D textureLife;
+uniform sampler2D textureOrg;
 uniform float time;
 uniform float maxRadius;
 
-
+uniform sampler2D texture0;
+uniform sampler2D texture1;
 uniform sampler2D depth0;
 uniform sampler2D depth1;
 
@@ -148,22 +150,70 @@ float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position, mat4 
 
 void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
+	vec3 posOrg     = texture2D(textureOrg, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
 	vec3 life       = texture2D(textureLife, vTextureCoord).rgb;
+
 	float posOffset = (0.5 + extra.r * 0.2) * .25;
 	vec3 acc        = curlNoise(pos * posOffset + time * .3);
+	acc += vec3( -2.0, 1.0, 0.0) * 0.5;
 	
-	vel += acc * .005;
+	vel += acc * .0015;
 
-	float dist = length(pos);
-	if(dist > maxRadius) {
-		float f = (dist - maxRadius) * .005;
-		vel -= normalize(pos) * f;
+
+	const float decrease = .9;
+	vel *= decrease;
+
+	pos += vel;
+
+
+	float outside = 1.0;
+	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside);
+	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside);
+
+	// float lifeDecrease  = 0.015;
+	const float lifeDecrease = 0.975;
+	float scale = 1.0;
+	if(outside < 0.5) {
+		life.x *= lifeDecrease;
+	} else {
+		if(pos.z < z0 && pos.z > z1) {
+			// scale = 1.0;
+			life.x += 0.1;	
+			life.x = min(life.x, 1.0);
+		} else {
+			life.x *= lifeDecrease;
+		}
 	}
 
-	const float decrease = .93;
-	vel *= decrease;
+	if(life.x < 0.01) {
+		pos = posOrg;
+		vel *= 0.0;
+
+		float outside = 1.0;
+		float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside);
+		float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside);
+
+		float scale = 1.0;
+		if(outside < 0.5) {
+			life.x = 0.0;
+		} else {
+			if(pos.z < z0 && pos.z > z1) {
+				life.x = 1.0;
+			} else {
+				life.x = 0.0;
+			}
+		}
+
+		float tmp = 1.1;
+		float ss = (posOrg.x + tmp + .17) / (tmp * 2.0); 
+		ss = smoothstep(0.0, 1.0, ss);
+		life.x *= 1.0 - ss;
+	}
+
+
+	// pos = posOrg;
 
 	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
