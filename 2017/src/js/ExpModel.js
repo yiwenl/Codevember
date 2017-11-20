@@ -98,6 +98,11 @@ const ExpModel = [
 		cover:'assets/img/cover20.jpg',
 		url:'//yiwenl.github.io/Codevember/2017/experiments/20/dist/index.html',
 		title:'Dissolve'
+	},
+	{
+		cover:'assets/img/cover21.jpg',
+		url:'//yiwenl.github.io/Codevember/2017/experiments/21/dist/index.html',
+		title:'City'
 	}
 ]
 
