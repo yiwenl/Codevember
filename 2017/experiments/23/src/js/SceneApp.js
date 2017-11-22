@@ -46,8 +46,9 @@ class SceneApp extends alfrid.Scene {
 		this.posHit = vec3.fromValues(999, 999, 999);
 
 		this.shader = new alfrid.GLShader();
-		const size = 35;
-		this.mesh = alfrid.Geom.plane(size, size, 1, 'xz');
+		const size = params.particles.radius;
+		// this.mesh = alfrid.Geom.plane(size, size, 1, 'xz');
+		this.mesh = alfrid.Geom.sphere(size, 12);
 		this._touchSize = new alfrid.EaseNumber(0);
 		this._detector = new TouchDetector(this.mesh);
 

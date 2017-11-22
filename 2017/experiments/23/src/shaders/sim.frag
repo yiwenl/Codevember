@@ -148,9 +148,9 @@ vec3 hitCheck(vec3 pos, inout vec3 acc, float speedOffset) {
 
 	if(distToHit < r3) {
 		// float scare = smoothstep(0.25, 1.0, uHitVel);
-		float scare = smoothstep(0.2, 0.75, uHitVel);
+		// float scare = smoothstep(0.0, 1.0, uHitVel);
 		float offset = 1.0 - distToHit / r3;
-		acc -= dir * scare * 2.0 * offset;
+		acc -= dir * offset * 0.15;
 	}
 	
 
@@ -165,7 +165,7 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = mix(extra.r, 1.0, .25) * .05;
+	float posOffset = mix(extra.r, 1.0, .5) * .1;
 	float speedOffset = mix(extra.b, 1.0, .75);
 	float speed = length(vel);
 
@@ -173,7 +173,7 @@ void main(void) {
 	float pMinSpeed = minSpeed * speedOffset;
 
 	vec3 acc = vec3((1.0 + extra.g) * 0.03, 0.0, 0.0);
-	vec3 noise = curlNoise(pos * posOffset + time * 0.5);
+	vec3 noise = curlNoise(pos * posOffset + time * 0.35);
 	noise.x = noise.x * .5 + .5;
 	noise *= 0.05;
 	acc += noise;
@@ -221,8 +221,8 @@ void main(void) {
 	boundaryCheck(pos, acc, speedOffset);
 	hitCheck(pos, acc, speedOffset);
 	
-	vel += acc * .01 * speedOffset;
-	const float decrease = .94;
+	vel += acc * .02 * speedOffset;
+	const float decrease = .96;
 	vel *= decrease;
 
 	
