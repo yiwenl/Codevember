@@ -5,6 +5,7 @@ attribute vec3 aVertexPosition;
 attribute vec2 aTextureCoord;
 attribute vec3 aNormal;
 attribute vec3 aExtra;
+attribute vec3 aExtra2;
 
 uniform mat4 uModelMatrix;
 uniform mat4 uViewMatrix;
@@ -14,6 +15,7 @@ varying vec2 vTextureCoord;
 varying vec3 vColor;
 varying vec3 vNormal;
 varying vec3 vExtra;
+varying vec3 vExtra2;
 
 void main(void) {
 	vColor       = aVertexPosition;
@@ -24,4 +26,5 @@ void main(void) {
 	
 	vNormal      = aNormal;
 	vExtra       = aExtra;
+	vExtra2       = aExtra2;
 }

@@ -126,6 +126,7 @@ class SceneApp extends alfrid.Scene {
 			this._fboCurrent.getTexture(1), 
 			this._fboCurrent.getTexture(0), 
 			this._fboCurrent.getTexture(2),
+			this._fboCurrent.getTexture(3),
 			this.posHit,
 			this._touchSize.value,
 			this._hitSpeed.value
@@ -144,7 +145,13 @@ class SceneApp extends alfrid.Scene {
 		GL.clear(0, 0, 0, 0);
 		GL.setMatrices(this._cameraLight);
 		this._vBall.render(this.posHit, this._touchSize.value);
-		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), this._percent, this._fboCurrent.getTexture(2));
+		this._vRender.render(
+			this._fboTarget.getTexture(0), 
+			this._fboCurrent.getTexture(0), 
+			this._percent, 
+			this._fboCurrent.getTexture(2),
+			this._fboCurrent.getTexture(3)
+			);
 		this._fboShadow.unbind();
 		GL.setMatrices(this.camera);
 	}
@@ -163,8 +170,14 @@ class SceneApp extends alfrid.Scene {
 
 		GL.clear(0, 0, 0, 0);
 
-		this._vRender.render(this._fboTarget.getTexture(0), this._fboCurrent.getTexture(0), this._percent, this._fboCurrent.getTexture(2));
+		this._vRender.render(
+			this._fboTarget.getTexture(0), 
+			this._fboTarget.getTexture(1), 
+			this._fboTarget.getTexture(2), 
+			this._fboTarget.getTexture(3) 
+			);
 		// this._vFloor.render(this._shadowMatrix, this._fboShadow.getDepthTexture());
+
 	}
 
 

@@ -19,6 +19,7 @@ class ViewSim extends alfrid.View {
 		this.shader.uniform('textureVel', 'uniform1i', 0);
 		this.shader.uniform('texturePos', 'uniform1i', 1);
 		this.shader.uniform('textureExtra', 'uniform1i', 2);
+		this.shader.uniform('textureExtra2', 'uniform1i', 3);
 
 		this.flocking = {
 			lowThreshold:.3,
@@ -33,7 +34,7 @@ class ViewSim extends alfrid.View {
 	}
 
 
-	render(textureVel, texturePos, textureExtra, mHit, mHitRadius, mHitVel) {
+	render(textureVel, texturePos, textureExtra, textureExtra2, mHit, mHitRadius, mHitVel) {
 		// console.log(mHit, mHitRadius);
 
 		this.time += .01;
@@ -50,6 +51,7 @@ class ViewSim extends alfrid.View {
 		textureVel.bind(0);
 		texturePos.bind(1);
 		textureExtra.bind(2);
+		textureExtra2.bind(3);
 
 
 		GL.draw(this.mesh);

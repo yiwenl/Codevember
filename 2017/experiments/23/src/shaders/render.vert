@@ -13,8 +13,9 @@ uniform mat4 uModelMatrix;
 uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform sampler2D textureCurr;
-uniform sampler2D textureNext;
+uniform sampler2D textureVel;
 uniform sampler2D textureExtra;
+uniform sampler2D textureExtra2;
 uniform float percent;
 uniform float time;
 uniform vec2 uViewport;
@@ -49,17 +50,18 @@ vec3 lookAt(inout vec3 pos, inout vec3 normal, vec3 origin, vec3 target) {
 
 void main(void) {
 	vec2 uv             = aUV;
-	vec3 posCurr        = texture2D(textureCurr, uv).rgb;
-	vec3 posNext        = texture2D(textureNext, uv).rgb;
-	vec3 posOffset      = mix(posCurr, posNext, percent);
+	vec3 pos        	= texture2D(textureCurr, uv).rgb;
+	vec3 vel        	= texture2D(textureVel, uv).rgb;
+	vec3 posNext 		= pos + vel;
 	vec3 extra          = texture2D(textureExtra, uv).rgb;
+	vec3 extra2         = texture2D(textureExtra2, uv).rgb;
 	// float scale 		= mix(aExtra.x, 1.0, .5) * 1.5;
-	vec3 scale 		    = mix(aExtra, vec3(1.0), .5) * 1.5;
-	vec3 position       = aVertexPosition * scale;
+	vec3 scale 		    = mix(aExtra, vec3(1.0), .35);
+	vec3 position       = aVertexPosition * scale * extra2.r;
 	vec3 normal 		= aNormal;
-	lookAt(position, normal, posOffset, posNext+vec3(0.0, 0.0, 0.0001));
+	lookAt(position, normal, pos, posNext+vec3(0.0, 0.0, 0.0001));
 	
-	position            += posOffset;
+	position            += pos;
 	gl_Position         = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(position, 1.0);
 	
 	

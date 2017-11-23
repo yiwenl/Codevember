@@ -52,27 +52,29 @@ class ViewRender extends alfrid.View {
 	}
 
 
-	render(textureCurr, textureNext, p, textureExtra) {
+	render(textureCurr, textureVel, textureExtra, textureExtra2) {
 		this.time += 0.1;
 		this.shader.bind();
 
 		this.shader.uniform('textureCurr', 'uniform1i', 0);
 		textureCurr.bind(0);
 
-		this.shader.uniform('textureNext', 'uniform1i', 1);
-		textureNext.bind(1);
+		this.shader.uniform('textureVel', 'uniform1i', 1);
+		textureVel.bind(1);
 
 		this.shader.uniform('textureExtra', 'uniform1i', 2);
 		textureExtra.bind(2);
 
-		this.shader.uniform("texture", "uniform1i", 3);
-		this.texture.bind(3);
+		this.shader.uniform('textureExtra2', 'uniform1i', 3);
+		textureExtra2.bind(3);
 
-		this.shader.uniform("textureNormal", "uniform1i", 4);
-		this.textureNormal.bind(4);
+		this.shader.uniform("texture", "uniform1i", 4);
+		this.texture.bind(4);
+
+		this.shader.uniform("textureNormal", "uniform1i", 5);
+		this.textureNormal.bind(5);
 
 		this.shader.uniform('uViewport', 'vec2', [GL.width, GL.height]);
-		this.shader.uniform('percent', 'float', p);
 		this.shader.uniform('time', 'float', this.time);
 		this.shader.uniform("uLightPos", "vec3", params.lightPosition);
 		this.shader.uniform(params.particles);

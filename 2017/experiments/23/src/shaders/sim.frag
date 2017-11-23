@@ -7,6 +7,7 @@ varying vec2 vTextureCoord;
 uniform sampler2D textureVel;
 uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
+uniform sampler2D textureExtra2;
 uniform float time;
 uniform float maxRadius;
 uniform float radius;
@@ -165,8 +166,13 @@ void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = mix(extra.r, 1.0, .5) * .1;
+	vec3 extra2     = texture2D(textureExtra2, vTextureCoord).rgb;
+	float posOffset = mix(extra.r, 1.0, .5) * .08;
 	float speedOffset = mix(extra.b, 1.0, .75);
+	float mess = extra2.r;
+
+	float t = smoothstep(1.1, 1.2, extra2.r);
+
 	float speed = length(vel);
 
 	float pMaxSpeed = maxSpeed * speedOffset;
@@ -178,19 +184,23 @@ void main(void) {
 	noise *= 0.05;
 	acc += noise;
 
-	float dist, p, f, delta, speedParticle;
+	float dist, p, f, delta, speedParticle, messParticle, flockingForce;
 	vec2 uvParticle;
 	vec3 posParticle, velParticle, dir;
 	float _num = float(NUM);
 
 	float offset = sin(extra.g + speedOffset * time * 0.2 );
-	float radius = minRadius * mix(extra.b, 1.0, 0.8 + offset * .2);
+	float radius = minRadius * mix(extra.b, 1.0, 0.8 + offset * .2) * extra2.r;
+
 
 	for( int i=0; i<NUM; i++) {
 		for( int j=0; j<NUM; j++) {
 			vec2 uvParticle = vec2( float(i)/_num, float(j)/_num);
 
-			posParticle = texture2D(texturePos, uvParticle).xyz;
+			posParticle   = texture2D(texturePos, uvParticle).xyz;
+			messParticle  = texture2D(textureExtra2, uvParticle).x;
+			flockingForce = messParticle / mess;
+
 			dist = distance(pos, posParticle);
 			if(dist > radius) { continue; }
 			if(dist <= 0.0) { continue; }
@@ -202,7 +212,9 @@ void main(void) {
 			if(p < lowThreshold) {
 				delta = getDelta(0.0, lowThreshold, p);
 				f = 1.0 / delta * 0.01;
-				acc -= dir * f;
+
+
+				acc -= dir * f * flockingForce;
 
 			} else if(p < highThreshold) {
 				delta = getDelta(lowThreshold, highThreshold, p);
@@ -211,7 +223,7 @@ void main(void) {
 
 				dir = mix(vel, velParticle, .5);
 				f = sin(delta * PI);
-				acc += dir * f * 0.0005;
+				acc += dir * f * 0.0005 * flockingForce;
 
 			} 
 		}
@@ -220,6 +232,15 @@ void main(void) {
 	
 	boundaryCheck(pos, acc, speedOffset);
 	hitCheck(pos, acc, speedOffset);
+
+	if(extra2.r > 1.0) {
+		acc.x = acc.x * .5 + .5;
+		float s = 0.05;
+		acc *= vec3(0.5, s, s) * 0.5;
+
+		// vec2 dir = normalize(acc.yz);
+		// acc.yz -= dir * 0.02;
+	}
 	
 	vel += acc * .02 * speedOffset;
 	const float decrease = .96;
@@ -243,10 +264,13 @@ void main(void) {
 	pos += vel;
 	if(pos.x > maxRadius) {
 		pos.x -= maxRadius * 2.0;
+		if(mess > 1.0) {
+			pos.yz *= 0.75;
+		}
 	}
 
 	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
 	gl_FragData[2] = vec4(extra, 1.0);
-	gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+	gl_FragData[3] = vec4(extra2, 1.0);
 }
