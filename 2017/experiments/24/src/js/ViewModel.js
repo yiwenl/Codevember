@@ -16,8 +16,9 @@ class ViewModel extends alfrid.View {
 	}
 
 
-	render() {
+	render(mExtrude=0.0) {
 		this.shader.bind();
+		this.shader.uniform("uExtrude", "float", mExtrude);
 		GL.draw(this.mesh);
 	}
 

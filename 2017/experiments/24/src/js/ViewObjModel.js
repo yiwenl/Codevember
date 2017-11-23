@@ -3,8 +3,8 @@
 import alfrid, { GL } from 'alfrid';
 import Assets from './Assets';
 
-import vs from '../shaders/pbr.vert';
-import fs from '../shaders/pbr.frag';
+import vs from 'shaders/pbr.vert';
+import fs from 'shaders/pbr.frag';
 
 class ViewObjModel extends alfrid.View {
 	
@@ -16,14 +16,12 @@ class ViewObjModel extends alfrid.View {
 	_init() {
 		this.mesh = Assets.get('model');
 
-		this.roughness = 1;
-		this.specular = 0;
-		this.metallic = 0;
-		this.baseColor = [1, 1, 1];
+		this.roughness = 0;
+		this.specular = 1;
+		this.metallic = 1;
 
-		gui.add(this, 'roughness', 0, 1);
-		gui.add(this, 'specular', 0, 1);
-		gui.add(this, 'metallic', 0, 1);
+		const s = 0.;
+		this.baseColor = [s, s, s];
 	}
 
 

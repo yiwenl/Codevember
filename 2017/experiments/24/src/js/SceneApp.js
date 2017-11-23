@@ -5,6 +5,10 @@ import ViewSave from './ViewSave';
 import ViewRender from './ViewRender';
 import ViewSim from './ViewSim';
 import ViewModel from './ViewModel';
+import ViewObjModel from './ViewObjModel';
+import ViewFXAA from './ViewFXAA';
+import PassBloom from './PassBloom';
+import Assets from './Assets';
 
 window.getAsset = function(id) {
 	return assets.find( (a) => a.id === id).file;
@@ -17,9 +21,8 @@ class SceneApp extends alfrid.Scene {
 
 		this.camera.setPerspective(Math.PI/2, GL.aspectRatio, .1, 100);
 		this.orbitalControl.radius.value = 3.5;
+		this.orbitalControl.radius.limit(2, 5);
 		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
-
-
 
 
 		this._shadowMatrix0 = mat4.create();
@@ -31,8 +34,9 @@ class SceneApp extends alfrid.Scene {
 			0.5, 0.5, 0.5, 1.0
 		);
 
-		this.pointSource0 = vec3.fromValues(0, 0, 7);
-		this.pointSource1 = vec3.fromValues(0, 0, -7);
+		const r = 10;
+		this.pointSource0 = vec3.fromValues(0, 0, r);
+		this.pointSource1 = vec3.fromValues(0, 0, -r);
 		const s = 2;
 		this._cameraLight0 = new alfrid.CameraOrtho();
 		this._cameraLight0.ortho(-s, s, -s, s, 1, 50);
@@ -76,11 +80,20 @@ class SceneApp extends alfrid.Scene {
 			type:GL.FLOAT
 		};
 
+		const oRender = {
+			minFilter:GL.LINEAR,
+			magFilter:GL.LINEAR,
+			type:GL.FLOAT
+		};
+
 		this._fboCurrent  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
 		this._fboTarget  	= new alfrid.FrameBuffer(numParticles, numParticles, o, true);
 
 		this.fboModel0 = new alfrid.FrameBuffer(1024, 1024, {minFilter:GL.NEAREST, magFilter:GL.NEAREST, wrapS:GL.CLAMP_TO_EDGE, wrapT:GL.CLAMP_TO_EDGE});
 		this.fboModel1 = new alfrid.FrameBuffer(1024, 1024, {minFilter:GL.NEAREST, magFilter:GL.NEAREST, wrapS:GL.CLAMP_TO_EDGE, wrapT:GL.CLAMP_TO_EDGE});
+
+		this._fboRender = new alfrid.FrameBuffer(GL.width, GL.height, oRender);
+		this._fboFXAA = new alfrid.FrameBuffer(GL.width, GL.height, oRender);
 	}
 
 
@@ -93,7 +106,11 @@ class SceneApp extends alfrid.Scene {
 		this._bDots = new alfrid.BatchDotsPlane();
 		this._bBall = new alfrid.BatchBall();
 
+		this._vFxaa = new ViewFXAA();
+		this._passBloom = new PassBloom();
+
 		this._vModel = new ViewModel();
+		this._vReflection = new ViewObjModel();
 
 
 		//	views
@@ -159,7 +176,7 @@ class SceneApp extends alfrid.Scene {
 		this.fboModel1.unbind();
 
 		GL.setMatrices(this.camera);
-		this._hasDepthTexture = true;
+		// this._hasDepthTexture = true;
 	}
 
 
@@ -171,53 +188,43 @@ class SceneApp extends alfrid.Scene {
 
 		GL.clear(0, 0, 0, 0);
 
-		// GL.disable(GL.DEPTH_TEST);
+		this._fboRender.bind();
+		GL.clear(0, 0, 0, 1);
+		
+		this._vReflection.render(Assets.get('studio_radiance'), Assets.get('irr'), Assets.get('aomap'));
+
+		this._fboRender.unbind();		
+
+		this._passBloom.render(this._fboRender.getTexture());
+
+
+		//	FINAL OUTPUT
+		GL.clear(0, 0, 0, 0);
+		GL.disable(GL.DEPTH_TEST);	
+		
+
 		this._vRender.render(
 			this._fboTarget.getTexture(0), 
 			this._fboTarget.getTexture(1),
 			this._fboTarget.getTexture(2),
 			this._fboTarget.getTexture(3)
 		);
-		// GL.enable(GL.DEPTH_TEST);
-
 		
+		GL.viewport(0, 0, GL.width, GL.height);
+		GL.enableAdditiveBlending();
+		this._bCopy.draw(this._fboRender.getTexture());
+		this._bCopy.draw(this._passBloom.getTexture());
 
-		let size = Math.min(params.numParticles, GL.height/4);
-
-		GL.viewport(0, 0, size, size);
-		this._bCopy.draw(this.texture0);
-		GL.viewport(size, 0, size, size);
-		this._bCopy.draw(this.texture1);
-
-		// for(let i=0; i<4; i++) {
-		// 	GL.viewport(0, size * i, size, size);
-		// 	this._bCopy.draw(this._fboCurrent.getTexture(i));
-		// }
+		GL.enableAlphaBlending();
+		GL.enable(GL.DEPTH_TEST);
 
 	}
 
 
 	resize() {
 		const { innerWidth, innerHeight, devicePixelRatio } = window;
-		GL.setSize(innerWidth * devicePixelRatio, innerHeight * devicePixelRatio);
+		GL.setSize(innerWidth, innerHeight);
 		this.camera.setAspectRatio(GL.aspectRatio);
-	}
-
-
-	get texture0() {
-		return this.fboModel0.getTexture();
-	}
-
-	get texture1() {
-		return this.fboModel1.getTexture();
-	}
-
-	get depthTexture0() {
-		return this.fboModel0.getDepthTexture();
-	}
-
-	get depthTexture1() {
-		return this.fboModel1.getDepthTexture();
 	}
 }
 

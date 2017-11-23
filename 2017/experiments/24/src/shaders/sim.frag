@@ -132,7 +132,7 @@ float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position, mat4 
 	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
 	vec2 uv = shadowCoord.xy;
 	vec4 color = texture2D(texture, uv);
-	if(color.a <=0.0) {
+	if(color.a <= 0.0) {
 		outside = 0.0;
 	}
 	float depth = texture2D(textureDepth, uv).r;
@@ -154,60 +154,50 @@ void main(void) {
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
 	vec3 life       = texture2D(textureLife, vTextureCoord).rgb;
-	float posOffset = mix(extra.r, 1.0, .15) * 0.85;
+	float posOffset = mix(extra.r, 1.0, .1) * 0.85;
 	vec3 acc        = curlNoise(pos * posOffset + time * 0.5);
-
+	float speedOffset = mix(extra.g, 1.0, .25);
 	
 
-	float outside = 1.0;
-	const float lifeDecrease = 0.;
+	float o0 = 1.0;
+	float o1 = 1.0;
+	
+	const float lifeDecrease = 0.0;
 	vec3 n0, n1, n; 
 	n = vec3(0.0);
-	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside, n0);
-	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside, n1);
-
+	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, o0, n0);
+	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, o1, n1);
+	float outside = o0 * o1;
 	float d0 = pos.z - z0;
 	float d1 = pos.z - z1;
-	// n = d0 < d1 ? n0 : n1;
+	n = d0 < d1 ? n0 : n1;
 
 	vec3 dir = normalize(pos);
 	if(outside > 0.5) {
-		
-		acc -= n * 1.0;
 
-		if(pos.z < z0) {
+		if(pos.z > z0) {
 			pos.z = z0;
-			extra.b += 0.2;
-			extra.b = min(1.0, extra.b);
+			extra.b *= 0.0;
+			// debug = vec3(1.0, 0.0, 0.0);
 			n = n0;
-		} else if(pos.z > z1) {
+		} else if(pos.z < z1) {
 			pos.z = z1;
-			extra.b += 0.2;
-			extra.b = min(1.0, extra.b);
+			extra.b *= 0.0;
+			// debug = vec3(0.0, 1.0, 0.0);
 			n = n1;
 		} else {
-			
 			extra.b += 1.2;
 			extra.b = min(1.0, extra.b);
+			// debug = vec3(1.0);
 		}
 
-		// if(pos.z < z0 || pos.z > z1) {
-		// 	extra.b *= lifeDecrease;
-		// } else {
-		// 	extra.b += 1.0;
-		// }
 	} else {
 		extra.b *= lifeDecrease;
-		acc -= dir * 2.0;
+		acc -= dir * 3.0;
 	}
-
+	acc -= n * 1.2 * speedOffset;
 	vel += acc * .0005;
-
-	// float dist = length(pos);
-	// if(dist > maxRadius) {
-	// 	float f = (dist - maxRadius) * .005;
-	// 	vel -= normalize(pos) * f;
-	// }
+	extra.b = min(1.0, extra.b);
 
 	const float decrease = .98;
 	vel *= decrease;

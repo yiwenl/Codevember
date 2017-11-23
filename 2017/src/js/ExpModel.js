@@ -113,6 +113,11 @@ const ExpModel = [
 		cover:'assets/img/cover23.jpg',
 		url:'//yiwenl.github.io/Codevember/2017/experiments/23/dist/index.html',
 		title:'Paper Plane'
+	},
+	{
+		cover:'assets/img/cover24.jpg',
+		url:'//yiwenl.github.io/Codevember/2017/experiments/24/dist/index.html',
+		title:'Glass Statue'
 	}
 ]
 

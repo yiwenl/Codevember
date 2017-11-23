@@ -23,6 +23,7 @@ varying vec3 vPosition;
 varying vec3 vWsPosition;
 varying vec3 vEyePosition;
 varying vec3 vWsNormal;
+varying vec3 vExtra;
 
 const float radius = 0.0075;
 
@@ -32,7 +33,8 @@ void main(void) {
 	vec3 vel 	 = texture2D(textureVel, uv).rgb;
 	vec3 life 	 = texture2D(textureLife, uv).rgb;
 	vec3 extra   = texture2D(textureExtra, uv).rgb;
-	vColor       = vec4(life * 2.0 - 1.0, extra.b);
+	// vColor       = vec4(life * 2.0 - 1.0, extra.b);
+	vColor       = vec4(life, extra.b);
 
 	vec4 worldSpacePosition	= uModelMatrix * vec4(pos, 1.0);
 	vec4 viewSpacePosition	= uViewMatrix * worldSpacePosition;
@@ -50,4 +52,7 @@ void main(void) {
 
 	float distOffset = uViewport.y * uProjectionMatrix[1][1] * radius / gl_Position.w;
 	gl_PointSize = distOffset * (1.0 + extra.x * 1.0) * life.x;
+
+
+	vExtra = extra;
 }

@@ -40,8 +40,8 @@ class ViewRender extends alfrid.View {
 		this.textureRad = Assets.get('studio_radiance'); 
 		this.textureIrr = Assets.get('irr');
 
-		this.roughness = 1;
-		this.specular = 0;
+		this.roughness = 0;
+		this.specular = 1;
 		this.metallic = 0;
 		this.baseColor = [1, 1, 1];
 	}

@@ -34,7 +34,6 @@ class ViewSim extends alfrid.View {
 		textureExtra.bind(6);
 		textureLife.bind(7);
 
-
 		this.shader.uniform("depth0", "uniform1i", 0);
 		fbo0.getDepthTexture().bind(0);
 		this.shader.uniform("depth1", "uniform1i", 1);

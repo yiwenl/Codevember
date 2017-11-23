@@ -1,6 +1,10 @@
+// pbr.frag
+
 #extension GL_EXT_shader_texture_lod : enable
+
 precision highp float;
 
+uniform sampler2D 	uAoMap;
 uniform samplerCube uRadianceMap;
 uniform samplerCube uIrradianceMap;
 
@@ -19,11 +23,9 @@ varying vec3		vEyePosition;
 varying vec3		vWsNormal;
 varying vec3		vWsPosition;
 varying vec2 		vTextureCoord;
-varying vec4 vColor;
 
 #define saturate(x) clamp(x, 0.0, 1.0)
 #define PI 3.1415926535897932384626433832795
-
 
 
 // Filmic tonemapping from
@@ -94,16 +96,14 @@ vec3 getPbr(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic, flo
 	return color;
 }
 
-void main(void) {
-	if(vColor.a <= 0.0) {
-		discard;
-	}
-	if(distance(gl_PointCoord, vec2(.5)) > .5) discard;
-    // gl_FragColor = vec4(vColor.rgb, 1.0);
-
-	vec3 N 				= normalize( vColor.rgb );
+void main() {
+	vec3 N 				= normalize( vWsNormal );
 	vec3 V 				= normalize( vEyePosition );
+	
 	vec3 color 			= getPbr(N, V, uBaseColor, uRoughness, uMetallic, uSpecular);
+
+	vec3 ao 			= texture2D(uAoMap, vTextureCoord).rgb;
+	color 				*= ao;
 
 	// apply the tone-mapping
 	color				= Uncharted2Tonemap( color * uExposure );
@@ -113,7 +113,9 @@ void main(void) {
 	// gamma correction
 	color				= pow( color, vec3( 1.0 / uGamma ) );
 
+	float a = smoothstep(0.3, 1.0, color.r);
+
 	// output the fragment color
-    gl_FragColor		= vec4( color, 1.0 );
-    gl_FragColor		= vec4( N, 1.0 );
+    gl_FragColor		= vec4( color, a );
+
 }
