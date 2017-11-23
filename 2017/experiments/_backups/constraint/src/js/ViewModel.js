@@ -2,11 +2,12 @@
 
 import alfrid, { GL } from 'alfrid';
 import Assets from './Assets';
+import fs from 'shaders/model.frag';
 
 class ViewModel extends alfrid.View {
 	
 	constructor() {
-		super();
+		super(null, fs);
 	}
 
 

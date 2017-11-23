@@ -16,7 +16,7 @@ class SceneApp extends alfrid.Scene {
 		GL.enableAlphaBlending();
 
 		this.camera.setPerspective(Math.PI/2, GL.aspectRatio, .1, 100);
-		this.orbitalControl.radius.value = 10;
+		this.orbitalControl.radius.value = 3.5;
 		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
 
 
@@ -121,7 +121,20 @@ class SceneApp extends alfrid.Scene {
 	updateFbo() {
 		this._fboTarget.bind();
 		GL.clear(0, 0, 0, 1);
-		this._vSim.render(this._fboCurrent.getTexture(1), this._fboCurrent.getTexture(0), this._fboCurrent.getTexture(2));
+		this._vSim.render(
+			this._fboCurrent.getTexture(1), 
+			this._fboCurrent.getTexture(0), 
+			this._fboCurrent.getTexture(2),
+			this._fboCurrent.getTexture(3),
+			this.fboModel0,
+			this.fboModel1,
+			this._shadowMatrix0, 
+			this._shadowMatrix1, 
+			this.projInvert0, 
+			this.projInvert1, 
+			this.viewInvert0, 
+			this.viewInvert1
+			);
 		this._fboTarget.unbind();
 
 
@@ -157,23 +170,24 @@ class SceneApp extends alfrid.Scene {
 		this.updateFbo();
 
 		GL.clear(0, 0, 0, 0);
-		this._bAxis.draw();
-		this._bDots.draw();
 
+		// GL.disable(GL.DEPTH_TEST);
 		this._vRender.render(
 			this._fboTarget.getTexture(0), 
 			this._fboTarget.getTexture(1),
 			this._fboTarget.getTexture(2),
 			this._fboTarget.getTexture(3)
-			);
+		);
+		// GL.enable(GL.DEPTH_TEST);
+
+		
 
 		let size = Math.min(params.numParticles, GL.height/4);
 
 		GL.viewport(0, 0, size, size);
-		this._bCopy.draw(this.depthTexture0);
-
+		this._bCopy.draw(this.texture0);
 		GL.viewport(size, 0, size, size);
-		this._bCopy.draw(this.depthTexture0);
+		this._bCopy.draw(this.texture1);
 
 		// for(let i=0; i<4; i++) {
 		// 	GL.viewport(0, size * i, size, size);

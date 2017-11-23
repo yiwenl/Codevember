@@ -7,8 +7,21 @@ varying vec2 vTextureCoord;
 uniform sampler2D textureVel;
 uniform sampler2D texturePos;
 uniform sampler2D textureExtra;
+uniform sampler2D textureLife;
 uniform float time;
 uniform float maxRadius;
+
+uniform mat4 uShadowMatrix0;
+uniform mat4 uShadowMatrix1;
+uniform mat4 uProjInvert0;
+uniform mat4 uProjInvert1;
+uniform mat4 uViewInvert0;
+uniform mat4 uViewInvert1;
+
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D depth0;
+uniform sampler2D depth1;
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0;  }
 
@@ -89,7 +102,6 @@ vec3 snoiseVec3( vec3 x ){
 
 }
 
-
 vec3 curlNoise( vec3 p ){
 	
 	const float e = .1;
@@ -113,26 +125,89 @@ vec3 curlNoise( vec3 p ){
 
 }
 
+
+
+float getDistToCamera(mat4 shadowMatrix, sampler2D texture, vec3 position, mat4 invertProj, mat4 invertView, sampler2D textureDepth, inout float outside, inout vec3 normal) {
+	vec4 vShadowCoord = shadowMatrix * vec4(position, 1.0);
+	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
+	vec2 uv = shadowCoord.xy;
+	vec4 color = texture2D(texture, uv);
+	if(color.a <=0.0) {
+		outside = 0.0;
+	}
+	float depth = texture2D(textureDepth, uv).r;
+	float z = depth * 2.0 - 1.0;
+
+	vec4 clipSpacePosition = vec4(uv * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = invertProj * clipSpacePosition;
+    viewSpacePosition /= viewSpacePosition.w;
+
+    vec4 worldSpacePosition = invertView * viewSpacePosition;
+
+    normal = color.rgb * 2.0 - 1.0;
+
+    return worldSpacePosition.z;
+}
+
 void main(void) {
 	vec3 pos        = texture2D(texturePos, vTextureCoord).rgb;
 	vec3 vel        = texture2D(textureVel, vTextureCoord).rgb;
 	vec3 extra      = texture2D(textureExtra, vTextureCoord).rgb;
-	float posOffset = (0.5 + extra.r * 0.2) * .25;
-	vec3 acc        = curlNoise(pos * posOffset + time * .3);
-	
-	vel += acc * .002;
+	vec3 life       = texture2D(textureLife, vTextureCoord).rgb;
+	float posOffset = mix(extra.r, 1.0, .15) * 0.85;
+	vec3 acc        = curlNoise(pos * posOffset + time * 0.5);
 
-	float dist = length(pos);
-	if(dist > maxRadius) {
-		float f = (dist - maxRadius) * .005;
-		vel -= normalize(pos) * f;
+	
+
+	float outside = 1.0;
+	const float lifeDecrease = 0.;
+	vec3 n0, n1, n; 
+	n = vec3(0.0);
+	float z0 = getDistToCamera(uShadowMatrix0, texture0, pos, uProjInvert0, uViewInvert0, depth0, outside, n0);
+	float z1 = getDistToCamera(uShadowMatrix1, texture1, pos, uProjInvert1, uViewInvert1, depth1, outside, n1);
+
+	float d0 = pos.z - z0;
+	float d1 = pos.z - z1;
+	n = d0 < d1 ? n0 : n1;
+
+	vec3 dir = normalize(pos);
+	if(outside > 0.5) {
+		
+		acc -= n * 1.0;
+
+		if(pos.z < z0) {
+			pos.z = z0;
+			extra.b += 0.2;
+			extra.b = min(1.0, extra.b);
+		} else if(pos.z > z1) {
+			pos.z = z1;
+			extra.b += 0.2;
+			extra.b = min(1.0, extra.b);
+		} else {
+			
+			extra.b += 1.2;
+			extra.b = min(1.0, extra.b);
+		}
+	} else {
+		extra.b *= lifeDecrease;
+		acc -= dir * 2.0;
 	}
+
+	vel += acc * .0005;
+
+	// float dist = length(pos);
+	// if(dist > maxRadius) {
+	// 	float f = (dist - maxRadius) * .005;
+	// 	vel -= normalize(pos) * f;
+	// }
 
 	const float decrease = .98;
 	vel *= decrease;
 
-	gl_FragData[0] = vec4(pos + vel, 1.0);
+	pos += vel;
+
+	gl_FragData[0] = vec4(pos, 1.0);
 	gl_FragData[1] = vec4(vel, 1.0);
 	gl_FragData[2] = vec4(extra, 1.0);
-	gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+	gl_FragData[3] = vec4(n * .5 + .5, 1.0);
 }

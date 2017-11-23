@@ -23,7 +23,7 @@ class ViewSave extends alfrid.View {
 		let totalParticles = numParticles * numParticles;
 		console.debug('Total Particles : ', totalParticles);
 		let ux, uy;
-		let range = 3;
+		let range = 2;
 
 		for(let j = 0; j < numParticles; j++) {
 			for(let i = 0; i < numParticles; i++) {
