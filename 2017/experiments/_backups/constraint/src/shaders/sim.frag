@@ -168,7 +168,7 @@ void main(void) {
 
 	float d0 = pos.z - z0;
 	float d1 = pos.z - z1;
-	n = d0 < d1 ? n0 : n1;
+	// n = d0 < d1 ? n0 : n1;
 
 	vec3 dir = normalize(pos);
 	if(outside > 0.5) {
@@ -179,15 +179,23 @@ void main(void) {
 			pos.z = z0;
 			extra.b += 0.2;
 			extra.b = min(1.0, extra.b);
+			n = n0;
 		} else if(pos.z > z1) {
 			pos.z = z1;
 			extra.b += 0.2;
 			extra.b = min(1.0, extra.b);
+			n = n1;
 		} else {
 			
 			extra.b += 1.2;
 			extra.b = min(1.0, extra.b);
 		}
+
+		// if(pos.z < z0 || pos.z > z1) {
+		// 	extra.b *= lifeDecrease;
+		// } else {
+		// 	extra.b += 1.0;
+		// }
 	} else {
 		extra.b *= lifeDecrease;
 		acc -= dir * 2.0;

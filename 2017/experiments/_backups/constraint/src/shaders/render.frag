@@ -115,4 +115,5 @@ void main(void) {
 
 	// output the fragment color
     gl_FragColor		= vec4( color, 1.0 );
+    gl_FragColor		= vec4( N, 1.0 );
 }
