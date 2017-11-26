@@ -123,6 +123,11 @@ const ExpModel = [
 		cover:'assets/img/cover25.jpg',
 		url:'//yiwenl.github.io/Codevember/2017/experiments/25/dist/index.html',
 		title:'Break'
+	},
+	{
+		cover:'assets/img/cover26.jpg',
+		url:'//yiwenl.github.io/Codevember/2017/experiments/26/dist/index.html',
+		title:'Ying Yang'
 	}
 ]
 
