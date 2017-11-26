@@ -7,7 +7,6 @@ import Capture3D from './Capture3D';
 
 import ViewSave from './ViewSave';
 import ViewRender from './ViewRender';
-import ViewRenderShadow from './ViewRenderShadow';
 import ViewSim from './ViewSim';
 import ViewFloor from './ViewFloor';
 
@@ -28,13 +27,17 @@ class SceneApp extends Scene {
 			0.5, 0.5, 0.5, 1.0
 		);
 
-		const s = 2.5;
+		this.count = 0;
+		const s = 3.5;
 		this._cameraLight = new alfrid.CameraOrtho();
 		this._cameraLight.ortho(-s, s, -s, s, 1, 50);
 		this._cameraLight.lookAt([0, 10, 0], [0, 0, 0], [0, 0, -1]);
+		// this._cameraLight.lookAt([0, 10, 4], [0, 0, 0]);
 
 		mat4.multiply(this._shadowMatrix, this._cameraLight.projection, this._cameraLight.viewMatrix);
 		mat4.multiply(this._shadowMatrix, this._biasMatrix, this._shadowMatrix);
+
+		this._vRender.setupUniform(this._shadowMatrix);
 	}
 
 	_initTextures() {
@@ -67,7 +70,6 @@ class SceneApp extends Scene {
 
 		//	views
 		this._vRender = new ViewRender();
-		this._vRenderShadow = new ViewRenderShadow();
 		this._vSim 	  = new ViewSim();
 
 		this._vSave = new ViewSave();
@@ -118,14 +120,20 @@ class SceneApp extends Scene {
 	}
 
 	render() {
+		
 		//	update capture
-		this._capture.capture(this._vWolf.mesh, this._vWolf.mtxModel);
+
+		if(this.count % 3 == 0) {
+			this._capture.capture(this._vWolf.mesh, this._vWolf.mtxModel);	
+		}
+		
 
 		//	update particles
 		this._updateFbo();
 
 		//	update shadow map
-		this._renderShadowMap();
+		this._renderShadowMap();	
+		
 
 		GL.clear(0, 0, 0, 0);
 		GL.setMatrices(this.camera);
@@ -137,7 +145,7 @@ class SceneApp extends Scene {
 
 		// let s = 150;
 		// GL.viewport(0, 0, s, s);
-		// this._bCopy.draw(this._capture.depth0);
+		// this._bCopy.draw(this._fboTarget.getTexture(2));
 		// GL.viewport(s, 0, s, s);
 		// this._bCopy.draw(this._capture.depth1);
 		// GL.viewport(s * 2, 0, s, s);
@@ -147,6 +155,8 @@ class SceneApp extends Scene {
 		// 	GL.viewport(s * i, s, s, s);
 		// 	this._bCopy.draw(this._capture.fboModel0.getTexture(i));
 		// }
+
+		this.count ++;
 	}
 
 

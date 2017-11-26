@@ -44,7 +44,11 @@ float fogFactorExp2(const float dist, const float density) {
 void main(void) {
 	if(distance(gl_PointCoord, vec2(.5)) > .5) discard;
 	float life = vColor.b;
+	float alpha = 1.0;
 	if( life <= 0.0) {	discard; }
+	// if( life <= 0.0) {	
+	// 	alpha = 0.1;
+	//  }
 
 	vec4 shadowCoord = vShadowCoord / vShadowCoord.w;
 	float s = PCFShadow(textureDepth, uMapSize, shadowCoord);
@@ -61,5 +65,6 @@ void main(void) {
 	float a = smoothstep(.0, .1, life);
 	gl_FragColor = mix(color, fogColor, fogAmount);
 	gl_FragColor.a *= a;
+	// gl_FragColor.gb *= alpha;
 	// gl_FragColor = color;
 }
