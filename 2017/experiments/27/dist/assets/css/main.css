@@ -13,7 +13,8 @@ html, body {
   background: -webkit-radial-gradient(center, ellipse cover, #333333 0%, #000000 100%);
   /* Chrome10-25,Safari5.1-6 */
   background: radial-gradient(ellipse at center, #333333 0%, #000000 100%);
-  /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */ }
+  /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  background: black; }
 
 html {
   -webkit-text-size-adjust: none;
