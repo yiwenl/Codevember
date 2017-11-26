@@ -18,9 +18,22 @@ window.params = {
 	gamma:2.2,
 	exposure:5,
 	numParticles:256,
-	skipCount:1,
+	skipCount:2,
 	maxRadius: 1.35
 };
+
+
+
+
+if(window.location.href.indexOf('num') > -1) {
+	let str = window.location.href.split('num=')[1];
+	let numParticles = parseInt(str);
+	if(!isNaN(numParticles)) {
+		window.params.numParticles = numParticles
+	}
+}
+
+console.log('numParticles', window.params.numParticles);
 
 function _init() {
 

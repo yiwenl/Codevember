@@ -87,19 +87,21 @@ vec3 getPosition(mat4 shadowMatrix, sampler2D tPos, vec3 position, inout float o
 	vec4 shadowCoord  = vShadowCoord / vShadowCoord.w;
 	vec2 uv = shadowCoord.xy;
 	vec4 _pos = texture2D(tPos, uv);
-	if(_pos.a <= 0.0) {
-		outside = 0.0;
-	}
+	// if(_pos.a <= 0.0) {
+	// 	outside = 0.0;
+	// }
+	outside *= _pos.a;
 
 	return _pos.xyz;
 }
 
 #define FLOOR_Y -0.65
 
-#define BOUNDARY vec3(1.1, 0.65, 0.28)
+// #define BOUNDARY vec3(1.1, 0.65, 0.28)
+#define BOUNDARY vec3(0.8, 0.65, 0.28)
 
 vec3 getRandomPos(vec3 v) {
-	float x = snoise(v.xyz) * BOUNDARY.x;
+	float x = snoise(v.xyz) * BOUNDARY.x + .4;
 	float y = snoise(v.yzx) * BOUNDARY.y;
 	float z = snoise(v.zxy) * BOUNDARY.z;
 
@@ -121,50 +123,32 @@ void main(void) {
 		
 		if(extra.g > 0.0) {	//	if has found home ( extra.g >= 0.0), set pos to posSave 
 			pos = posOrg;
+		} 
 
-			float outside = 1.0;
-			vec3 posFromFront 	= getPosition(uShadowMatrix0, texturePos0, pos, outside);
-			vec3 posFromBack 	= getPosition(uShadowMatrix1, texturePos1, pos, outside);
+		float outside = 1.0;
+		vec3 posFromFront 	= getPosition(uShadowMatrix0, texturePos0, pos, outside);
+		vec3 posFromBack 	= getPosition(uShadowMatrix1, texturePos1, pos, outside);
 
-			if(outside >= 1.0) {	//	boundary check, if it's in , set found home to true, save pos to posOrg
-				if(pos.z > posFromFront.z) {
-					life = 0.0;
-				} else if(pos.z < posFromBack.z) {
-					life = 0.0;
-				} else {
-					life = mix(extra.r, 1.0, .5);
-				}
-			} else {
-				life = 0.0;
-			}
+		//	boundary check, if it's in , set found home to true, save pos to posOrg
+		outside *= step(pos.z, posFromFront.z);
+		outside *= step(posFromBack.z, pos.z);
+		outside *= mix(extra.r, 1.0, .5);
+		life = outside;
 
-		} else {				//	else find random pos within boundary
-			float outside = 1.0;
-			vec3 posFromFront 	= getPosition(uShadowMatrix0, texturePos0, pos, outside);
-			vec3 posFromBack 	= getPosition(uShadowMatrix1, texturePos1, pos, outside);
+		//	find pos in boundary and home position not set -> set found flag true, save home pos
+		if(life > 0.0 && extra.g <= 0.0) {	
+			extra.g = 1.0;
+			posOrg = pos;
+		} 
 
-			if(outside >= 1.0) {	//	boundary check, if it's in , set found home to true, save pos to posOrg
-				if(pos.z > posFromFront.z) {
-					life = 0.0;
-				} else if(pos.z < posFromBack.z) {
-					life = 0.0;
-				} else {
-					life = mix(extra.r, 1.0, .5);
-					extra.g = 1.0;
-					posOrg = pos;
-				}
-			} else {
-				life = 0.0;
-			}
+		//	pos not in boundary and home position not set -> get new random pos
+		if(life <= 0.0 && extra.g <= 0.0) {	
+			pos = getRandomPos(posOrg + (time*(1.0 + vTextureCoord.x * 3.0)) + vTextureCoord.xyy);
 		}
 
-		if(life <= 0.0) {
-			pos = getRandomPos(posOrg + (time*(1.0 + vTextureCoord.x)) + vTextureCoord.xyy);
-		}
-
-		vel = vec3(0.0);
-		vel.xz = (extra.xy * 2.0 - 1.0) * .002;
-		vel.x -= 0.02;
+		vel.xz = (extra.xy * 2.0 - 1.0) * .001;
+		vel.y = 0.0;
+		vel.x -= 0.015;
 	}
 
 	extra.b = life;

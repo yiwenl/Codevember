@@ -25,9 +25,7 @@ class ViewRender extends alfrid.View {
 		let count        = 0;
 		let numParticles = params.numParticles;
 		let ux, uy;
-		let r = random(0.01, 0.02);
-
-		console.log('Num particles :', numParticles * numParticles);
+		let r = 0.01;
 
 		for(let j = 0; j < numParticles; j++) {
 			for(let i = 0; i < numParticles; i++) {
@@ -36,7 +34,7 @@ class ViewRender extends alfrid.View {
 				positions.push([ux, uy, 0]);
 				positionOffset.push([random(-1, 1) * r, random(-1, 1) * r, random(-1, 1) * r]);
 
-				let axis = vec3.fromValues(random(-1, 1), random(-1, 1), random(-1, 1));
+				let axis = vec3.fromValues(random(-1, 1), random(-1, 1), random(-1, 1), random(1, 2));
 				vec3.normalize(axis, axis);
 				extras.push(axis);
 
@@ -53,10 +51,10 @@ class ViewRender extends alfrid.View {
 		this.mesh.bufferData(extras, 'aExtra');
 
 
-		const numRender = 3;
+		const numRender = 2;
+		console.log('Num particles :', numParticles * numParticles * numRender);
+
 		this._rotations = [];
-
-
 		for(let i=0; i<numRender; i++) {
 			this._rotations.push([random(1, 3), Math.random(), Math.random(), random(-Math.PI, Math.PI)]);
 		}

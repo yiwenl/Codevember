@@ -9,7 +9,7 @@ class ViewWolf extends alfrid.View {
 	
 	constructor() {
 		super(vs, fs);
-		this.fps = 30;
+		this.fps = 32;
 		this.frame = 0;
 
 		this.mtxModel = mat4.create();

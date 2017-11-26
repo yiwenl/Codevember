@@ -17,6 +17,8 @@ class SceneApp extends Scene {
 		GL.enableAlphaBlending();
 		this.orbitalControl.rx.value = this.orbitalControl.ry.value = 0.3;
 		this.orbitalControl.radius.value = 3.5;
+		this.orbitalControl.rx.limit(0, Math.PI/2 - .1);
+		this.orbitalControl.radius.limit(3, 5);
 
 
 		this._shadowMatrix = mat4.create();
@@ -122,11 +124,7 @@ class SceneApp extends Scene {
 	render() {
 		
 		//	update capture
-
-		if(this.count % 3 == 0) {
-			this._capture.capture(this._vWolf.mesh, this._vWolf.mtxModel);	
-		}
-		
+		this._capture.capture(this._vWolf.mesh, this._vWolf.mtxModel);	
 
 		//	update particles
 		this._updateFbo();
@@ -140,21 +138,7 @@ class SceneApp extends Scene {
 
 		this._vFloor.render(this._shadowMatrix, this._fboShadow.getDepthTexture());
 		this._vRender.render(this._fboTarget.getTexture(0), this._fboTarget.getTexture(2), this._shadowMatrix, this._fboShadow.getDepthTexture());
-		// this._vWolf.render();
 		
-
-		// let s = 150;
-		// GL.viewport(0, 0, s, s);
-		// this._bCopy.draw(this._fboTarget.getTexture(2));
-		// GL.viewport(s, 0, s, s);
-		// this._bCopy.draw(this._capture.depth1);
-		// GL.viewport(s * 2, 0, s, s);
-		// this._bCopy.draw(this._fboShadow.getDepthTexture());
-
-		// for(let i=0; i<4; i++) {
-		// 	GL.viewport(s * i, s, s, s);
-		// 	this._bCopy.draw(this._capture.fboModel0.getTexture(i));
-		// }
 
 		this.count ++;
 	}

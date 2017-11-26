@@ -4,7 +4,7 @@ precision highp float;
 attribute vec3 aVertexPosition;
 attribute vec3 aNormal;
 attribute vec3 aPosOffset;
-attribute vec3 aExtra;
+attribute vec4 aExtra;
 
 uniform mat4 uModelMatrix;
 uniform mat4 uViewMatrix;
@@ -40,25 +40,20 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
 }
 
 vec3 rotate(vec3 v) {
-	return rotate(v * uRotation.x, aExtra, uRotation.w + uTime);
+	return rotate(v * uRotation.x * aExtra.w, aExtra.xyz, uRotation.w + uTime * 5.0 );
 }
 
 void main(void) {
-	vec2 uv      = aVertexPosition.xy;
-	vec3 pos     = texture2D(texturePos, uv).rgb + rotate(aPosOffset);
-	vec3 extra   = texture2D(textureExtra, uv).rgb;
+	vec2 uv          = aVertexPosition.xy;
+	vec3 pos         = texture2D(texturePos, uv).rgb + rotate(aPosOffset);
+	vec3 extra       = texture2D(textureExtra, uv).rgb;
 	vec4 wsPosition  = uModelMatrix * vec4(pos, 1.0);
-	gl_Position  = uProjectionMatrix * uViewMatrix * wsPosition;
+	gl_Position      = uProjectionMatrix * uViewMatrix * wsPosition;
+	vColor           = vec4(extra, 1.0);
 	
-
-	// float g 	 = sin(extra.r + time * mix(extra.b, 1.0, .5));
-	// g 			 = smoothstep(0.0, 1.0, g);
-	// g 			 = mix(g, 1.0, .75);
-	vColor       = vec4(extra, 1.0);
-
 	float distOffset = uViewport.y * uProjectionMatrix[1][1] * radius / gl_Position.w;
-    gl_PointSize = distOffset;
-
-	vNormal 	 = aNormal;
-	vShadowCoord = uShadowMatrix * wsPosition;
+	gl_PointSize     = distOffset;
+	
+	vNormal          = aNormal;
+	vShadowCoord     = uShadowMatrix * wsPosition;
 }

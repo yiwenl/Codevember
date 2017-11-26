@@ -5,7 +5,7 @@ varying vec4 vShadowCoord;
 uniform sampler2D textureDepth;
 
 #define uMapSize vec2(1024.0)
-#define FOG_DENSITY 0.2
+#define FOG_DENSITY 0.5
 
 
 float rand(vec4 seed4) {
@@ -46,9 +46,6 @@ void main(void) {
 	float life = vColor.b;
 	float alpha = 1.0;
 	if( life <= 0.0) {	discard; }
-	// if( life <= 0.0) {	
-	// 	alpha = 0.1;
-	//  }
 
 	vec4 shadowCoord = vShadowCoord / vShadowCoord.w;
 	float s = PCFShadow(textureDepth, uMapSize, shadowCoord);
@@ -59,12 +56,11 @@ void main(void) {
 	color.rgb *= s;
 
 	float fogDistance = gl_FragCoord.z / gl_FragCoord.w;
-	float fogAmount = fogFactorExp2(fogDistance - 4.5, FOG_DENSITY);
+	float fogAmount = fogFactorExp2(fogDistance - 2.5, FOG_DENSITY);
 	const vec4 fogColor = vec4(0.0, 0.0, 0.0, 1.0); // white
 
 	float a = smoothstep(.0, .1, life);
 	gl_FragColor = mix(color, fogColor, fogAmount);
 	gl_FragColor.a *= a;
 	// gl_FragColor.gb *= alpha;
-	// gl_FragColor = color;
 }
