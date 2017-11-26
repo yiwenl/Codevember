@@ -44,7 +44,7 @@
     "webpack-dev-server": "^2.7.0"
   },
   "dependencies": {
-    "alfrid": "^0.2.1",
+    "alfrid": "^0.2.7",
     "assets-loader": "^0.5.1",
     "dat-gui": "^0.5.0",
     "stats.js": "^0.17.0"

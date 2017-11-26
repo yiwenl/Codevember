@@ -114,6 +114,9 @@ class Capture3D {
 
 	get fboModel0() {	return this._fboModel0;	}
 	get fboModel1() {	return this._fboModel1;	}
+
+	get shadowMatrix0() {	return this._shadowMatrix0;	}
+	get shadowMatrix1() {	return this._shadowMatrix1;	}
 }
 
 

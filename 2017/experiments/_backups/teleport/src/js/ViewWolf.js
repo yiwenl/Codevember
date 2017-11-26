@@ -9,13 +9,13 @@ class ViewWolf extends alfrid.View {
 	
 	constructor() {
 		super(vs, fs);
-		this.fps = 32;
+		this.fps = 30;
 		this.frame = 0;
 
 		this.mtxModel = mat4.create();
 		const s = 2;
 		mat4.scale(this.mtxModel, this.mtxModel, vec3.fromValues(s, s, s));
-		mat4.translate(this.mtxModel, this.mtxModel, vec3.fromValues(-.3, 0.0, 0.0));
+		mat4.translate(this.mtxModel, this.mtxModel, vec3.fromValues(-.2, 0.07, 0.0));
 		mat4.rotateY(this.mtxModel, this.mtxModel, Math.PI / 2);
 	}
 
