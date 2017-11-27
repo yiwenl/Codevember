@@ -152,8 +152,10 @@ void main(void) {
 	}
 
 	extra.b = life;
+
+
 	vel += acc * 0.02 * speedOffset;
-	pos += vel;
+	pos += vel * smoothstep(1.0, 0.75, life);
 	pos.y = max(pos.y, FLOOR_Y);
 
 	float decreaseRate = 0.996;
