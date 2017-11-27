@@ -2,7 +2,7 @@
 
 import alfrid, { GL } from 'alfrid';
 import vs from 'shaders/render.vert';
-import fs from 'shaders/render.frag';
+import fs from 'shaders/renderShadow.frag';
 
 class ViewRender extends alfrid.View {
 	
@@ -37,7 +37,7 @@ class ViewRender extends alfrid.View {
 	}
 
 
-	render(textureCurr, textureNext, p, textureExtra, mShadowMatrix, mTextureDepth) {
+	render(textureCurr, textureNext, p, textureExtra) {
 		this.time += 0.1;
 		this.shader.bind();
 
@@ -49,10 +49,6 @@ class ViewRender extends alfrid.View {
 
 		this.shader.uniform('textureExtra', 'uniform1i', 2);
 		textureExtra.bind(2);
-
-		this.shader.uniform("uShadowMatrix", "mat4", mShadowMatrix);
-		this.shader.uniform("textureDepth", "uniform1i", 3);
-		mTextureDepth.bind(3);
 
 		this.shader.uniform('uViewport', 'vec2', [GL.width, GL.height]);
 		this.shader.uniform('percent', 'float', p);

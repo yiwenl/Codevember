@@ -1,27 +1,25 @@
 import '../scss/global.scss';
-import debugPolyfill from './debugPolyfill';
 import alfrid, { GL } from 'alfrid';
 import SceneApp from './SceneApp';
 import AssetsLoader from 'assets-loader';
-
+import dat from 'dat-gui';
+import Stats from 'stats.js';
 import assets from './asset-list';
 import Assets from './Assets';
+import debug from './debug';
+
+window.params = {
+	numParticles:256*2,
+	skipCount:6,
+	maxRadius: 3.5
+};
 
 if(document.body) {
 	_init();
 } else {
-	window.addEventListener('DOMContentLoaded', _init);
+	window.addEventListener('DOMContentLoaded', _init);	
 }
 
-
-window.params = {
-	gamma:2.2,
-	exposure:5,
-	lightPosition:[.2, 3, 3],
-	numParticles:256*2,
-	skipCount:1,
-	maxRadius: 2.5
-};
 
 function _init() {
 
@@ -29,23 +27,20 @@ function _init() {
 	if(assets.length > 0) {
 		document.body.classList.add('isLoading');
 
-		const loader = new AssetsLoader({
+		let loader = new AssetsLoader({
 			assets:assets
-		})
-		.on('error', (error)=>{
-			console.log('Error :', error);
-		})
-		.on('progress', (p) => {
+		}).on('error', function (error) {
+			console.error(error);
+		}).on('progress', function (p) {
 			// console.log('Progress : ', p);
-			const loader = document.body.querySelector('.Loading-Bar');
-			if(loader) loader.style.width = `${(p * 100)}%`;
-		})
-		.on('complete', _onImageLoaded)
-		.start();
-
+			let loader = document.body.querySelector('.Loading-Bar');
+			if(loader) loader.style.width = (p * 100).toFixed(2) + '%';
+		}).on('complete', _onImageLoaded)
+		.start();	
 	} else {
 		_init3D();
 	}
+
 }
 
 
@@ -65,6 +60,7 @@ function _onImageLoaded(o) {
 
 
 function _init3D() {
+	
 	//	CREATE CANVAS
 	const canvas = document.createElement('canvas');
 	canvas.className = 'Main-Canvas';
@@ -78,6 +74,4 @@ function _init3D() {
 
 	//	CREATE SCENE
 	const scene = new SceneApp();
-
-	
 }

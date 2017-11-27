@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run html & NODE_ENV=development webpack-dev-server --open & node ./tasks/watch-asset.js & node ./tasks/shader-watcher.js",
+    "start": "npm run html:watch & NODE_ENV=development webpack-dev-server --open & node ./tasks/watch-asset.js & node ./tasks/shader-watcher.js",
     "build:dev": "npm run html & webpack --progress --profile --colors",
     "build": "NODE_ENV=production npm run html & NODE_ENV=production webpack --progress --profile --colors",
     "watch": "webpack --watch",
     "html": "node ./tasks/html.js",
+    "html:watch": "node ./tasks/html-watch.js",
     "lint": "eslint -c .eslintrc src/**",
     "lint:fix": "eslint -c .eslintrc --fix src/**",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -28,6 +29,7 @@
     "babel-core": "^6.25.0",
     "babel-loader": "^7.1.1",
     "babel-preset-env": "^1.6.0",
+    "chokidar": "^1.7.0",
     "css-loader": "^0.28.4",
     "eslint": "^4.4.1",
     "eslint-loader": "^1.9.0",
@@ -42,7 +44,7 @@
     "webpack-dev-server": "^2.7.0"
   },
   "dependencies": {
-    "alfrid": "^0.1.29",
+    "alfrid": "^0.2.1",
     "assets-loader": "^0.5.1",
     "dat-gui": "^0.5.0",
     "stats.js": "^0.17.0"
