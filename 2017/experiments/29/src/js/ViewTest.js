@@ -18,16 +18,16 @@ class ViewTest extends alfrid.View {
 		this.diskSize = s;
 		this.mesh = alfrid.Geom.plane(s, s, 100, 'xz');
 
-		let r = 10;
+		let r = 8;
 
 		const getPos = () => {
-			return [random(-r/2, r/2), random(2, 5), random(-r, r)];
+			return [random(-r/2, r/2), random(2, 4), random(-r, r)];
 		}
 
 
 		const positions = [];
 		const extras = [];
-		const numLamps = 30;
+		const numLamps = 20;
 
 		for(let i=0; i<numLamps; i++) {
 			positions.push(getPos());
@@ -36,7 +36,6 @@ class ViewTest extends alfrid.View {
 
 		this.mesh.bufferInstance(positions, 'aPosOffset');
 		this.mesh.bufferInstance(extras, 'aExtra');
-
 
 		this.positions = positions;
 
