@@ -143,6 +143,11 @@ const ExpModel = [
 		cover:'assets/img/cover29.jpg',
 		url:'//yiwenl.github.io/Codevember/2017/experiments/29/dist/index.html',
 		title:'Ripples'
+	},
+	{
+		cover:'assets/img/cover30.jpg',
+		url:'//yiwenl.github.io/Codevember/2017/experiments/30/dist/index.html',
+		title:'Taichi'
 	}
 ]
 
