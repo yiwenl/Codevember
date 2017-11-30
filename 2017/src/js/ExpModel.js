@@ -145,7 +145,7 @@ const ExpModel = [
 		title:'Ripples'
 	},
 	{
-		cover:'assets/img/cover30.jpg',
+		cover:'assets/img/coverFinal.jpg',
 		url:'//yiwenl.github.io/Codevember/2017/experiments/30/dist/index.html',
 		title:'Taichi'
 	}
