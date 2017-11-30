@@ -154,4 +154,3 @@ const ExpModel = [
 
 
 module.exports = ExpModel;
-// export default ExpModel;
