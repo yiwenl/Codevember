@@ -25,7 +25,7 @@ class SceneApp extends Scene {
 		this.cameraPortrait = new CameraPerspective();
 		this.cameraPortrait.setPerspective(FOV * RAD, ratio, .1, 50);
 
-		this.pointSource = vec3.fromValues(0, 0, -radius);
+		this.pointSource = vec3.fromValues(0, 0, radius);
 		this.cameraPortrait.lookAt(this.pointSource, [0, -1, 0], [0, 1, 0]);
 
 		this.biasMatrix = mat4.fromValues(
