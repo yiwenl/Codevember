@@ -1,7 +1,6 @@
 // SceneApp.js
 
 import alfrid, { Scene, GL, CameraPerspective } from 'alfrid';
-import ViewObjModel from './ViewObjModel';
 import Assets from './Assets';
 import vs from 'shaders/cylinders.vert';
 import fs from 'shaders/cylinders.frag';
